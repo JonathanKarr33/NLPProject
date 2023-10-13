@@ -1,0 +1,1158 @@
+3
+2
+0
+2
+
+t
+c
+O
+2
+1
+
+]
+I
+
+A
+.
+s
+c
+[
+
+1
+v
+1
+3
+4
+8
+0
+.
+0
+1
+3
+2
+:
+v
+i
+X
+r
+a
+
+Neural Sampling in Hierarchical Exponential-family
+Energy-based Models
+
+Xingsi Dong1
+dxs19980605@pku.edu.cn
+
+Si Wu1,2
+siwu@pku.edu.cn
+
+1. PKU-Tsinghua Center for Life Sciences, Academy for Advanced Interdisciplinary Studies.
+School of Psychology and Cognitive Sciences, Peking University.
+2. IDG/McGovern Institute for Brain Research. Center of Quantitative Biology, Peking University.
+
+Abstract
+
+Bayesian brain theory suggests that the brain employs generative models to un-
+derstand the external world. The sampling-based perspective posits that the brain
+infers the posterior distribution through samples of stochastic neuronal responses.
+Additionally, the brain continually updates its generative model to approach the
+true distribution of the external world. In this study, we introduce the Hierarchical
+Exponential-family Energy-based (HEE) model, which captures the dynamics of
+inference and learning. In the HEE model, we decompose the partition function
+into individual layers and leverage a group of neurons with shorter time constants
+to sample the gradient of the decomposed normalization term. This allows our
+model to estimate the partition function and perform inference simultaneously,
+circumventing the negative phase encountered in conventional energy-based mod-
+els (EBMs). As a result, the learning process is localized both in time and space,
+and the model is easy to converge. To match the brain’s rapid computation, we
+demonstrate that neural adaptation can serve as a momentum term, significantly
+accelerating the inference process. On natural image datasets, our model exhibits
+representations akin to those observed in the biological visual system. Furthermore,
+for the machine learning community, our model can generate observations through
+joint or marginal generation. We show that marginal generation outperforms joint
+generation and achieves performance on par with other EBMs.
+
+1
+
+Introduction
+
+Human behavioral studies [1, 2, 3] and animal neurophysiological studies [4, 5] have suggested that
+the brain performs statistically optimal Bayesian inference to interpret the external world [6, 7, 8, 9].
+One promising theory for implementing Bayesian inference in the brain is to interpret the variability
+of neural responses as Monte Carlo sampling of the posterior distribution [10]. This perspective
+naturally accounts for the irregular firing patterns and other response properties observed in sensory
+cortex neurons [11, 12, 13]. Numerous sampling-based models [10, 14, 15, 16, 17, 12, 13, 18] have
+been proposed to elucidate neural dynamics and the underlying mechanisms of Bayesian inference.
+
+To facilitate the brain’s ability to derive meaningful representations from sensory input, it must
+continually update its generative model to approximate the true distribution of the external world [19].
+Previous approaches often neglect this critical learning process. They either maintain fixed parameters
+for their generative model [15, 17, 16], or they employ biologically implausible methods like the
+variational approach with backpropagation (BP) for training [9]. Is there a generative model that
+integrates sampling-based inference with the capability to learn locally in both time and space?
+
+37th Conference on Neural Information Processing Systems (NeurIPS 2023).
+
+ 
+ 
+ 
+ 
+ 
+ 
+Energy-based models (EBMs) [20] provide a framework for inference with sampling method and
+learning with spatially localized rules. The reason for non-locality in time is the need to estimate
+the partition function. To estimate the global partition function, the network has to perform a top-
+down pass to obtain a negative sample. This process is referred to as the negative phase. During
+this pass, it disrupts the neural network’s stored inference results, which is essentially the same
+reason for the temporal non-locality as in the case of BP. Recently, predictive coding networks
+(PCNs) [21, 22, 23, 24] use the Gaussian distribution to avoid the negative phase since the partition
+function of Gaussian is constant. But further study [25] reveals that the Gaussian assumption is
+restrictive when dealing with complex probability distributions. Moreover, setting aside biological
+constraints, estimating the partition function itself poses a significant challenge. In the field of machine
+learning, various sampling methods, such as amortized generation [26] and implicit generation [27],
+have been proposed to tackle this issue. However, both of these methods involve the use of the
+negative phase, which is known for being challenging to converge. Generative adversarial networks
+(GANs) address this issue by utilizing a discriminative model, but GANs are notoriously difficult to
+train in practice.
+
+Besides, the inference dynamic of Gibbs sampling [28, 20] or Langevin sampling [29] in EBMs
+essentially perform random walks in local regions rather than the whole posterior space, which is too
+slow to be compatible with brain functions [16]. Therefore, it is crucial to investigate whether neural
+circuits in the brain have the capacity of realizing sampling-based inference rapidly.
+
+Summary of the work. In Sec.2, we propose that our brain holds an EBM as the intrinsic generative
+model to interpret the external world. The neural dynamics employ a sampling-based method for
+Bayesian inference. Simultaneously, the learning dynamic aims to minimize the discrepancy between
+the observed distribution of intrinsic model and the real world. In Section 3, we introduce the
+Hierarchical Exponential-family Energy-based (HEE) model, which allocates the partition function
+across each layer. This allocation shifts the estimation of the total sample space required for
+calculating the partition function from a product of individual layer spaces to a sum of layer spaces.
+This approach enhances the convergence of our model. Furthermore, we efficiently sample the
+normalization term of the exponential-family in each layer using a group of neurons with fast
+dynamics. This localizes the learning process in both time and space.
+In Sec.4, we find that
+incorporating noisy adaptation, a generic feature of neuronal responses, into the inference dynamics
+effectively yields a second-order Langevin dynamic. In Sec.5, we validate the capabilities of the HEE
+model using 2D synthetic datasets and FashionMNIST [30]. Then, we incorporate receptive field as
+the biological constrains to the HEE model training on CIFAR10 [31]. We show that the HEE model
+can achieve a performance comparable with previous EBMs [27]. We also investigate the neural
+representation of semantic information, including orientation, color and category, which exhibit
+similarities to biological visual systems. And the neural adaptation can trigger neural phenomena
+including oscillations and transient which are widely observed in biological systems. In Sec.6, we
+discuss several related theories and models.
+
+Main Contributions. We propose a hierarchical EBM whose learning process is localized both in
+time and space, which could potentially serve as a mechanism for the brain to utilize changes in
+synaptic strength for learning. And our brain-inspired EBM also presents a technique for estimating
+the partition function, which is a challenging problem within the machine learning community.
+
+2 The intrinsic generative model
+
+In this section, we propose that our brain holds energy-based models (EBMs) as the intrinsic
+generative model consisting of two components: inference and learning. Inference is believed to
+be carried out through neural sampling [10, 20], while learning is accomplished through long-term
+synaptic plasticity [32].
+
+Let x be the observation received by our brain, and let z be the latent variable represented by neurons.
+The joint distribution of the EBMs is written as pθ(x, z) = pθ(x|z)pθ(z), where θ are stored in the
+connection weights of neurons (Fig.1A). The EBMs aims to minimize the difference between the
+intrinsic marginal distribution pθ(x) and the true distribution of the external world ptrue(x), which is
+described by the Kullback–Leibler divergence,
+
+min
+θ
+
+DKL [ptrue(x) ∥ pθ(x)] .
+
+(1)
+
+2
+
+(A)
+
+Probabilistic
+model
+
+(B)
+
+Inference
+& learning
+
+(C)
+
+Joint
+generation
+
+(D)
+
+Marginal
+generation
+
+x
+
+z
+
+x
+
+z
+
+pθ(x|z)
+
+pθ(z)
+
+x
+
+z
+
+x
+
+z
+
+Figure 1: (A) The directed graphical model of the energy-based model (EBM). (B) The latent variable
+z receives the likelihood information pθ(x|z) from the observation x and combines it with the prior
+knowledge pθ(z) to perform the inference dynamic. And the connected weights θ changes following
+the learning dynamic (dashed line). (C) The latent variable z performs inference dynamic and the
+observation x performs generation dynamic, which leads to the distribution of x, z ∼ pθ(x, z). And
+the connection weights θ are fixed (solid line). (D) The latent variable doesn’t receive likelihood
+information from observation and z ∼ pθ(z), x ∼ pθ(x) which is called marginal generation.
+
+The neural system can adopts the gradient based learning method such as gradient decent. And the
+gradients is calculated as (see SI for detailed proof),
+
+∇θDKL [ptrue(x) ∥ pθ(x)] = −Ex∼ptrue(x)Ez∼pθ(z|x) [∇θ ln pθ(x, z)] .
+The second expectation of the above equation requires the posterior of a given observation x, which is
+calculated as pθ(z|x) = pθ(x, z)/pθ(x). Practically, the posterior is intractable for the denominator
+pθ(x) requires complex integral. Variational inference is usually used to solve this problem (such as
+VAE [33]). And the EBMs adopts the sampling method to avoid complex calculations. By leveraging
+the relationship ∇z ln pθ(z|x) = ∇z ln pθ(x, z) ,the samples of posterior can be offered by the neural
+dynamic (Langevin sampling),
+
+(2)
+
+τz
+
+dz
+dt
+
+= ∇z ln pθ(x, z) +
+
+√
+
+2τzξ,
+
+(3)
+
+where ξ is Gaussian white noise and τz is the time constant. The stationary distribution of the above
+dynamic is our target distribution pθ(z|x). The sampling algorithm, along with the joint distribution,
+determines the connections of neurons and their inference dynamic (Fig.1B).
+
+For the learning dynamic, the brain receives the observations from the real world continuously
+(Ex∼ptrue(x)), and the neural dynamic mentioned above can produce samples of their posterior simul-
+taneously (Ez∼pθ(z|x)). The parameters can be updated according to the gradient, which is often
+implemented by Hebbian learning rules(Fig.1B),
+
+τθ
+
+dθ
+dt
+
+= −∇θDKL [ptrue(x) ∥ pθ(x)] = ∇θ ln pθ(x, z),
+
+(4)
+
+where τθ is the time constant of synapses.
+
+For neuroscience, this is the end of the story. Nevertheless, EBMs can also generate observations
+which the machine learning society follow with interest. In the generation process, the observation is
+not fixed but undergoes the Langevin sampling,
+
+τx
+
+dx
+dt
+
+= ∇x ln pθ(x, z) +
+
+√
+
+2τxξ.
+
+(5)
+
+The latent variable z can follow the inference dynamic Eq.(3). In this case, the observation x and
+latent variable z together follow the joint distribution pθ(x, z). Thus, the observation x can produce
+samples following pθ(x), which is called joint generation (Fig.1C). However, in order to get the
+marginal distribution pθ(x), the latent variable z just needs to follow the prior distribution pθ(z)
+rather than reaching the posterior. In this case, the generation dynamic of latent variable is written as,
+
+τz
+
+dz
+dt
+
+= ∇z ln pθ(z) +
+
+√
+
+2τzξ.
+
+3
+
+(6)
+
+And the stationary distribution of Eq.(5) performed by observation x still equals to pθ(x), which
+is called marginal generation (Fig.1D). In Sec.5, we will see that the marginal generation performs
+better than joint generation. Here is an informal understanding. The process of sampling (x, z) can
+be understood as searching for a specific pair. We assume that the size of the x-space is O(m) and
+the size of the z-space is O(n). In joint generation, the search is conducted simultaneously in both
+the x-space and z-space, resulting in a required search space of O(n ∗ m). In marginal generation,
+the process involves initially searching in the z-space according to pθ(z). Once z is found, it is fixed.
+This step’s search space size is O(n). Then, x is searched based on pθ(x|z) in the x-space. This
+step’s search space size is O(m), leading to a combined required search space size of O(n + m).
+
+3 Exponential-family energy-based model
+
+In this section, we provide a neural implementation of the HEE model and outline the specific
+dynamics involved in inference, learning, and generation, as discussed in Section 2. Approximating
+the target distribution ptrue(x) which is diverse and complex requires a good representation ability of
+the model. Exponential families include many of the most common distributions (such as normal,
+Poisson, gamma distribution and so on). Moreover, exponential families can be easily parameterized,
+allowing for generalization and flexibility in modeling various types of distributions.
+Let x0 ∈ Rn0 be the observation (such as an image) received by our brain. And there are L layers of
+neurons representing the latent variables x1:L = {x1, x2, ..., xL}, xl ∈ Rnl . The joint distribution
+is a Markov chain (Fig.2A) starting with p(xL) = exp (cid:2)ηT
+
+L ϕ(xL) + g(xL) − A(ηL)(cid:3),
+
+pθ(x0:L) = p(xl)
+
+L−1
+(cid:89)
+
+l=0
+
+pθ(xl|xl+1),
+
+pθ(xl|xl+1) = exp (cid:2)ηT
+
+l ϕ(xl) + g(xl) − A(ηl)(cid:3) .
+
+(7)
+
+The natural parameter ηl ∈ Rnl is a function of xl+1 with parameters θl ∈ Rnl×nl+1, which is
+written as ηl = θlf (xl+1), where f (·) is the activation function. And ηL is constant. The sufficient
+statistic ϕ(xl) ∈ Rnl and the base measure g(xl) ∈ R is the function of xl. A(ηl) ∈ R is the
+normalize term (log-partition function) to make sure the sum of the probability equals to 1. In order
+to get the inference dynamic, we substitute the joint distribution Eq.(7) into the Langevin dynamic
+Eq.(3) obtaining,
+dxl
+dt
+
+l−1 [ϕ(xl−1) − A′(ηl−1)] + ϕ′(xl)ηl + g′(xl) +
+
+= f ′(xl)θT
+
+2τzξl,
+
+τz
+
+√
+
+(8)
+
+where f ′(xl), ϕ′(xl) ∈ Rnl×nl are diagonal matrices. The derivative of log-partition A′(ηl−1) is
+intractable for it needs complex integral. Here, we use a group of interneurons εl−1 ∈ Rnl−1 to rep-
+resent the term ϕ(xl−1) − A′(ηl−1). It can be proved that A′(ηl−1) = Exl−1∼pθ(xl−1|xl) [ϕ(xl−1)]
+(See SI for detailed proof). Thus, in order to calculate A′(ηl−1), the interneurons need to produce
+samples xl−1 following the distribution pθ(xl−1|xl) in a short time compared with the inference
+dynamic. Therefore, the dynamic of εl−1 can be written as,
+
+εl−1 = ϕ(xl−1) − ϕ(ul−1),
+
+τu
+
+dul−1
+dt
+
+= ϕ′(ul−1)ηl−1 + g′(ul−1) +
+
+√
+
+2τuξu.
+
+(9)
+
+1, we can ensure that ul−1 converges much faster than xl, and the
+By setting the time constant τu ≪ τz
+stationary distribution of ul−1 corresponds to pθ(ul−1|xl). This leads to εl−1 = ϕ(xl−1)−A′(ηl−1).
+Now, we can rewrite the inference dynamic Eq.(8) into,
+
+τz
+
+dxl
+dt
+
+= f ′(xl)θT
+
+l−1εl−1 + ϕ′(xl)ηl + g′(xl) +
+
+√
+
+2τzξl.
+
+(10)
+
+The first term on the right side of the dynamic equation indicates that neurons xl receive feedback
+from interneurons εl−1, which provides likelihood information pθ(xl−1|xl). The second term shows
+
+1There are various types of interneurons that target on pyramidal cells, comprising approximately 10-20% of
+the overall neuron population in the cerebral cortex [34]. The interneurons in the HEE model bear the closest
+resemblance to the Large Basket Cell or Nest Basket Cell [35], which collectively constitute around 50% of
+interneurons. Their electrophysiological characteristics include fast spiking, non-accommodating, and non-
+adapting behaviors. These interneurons have also been identified in the visual cortex of ferrets [36], displaying
+short-duration action potentials (approximately 0.5 ms at half height). This suggests that these neurons have
+shorter time constants compared to pyramidal cells.
+
+4
+
+(A)
+
+Probabilistic
+model
+
+(B)
+
+Inference
+& learning
+
+xl−1
+
+xl−1
+
+ϕ(xl−1)
+
+εl−1
+
+pθ(xl−1|xl)
+
+pθ(xl|xl+1)
+
+xl
+
+xl
+
+xl+1
+
+xl+1
+
+η l − 1
+
+ϕ(xl)
+
+ηl
+
+η l
+
+εl
+
+(C)
+
+l
+
+l + 1
+
+g(·)
+
+θl
+
+Figure 2: (A) The directed graphical model of the hierarchical exponential-family energy-based
+(HEE) model . (B) The inference and learning dynamic of HEE model. The red arrows represent the
+likelihood information and the black arrows represent the prior information. Neurons xl receive the
+likelihood information from εl−1 and receive prior information ηl from εl. The interneurons εl−1
+receive the natural parameter ηl−1 from neurons xl and perform the Langevin sampling dynamic
+to approximate A′(ηl−1). Then, the interneurons compare it with the the sufficient statistic ϕ(xl−1)
+received from xl−1 to calculate the value of εl−1. The dashed line shows that the connection weights
+θ will perform gradient decent in the learning dynamic. (C) The neural connection diagram between
+layer l and layer l + 1.
+
+that neurons xl receive prior knowledge pθ(xl|xl+1) from interneurons εl through a feedforward
+loop. The term g′(xl) controls the self-connections within layer l (Fig.2B). εl−1 is also called the
+error term in PCNs. Here, we show that the predictions in PCNs essentially estimate the log-partition.
+
+Then, we can obtain the learning dynamic by substituting the joint distribution Eq.(7) into the gradient
+decent dynamic Eq.(4),
+
+τθ
+
+dθl
+dt
+
+= [ϕ(xl) − A′(ηl)] f (xl+1)T = εlf (xl+1)T .
+
+(11)
+
+The derivatives of the log-partition function are stored in the interneurons εl. As a result, the synaptic
+changes are determined solely by local neurons, adhering to Hebbian rules.
+
+After inference and learning, our model can also generate observations. During joint generation, the
+dynamics of neurons x1:L follow the same principles as the inference dynamics described by Eq.(10).
+By substituting the joint distribution Eq.(7) into the Langevin dynamic Eq.(5), we can generate new
+samples from the model by,
+
+τx
+
+dx0
+dt
+
+= ϕ′(x0)η0 + g′(x0) +
+
+√
+
+2τxξ0
+
+(12)
+
+And for marginal generation, we can substitute the prior distribution described in Eq.(7) into Eq.(6)
+obtaining the dynamic of neurons x1:L,
+
+τz
+
+dxl
+dt
+
+= ϕ′(xl)ηl + g′(xl) +
+
+√
+
+2τzξl.
+
+(13)
+
+4 Neural adaptation accelerate the sampling process
+
+Langevin sampling essentially performs random walks in local regions rather than the whole posterior
+space [37], because the drift term ∇z ln pθ(x, z) in Eq.(3) will vanish near the local minima and
+only noise term remains (Fig.3A). Sampling the entire posterior space is a time-consuming process
+and does not align with the brain’s ability to perform tasks quickly. Therefore, it is important to
+implement a faster sampling algorithms for our model.
+
+In this section, we show that by including noisy adaptation, the network is able to speed up the
+inference dynamic significantly. Adaptation is a common phenomenon observed in neural systems,
+
+5
+
+Trec
+
+Tesc
+
+Energy function
+− ln pθ(z|x)
+
+Figure 3: (A)(B) The sampling trace of Langevin dynamic and second-order Langevin dynamic of
+a mixture of 2D Gaussian distribution. (C) Illustration of the sampling process. States with lower
+energy indicates a higher probability, which needs to be stay longer. And the network needs to cross
+the energy barrier to reach a new local minima for the non-convex of the energy function. (D) λ1 and
+det(H) increases and decreases, respectively, with the changes of layers L and the total number of
+the neurons fixed ((cid:80)
+
+l nl = 10000).
+
+where negative feedback mechanisms are employed to suppress neuronal responses when they reach
+high levels. Here, we show that the neural adaptation v can introduce an auxiliary variable to
+implement a faster sampling algorithm, which is called second-order Langevin dynamics (SLD),
+
+τz
+
+τv
+
+dz
+dt
+dv
+dt
+
+= ∇z ln pθ(z|x) − v +
+
+= −
+
+mv
+2
+
+√
+
++ m
+
+2τvξ,
+
+√
+
+2τzξ,
+
+(14)
+
+(15)
+
+where m > 0 controls the adaptation strength. The auxiliary variable v can keep the network moving
+while reaching the local minima, which essentially serves as the momentum term (Fig.3B). When
+there is no adaptation (m = 0), the above dynamic will degenerate to the Langevin sampling (LS)
+described in Eq.(3). And the stationary distribution of the above dynamic remains to be pθ(z|x)
+(See SI for proof). By substituting the joint distribution of exponential family Eq.(7) into the above
+dynamic, we can obtain the SLD inference dynamic,
+
+τz
+
+τv
+
+dxl
+dt
+dvl
+dt
+
+= f ′(xl)θT
+
+l−1εl−1 + ϕ′(xl)ηl + g′(xl) − vl +
+
+√
+
+2τzξl,
+
+= −
+
+mvl
+2
+
+√
+
++ m
+
+2τvξl.
+
+(16)
+
+(17)
+
+Here we exemplify the neural adaptation with spike frequency adaptation (SFA) [38]. In the neural
+system, the adaptation current vl accumulates the noise term ξl coming from the ion concentrations,
+release of neural transmitters, activation/inactivation of ion channels and so on, which is described by
+Eq.(17). The adaptation current induces suppression on neurons xl, acting as momentum variables to
+accelerate the sampling process (Eq.(16)).
+
+We conduct further investigation to elucidate the precise mechanism by which noisy adaptation
+facilitates the acceleration of the sampling process in the HEE model. Considering that the energy
+function − ln pθ(x1:L|x) is non-convex, the sampling process can be divided into two parts. In the
+first part, the network needs to find a local minima and samples near the local minima, which takes a
+certain amount of time called recurrence time Trec (Fig.3C). In the second part, the network needs to
+leave the local minima and find a new one, which takes a certain amount of time called the escape
+time Tesc. Typically, we have Trec ≪ Tesc. The total time to get stationary distribution can be
+approximated by T = Tesc + Trec. It can be proved that [39] the recurrence time is bounded by
+Trec = O (1/λ1(HJ )). λ1(HJ ) is the smallest eigenvalue of the matrix HJ ,
+
+HJ =
+
+(cid:18) H/τz
+0
+
+(cid:19)
+
+I/τz
+mI/(2τv)
+
+(18)
+
+where H is the Hessien matrix of the energy function − ln pθ(x1:L|x0). The smallest eigenvalue
+of HJ is calculated as λ1(HJ ) = min{λ1(H)/τz, m/(2τv)}. Thus, in the case m > 2λ1(H)τv/τz,
+the SLD can reduce the recurrence time Trec to accelerate the sampling process. And the escape
+
+6
+
+zzz(A)(B)Langevin samplingsecond-order Langevin samplingTime t(=¿z)(C)(D)1250500Layers L0.51.01.5¸1det(H)Figure 4: Evaluation on 2D synthetic datasets and FashionMNIST: a mixture of four Gaussian
+distribution (first line), a mixture of four banana-shaped distribution (second line), pinwheel-shaped
+distribution (third line).
+
+time is bounded by Tesc = O
+
+. The determinant of HJ is calculated as det(HJ ) =
+(cid:80) nl . Thus, det(HJ ) is monotonically increaseing with m, indicating that the
+
+det(H)(mτ /2τv)
+larger m is, the shorter the time it takes to escape from the local minima.
+
+(cid:17)
+(cid:16)(cid:112)1/ det(HJ )
+
+The analysis presented above demonstrates that the convergence speed of the inference dynamic is
+determined by the values of λ1(H) and det(H). This valuable insight can be leveraged to guide
+the design of the network architecture, enabling the creation of more efficient and effective models.
+Specifically, with a fixed total number of neurons (cid:80)
+l nl, increasing the number of layers L results in
+a deeper network, while decreasing the number of layers results in a wider network. Practically, we
+show that det(H) will decrease with layers L while λ1 will increase (Fig.3D), which indicates that
+there is a trade-off between the recurrence time Trec and the escaping time Tesc with different layers
+L (See SI for detailed setting and analysis).
+
+5 Experiment
+
+In this section, we firstly validate the capability of HEE model for approaching complex distribution
+by examining the quality of generation. Then, we show that our model demonstrates similarity in
+the representation of natural images to the biological visual system. And adaptation can induce
+oscillatory behavior and transient overshoots in neurons during the inference phase.
+
+5.1 Generation
+
+Firstly, we conducted experiments using three variations of the HEE model, each with different
+ϕ(x) functions and sampling methods (Tabel 1), to evaluate their capabilities. The experiments
+were performed on both 2D synthetic datasets and the FashionMINST. We use the fully connected
+architecture, i.e., θl has no zero elements. The results (second and third column) show that HEE with
+linear statistic (HEE-L) struggles to capture the complex distribution. Moreover, we theoretically
+prove that HEE-L can only approach unimodal distributions (See SI for detailed proof). For HEE-NL,
+some modes are missing while using the joint generation. And when the spacing between modes
+is large, there is an issue of non-uniformity among different modes. And the marginal generation
+converge much faster than the joint generation. In FashionMNIST, it takes less time for marginal
+method to get the generation of high-quality images.
+
+7
+
+preal(x)HEE-L JointHEE-L MarginalHEE-NL JointHEE-NL MarginalHEE-NL-A JointHEE-NL-A MarginalModel
+
+Then, we employ the HEE-NL-A with layers
+L = 10 on the CIFAR10 unconditional. The
+sparse connection is employed as a method
+to mimic the receptive field behavior found
+in biological systems. We quantitatively
+evaluate image quality of HEE-NL-A with
+Inception score [40] and FID score [41] in
+Tabel 2. Overall, we achieve a performance comparable with the previous EBMs. And the generation
+quality of the marginal method is better than joint method, which agrees with the previous results [42].
+
+x
+HEE-L
+sigmoid(x)
+HEE-NL
+HEE-NL-A sigmoid(x)
+
+Table 1: Table of different HEE models.
+
+Sampling method
+
+LS
+LS
+SLD
+
+ϕ(x)
+
+5.2
+
+Inference
+
+We further use the HEE-NL-A trained on CIFAR10 to explore the relationship between the latent
+features and semantic information, including orientation, color and category.
+
+Orientation: Simple cells [43] and complex cells [44] are the most prominent and widely observed
+neurons in the biological visual system that exhibit tuning to orientation. They are found in the
+primary visual cortex (V1) of numerous animal species [45, 46]. We present the model with gabor
+images of different orientations commonly used in experiments (Fig.6A) and compute the mean and
+variance of the neural responses for each neuron. Then, we use a Gaussian curve with bandwidth
+limited from 20◦ to 90◦ and a two-modes Gaussian curve to fit the simple cell and complex cell,
+respectively (Fig.6A&B). We find that the proportion of simple cells and complex cells remains
+relatively consistent across each layer and both decrease with increasing layers in our model (Fig.6C).
+
+End stopping: In the HEE model, interneurons essentially represent the error term in the PCNs. We
+have observed the phenomenon of ’end stopping’ in interneurons (Fig.6D), which aligns with the
+end-stopping behavior observed in error neurons in the PCNs [21].
+
+Color: Recent study shows that there is a hierarchical representation for chromatic processing across
+the ventral pathway of macaque [47]. We present our model using reshaped natural images [48] and
+employ principal component analysis to demonstrate that the middle layer’s neural representation’s
+most informative dimensions carry chromatic information (Fig.6E).
+
+Category: Visual object recognition is believed to be solved by the brain hierarchically [49]. A
+recent study [50] demonstrate that the inferotemporal cortex, situated in the deeper layer of the visual
+pathway, is capable of constructing a linear map of the object space. For each layer in our model,
+we employed a linear support vector machine (SVM) to classify the ten labels of the CIFAR10. The
+SVM was trained using the average neural responses as features. Fig.6F illustrates the projection
+of the features in the last layer onto the SVM weights corresponding to the "cat" and "dog" labels.
+Furthermore, we observe that the classification accuracy improves as we move up the layers of our
+model (Fig.6G), which is consistent with findings in both biological visual systems [50] and the
+artificial neural networks [51].
+
+Phenomena: Oscillations [52] and transients [53] are two kinds of spatial-temporal dynamic features
+in neural systems, which play a crucial role during the sampling process [13]. Here, we show that by
+adjusting the adaptation strength m, the oscillation frequency of the HEE model can span within the
+
+Model
+
+HEE-NL-A (Joint)
+EBM (single) [27]
+HEE-NL-A (Marginal)
+MEG (Generator) [42]
+EBM (10 ensemble)
+MEG (MCMC)
+
+IS
+
+5.95
+6.02
+6.47
+6.49
+6.78
+7.31
+
+FID
+
+43.21
+40.58
+37.05
+35.02
+38.20
+33.18
+
+Table 2: Table of Inception and FID scores. Figure 5: Marginal generation of HEE-NL-A on
+
+CIFAR10.
+
+8
+
+Figure 6: (A)(B) The red dots show the average firing rate of two neurons in x1 with different
+gabor-like stimulus. Different tuning curves are used to fit simple cells and complex cells. (C)
+The proportion of simple cells and complex cells in each layer. (D) We show horizontal bars of
+varying lengths to the HEE. The red dots show the average firing rate of a neuron in ϵ1 whose
+corresponding neuron in x1 is a simple cell preferring 0 degree. (E) The images are plotted at the
+location corresponding to the projection of their average neural response in layer 5 onto the first
+two principal components. Red images are located in the upper left corner, while blue-green images
+are located in the lower right corner. (F) The true label of cat, dog, and other categories should be
+respectively located in the second, fourth, and third quadrants. (G) The classification accuracy of the
+SVM in each layer. (H) We sampled and statistically analyzed the distribution of the highest firing
+rate frequencies of all neurons during the inference phase in the first 100τz for different values of
+m. The gamma band is centered around the dashed line. (I) We sampled and statistically assessed
+the maximum change in firing rates of all neurons during the inference phase in the first 100τz for
+different values of m. We refer to the mean of the maximum change values as the ’average step
+size’. We utilize the average step size of the neurons during the sampling process as an indicator of
+transients.
+
+range of 20-80 Hz (gamma band), which is widely observed in visual systems [54] (Fig.6H). And
+stimulus-onset transients of the firing rate can also be enhanced by the adaptation (Fig.6I).
+
+6 Discussion
+
+The present study investigates the sampling-based inference and learning dynamic within the frame-
+work of an intrinsic generative model. We introduce the HEE model as a neural implementation that
+utilizes neural dynamics and Hebbian learning. Additionally, we demonstrate that the inclusion of
+
+9
+
+2468Layer l0.00.10.20.3ProportionOrientation tuningsimple cellcomplex cell(A)(B)(D)0.00.5Firing rateSimple cell0.00.5Complex cell2468Layer l0.20.40.60.8AccuracyDecoding accuracy(G)dogcatothers(C)(F)012345m(¿z=¿v)101102103Frequency (Hz)Oscillation peak(H)(E)012345m(¿z=¿v)258Average step sizeTransient(I)01020Bar length x (pixels)01Firing ratexneural adaptation can significantly accelerate the sampling process and give rise to various dynamic
+phenomena throughout the network. In this section, we will discuss several related theories and
+models.
+
+Probabilistic Population Code (PPC) [55, 56] is another theory that explains how the brain perform
+Bayesian inference, in which neural responses are interpreted as the parameters of the probability
+distributions. We adopted the idea [57] that PPC theory incorporates two generative models. In the
+framework of PPC, the experimenter presents the subject with observation x (gabor image) based on
+the semantic information s (orientation), which actually defines an external generative model from s
+to x. And the subjects holds an intrinsic generative model with latent variable z represented by neural
+response to interpret the observation x. PPC theory integrates two generative models into a single
+generative model, in which the neural response z is regarded as the observation generated from the
+semantic information s. We propose that the learning dynamic occurs exclusively within the intrinsic
+generative model, as the brain is not aware of the external generative model.
+
+Energy-based models (EBMs) [20, 58] When EBMs were initially proposed [20], they had latent
+variables corresponding to neurons. Later, to enhance the model’s expressive power, hierarchical
+structures were introduced [59, 60]. Such EBMs could typically ensure local learning in space. As
+artificial neural networks have become increasingly powerful, it has been observed that for generative
+tasks, there’s no need to explicitly introduce neurons as latent variables within EBMs. Instead, one
+can directly employ a neural network to represent the energy [27]. Training such EBMs often involves
+utilizing BP. The distinction between these EBMs and traditional EBMs is akin to the difference
+between dynamic systems and recurrent neural networks.
+
+Regardless of whether it’s the traditional EBMs or the new type of EBMs, both involve the challenge
+of estimating the partition function. This difficulty arises from the fact that as the depth of the energy
+function increases, the total sample space required multiplies the space for each layer. In the case of
+HEE, we allocate the partition function across each layer. As a result, the total sample space required
+is the sum of the spaces for each layer. This significantly reduces the required sample space.
+
+Predictive coding networks (PCNs) [21, 22] The interneurons in the HEE model serve a similar
+role to the prediction error in PCNs. And our theoretical analysis shows that the predictions in PCNs
+essentially represent the decomposed log-partition function. And PCNs don’t stress the sampling-
+based inference, which requires them to approximate the energy function using variation inference by
+delta function. Sampling-based inference can assist the network in exploring the posterior probability
+space, leading to a more accurate estimation of the energy function. Additionally, it can account for
+the observed neural variability in experiments.
+
+Diffusion models (DDPMs) [61, 62] The HEE model and DDPMs share the same joint distribution
+and both exhibit a hierarchical Markov structure, which may contribute to the HEE model’s strong
+expressive potential. The marginal generation is also called latent space MCMC [63, 42], which is
+similar to the generation process of DDPMs. While DDPMs unfolds the Markov chain over time, the
+HEE model unfold it between layers of neurons. However, in order to reach a better performance,
+DDPMs use a fixed diffusion process as the inference dynamic, which may not be adopted by our
+brain since the latent variables in our brain carry semantic information (such as simple cells [43]).
+
+Speed up sampling [17, 38] In previous work, inhibition neurons were used to serve as momentum
+terms to accelerate sampling [17]. However, this approach required a one-to-one correspondence
+between inhibition neurons and excitatory neurons. In our approach, we consider the adaptive
+properties inherent in each neuron itself to serve as momentum, naturally resolving the one-to-one
+correspondence issue. Furthermore, our consideration extends to sampling in a non-convex energy
+space, which differs from the prior focus solely on convex space convergence properties [38].
+
+Acknowledgement
+
+This work was supported by Science and Technology Innovation 2030-Brain Science and Brain-
+inspired Intelligence Project (No. 2021ZD0200204).
+
+10
+
+References
+
+[1] Marc O Ernst and Martin S Banks. Humans integrate visual and haptic information in a
+
+statistically optimal fashion. Nature, 415(6870):429–433, 2002.
+
+[2] Konrad P Körding and Daniel M Wolpert. Bayesian integration in sensorimotor learning. Nature,
+
+427(6971):244–247, 2004.
+
+[3] Wei Ji Ma, Vidhya Navalpakkam, Jeffrey M Beck, Ronald Van Den Berg, and Alexandre Pouget.
+Behavior and neural basis of near-optimal visual search. Nature neuroscience, 14(6):783, 2011.
+
+[4] Yong Gu, Dora E Angelaki, and Gregory C DeAngelis. Neural correlates of multisensory cue
+
+integration in macaque mstd. Nature Neuroscience, 11(10):1201–1210, 2008.
+
+[5] Christopher R Fetsch, Gregory C DeAngelis, and Dora E Angelaki. Bridging the gap between
+theories of sensory cue integration and the physiology of multisensory neurons. Nature Reviews
+Neuroscience, 14(6):429–442, 2013.
+
+[6] Tai Sing Lee and David Mumford. Hierarchical bayesian inference in the visual cortex. JOSA
+
+A, 20(7):1434–1448, 2003.
+
+[7] David C Knill and Alexandre Pouget. The bayesian brain: the role of uncertainty in neural
+
+coding and computation. TRENDS in Neurosciences, 27(12):712–719, 2004.
+
+[8] Alan Yuille and Daniel Kersten. Vision as bayesian inference: analysis by synthesis? Trends in
+
+cognitive sciences, 10(7):301–308, 2006.
+
+[9] James CR Whittington, Timothy H Muller, Shirley Mark, Guifen Chen, Caswell Barry, Neil
+Burgess, and Timothy EJ Behrens. The tolman-eichenbaum machine: unifying space and
+relational memory through generalization in the hippocampal formation. Cell, 183(5):1249–
+1263, 2020.
+
+[10] Patrik Hoyer and Aapo Hyvärinen. Interpreting neural response variability as monte carlo
+sampling of the posterior. Advances in neural information processing systems, 15, 2002.
+
+[11] Ralf M Haefner, Pietro Berkes, and József Fiser. Perceptual decision-making as probabilistic
+
+inference by neural sampling. Neuron, 90(3):649–660, 2016.
+
+[12] Gerg˝o Orbán, Pietro Berkes, József Fiser, and Máté Lengyel. Neural variability and sampling-
+
+based probabilistic representations in the visual cortex. Neuron, 92(2):530–543, 2016.
+
+[13] Rodrigo Echeveste, Laurence Aitchison, Guillaume Hennequin, and Máté Lengyel. Cortical-like
+dynamics in recurrent circuits optimized for sampling-based probabilistic inference. Nature
+neuroscience, 23(9):1138–1149, 2020.
+
+[14] Lars Buesing, Johannes Bill, Bernhard Nessler, and Wolfgang Maass. Neural dynamics as
+sampling: a model for stochastic computation in recurrent networks of spiking neurons. PLoS
+computational biology, 7(11):e1002211, 2011.
+
+[15] Agnieszka Grabska-Barwinska, Jeff Beck, Alexandre Pouget, and Peter Latham. Demixing
+odors-fast inference in olfaction. Advances in Neural Information Processing Systems, 26, 2013.
+
+[16] Guillaume Hennequin, Laurence Aitchison, and Máté Lengyel. Fast sampling-based inference
+in balanced neuronal networks. In Advances in neural information processing systems, pages
+2240–2248, 2014.
+
+[17] Laurence Aitchison and Máté Lengyel. The hamiltonian brain: efficient probabilistic inference
+with excitatory-inhibitory neural circuit dynamics. PLoS computational biology, 12(12), 2016.
+
+[18] Yang Qi and Pulin Gong. Fractional neural sampling as a theory of spatiotemporal probabilistic
+
+computations in neural circuits. Nature communications, 13(1):1–19, 2022.
+
+[19] Karl J Friston and Cathy J Price. Dynamic representations and generative models of brain
+
+function. Brain research bulletin, 54(3):275–285, 2001.
+
+[20] David H Ackley, Geoffrey E Hinton, and Terrence J Sejnowski. A learning algorithm for
+
+boltzmann machines. Cognitive science, 9(1):147–169, 1985.
+
+[21] Rajesh PN Rao and Dana H Ballard. Predictive coding in the visual cortex: a functional
+interpretation of some extra-classical receptive-field effects. Nature neuroscience, 2(1):79–87,
+1999.
+
+11
+
+[22] James CR Whittington and Rafal Bogacz. An approximation of the error backpropagation algo-
+rithm in a predictive coding network with local hebbian synaptic plasticity. Neural computation,
+29(5):1229–1262, 2017.
+
+[23] Tommaso Salvatori, Yuhang Song, Yujian Hong, Lei Sha, Simon Frieder, Zhenghua Xu, Rafal
+Bogacz, and Thomas Lukasiewicz. Associative memories via predictive coding. Advances in
+neural information processing systems, 34:3874–3886, 2021.
+
+[24] Alexander Ororbia and Daniel Kifer. The neural coding framework for learning generative
+
+models. Nature communications, 13(1):2064, 2022.
+
+[25] Luca Pinchetti, Tommaso Salvatori, Yordan Yordanov, Beren Millidge, Yuhang Song, and
+Thomas Lukasiewicz. Predictive coding beyond gaussian distributions. arXiv preprint
+arXiv:2211.03481, 2022.
+
+[26] Taesup Kim and Yoshua Bengio. Deep directed generative models with energy-based probability
+
+estimation. arXiv preprint arXiv:1606.03439, 2016.
+
+[27] Yilun Du and Igor Mordatch. Implicit generation and modeling with energy based models.
+
+Advances in Neural Information Processing Systems, 32, 2019.
+
+[28] Stuart Geman and Donald Geman. Stochastic relaxation, gibbs distributions, and the bayesian
+restoration of images. IEEE Transactions on pattern analysis and machine intelligence, (6):721–
+741, 1984.
+
+[29] Max Welling and Yee W Teh. Bayesian learning via stochastic gradient langevin dynamics.
+In Proceedings of the 28th international conference on machine learning (ICML-11), pages
+681–688, 2011.
+
+[30] Han Xiao, Kashif Rasul, and Roland Vollgraf. Fashion-mnist: a novel image dataset for
+
+benchmarking machine learning algorithms. arXiv preprint arXiv:1708.07747, 2017.
+
+[31] Alex Krizhevsky, Geoffrey Hinton, et al. Learning multiple layers of features from tiny images.
+
+2009.
+
+[32] Tim VP Bliss and Terje Lømo. Long-lasting potentiation of synaptic transmission in the dentate
+area of the anaesthetized rabbit following stimulation of the perforant path. The Journal of
+physiology, 232(2):331–356, 1973.
+
+[33] Diederik P Kingma and Max Welling. Auto-encoding variational bayes. arXiv preprint
+
+arXiv:1312.6114, 2013.
+
+[34] Therese Riedemann. Diversity and function of somatostatin-expressing interneurons in the
+
+cerebral cortex. International journal of molecular sciences, 20(12):2952, 2019.
+
+[35] Henry Markram, Eilif Muller, Srikanth Ramaswamy, Michael W Reimann, Marwan Abdellah,
+Carlos Aguado Sanchez, Anastasia Ailamaki, Lidia Alonso-Nanclares, Nicolas Antille, Selim
+Arsever, et al. Reconstruction and simulation of neocortical microcircuitry. Cell, 163(2):456–
+492, 2015.
+
+[36] Vanessa F Descalzo, Lionel G Nowak, Joshua C Brumberg, David A McCormick, and Maria V
+Sanchez-Vives. Slow adaptation in fast-spiking neurons of visual cortex. Journal of neurophysi-
+ology, 93(2):1111–1118, 2005.
+
+[37] Xiang Cheng and Peter Bartlett. Convergence of langevin mcmc in kl-divergence. In Algorithmic
+
+Learning Theory, pages 186–211. PMLR, 2018.
+
+[38] Xingsi Dong, Zilong Ji, Tianhao Chu, Tiejun Huang, Wenhao Zhang, and Si Wu. Adaptation
+accelerating sampling-based bayesian inference in attractor neural networks. Advances in
+Neural Information Processing Systems, 35:21534–21547, 2022.
+
+[39] Xuefeng Gao, Mert Gurbuzbalaban, and Lingjiong Zhu. Breaking reversibility accelerates
+langevin dynamics for global non-convex optimization. arXiv preprint arXiv:1812.07725, 2018.
+
+[40] Tim Salimans, Ian Goodfellow, Wojciech Zaremba, Vicki Cheung, Alec Radford, and Xi Chen.
+Improved techniques for training gans. Advances in neural information processing systems, 29,
+2016.
+
+[41] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter.
+Gans trained by a two time-scale update rule converge to a local nash equilibrium. Advances in
+neural information processing systems, 30, 2017.
+
+12
+
+[42] Rithesh Kumar, Sherjil Ozair, Anirudh Goyal, Aaron Courville, and Yoshua Bengio. Maximum
+
+entropy generators for energy-based models. arXiv preprint arXiv:1901.08508, 2019.
+
+[43] David H Hubel and Torsten N Wiesel. Receptive fields of single neurones in the cat’s striate
+
+cortex. The Journal of physiology, 148(3):574, 1959.
+
+[44] David H Hubel and Torsten N Wiesel. Receptive fields, binocular interaction and functional
+
+architecture in the cat’s visual cortex. The Journal of physiology, 160(1):106, 1962.
+
+[45] PO Bishop, J So Coombs, and GH Henry. Receptive fields of simple cells in the cat striate
+
+cortex. The Journal of physiology, 231(1):31–60, 1973.
+
+[46] David H Hubel and Torsten N Wiesel. Brain and visual perception: the story of a 25-year
+
+collaboration. Oxford University Press, 2004.
+
+[47] Ye Liu, Ming Li, Xian Zhang, Yiliang Lu, Hongliang Gong, Jiapeng Yin, Zheyuan Chen,
+Liling Qian, Yupeng Yang, Ian Max Andolina, et al. Hierarchical representation for chromatic
+processing across macaque v1, v2, and v4. Neuron, 108(3):538–550, 2020.
+
+[48] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-
+scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern
+recognition, pages 248–255. Ieee, 2009.
+
+[49] James J DiCarlo, Davide Zoccolan, and Nicole C Rust. How does the brain solve visual object
+
+recognition? Neuron, 73(3):415–434, 2012.
+
+[50] Pinglei Bao, Liang She, Mason McGill, and Doris Y Tsao. A map of object space in primate
+
+inferotemporal cortex. Nature, 583(7814):103–108, 2020.
+
+[51] SueYeon Chung, Daniel D Lee, and Haim Sompolinsky. Classification and geometry of general
+
+perceptual manifolds. Physical Review X, 8(3):031003, 2018.
+
+[52] Supratim Ray and John HR Maunsell. Differences in gamma frequencies across visual cortex
+
+restrict their possible use in computation. Neuron, 67(5):885–896, 2010.
+
+[53] Bilal Haider, Michael Häusser, and Matteo Carandini. Inhibition dominates sensory responses
+
+in the awake cortex. Nature, 493(7430):97–100, 2013.
+
+[54] Mark J Roberts, Eric Lowet, Nicolas M Brunet, Marije Ter Wal, Paul Tiesinga, Pascal Fries, and
+Peter De Weerd. Robust gamma coherence between macaque v1 and v2 by dynamic frequency
+matching. Neuron, 78(3):523–536, 2013.
+
+[55] Jeffrey M Beck, Wei Ji Ma, Roozbeh Kiani, Tim Hanks, Anne K Churchland, Jamie Roitman,
+Michael N Shadlen, Peter E Latham, and Alexandre Pouget. Probabilistic population codes for
+bayesian decision making. Neuron, 60(6):1142–1152, 2008.
+
+[56] Jeff Beck, Alexandre Pouget, and Katherine A Heller. Complex inference in neural circuits with
+probabilistic population codes and topic models. Advances in neural information processing
+systems, 25, 2012.
+
+[57] Sabyasachi Shivkumar, Richard Lange, Ankani Chattoraj, and Ralf Haefner. A probabilistic
+population code based on neural samples. In Advances in Neural Information Processing
+Systems, pages 7070–7079, 2018.
+
+[58] Ian Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil
+Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial networks. Communications
+of the ACM, 63(11):139–144, 2020.
+
+[59] Ruslan Salakhutdinov and Geoffrey Hinton. Deep boltzmann machines. In Artificial intelligence
+
+and statistics, pages 448–455. PMLR, 2009.
+
+[60] Benjamin Scellier and Yoshua Bengio. Equilibrium propagation: Bridging the gap between
+energy-based models and backpropagation. Frontiers in computational neuroscience, 11:24,
+2017.
+
+[61] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances
+
+in Neural Information Processing Systems, 33:6840–6851, 2020.
+
+[62] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Stefano Ermon, and
+Ben Poole. Score-based generative modeling through stochastic differential equations. arXiv
+preprint arXiv:2011.13456, 2020.
+
+[63] Yoshua Bengio, Grégoire Mesnil, Yann Dauphin, and Salah Rifai. Better mixing via deep
+representations. In International conference on machine learning, pages 552–560. PMLR, 2013.
+
+13
+
+

@@ -3,6 +3,8 @@ import re
 from pdfminer.high_level import extract_text
 #pip install pdfminer-six
 
+#papers from https://arxiv.org/list/cs.AI/recent
+
 # Define the input and output folders
 pdf_folder = 'data/pdfs'
 entire_paper_folder = 'data/entire_paper'

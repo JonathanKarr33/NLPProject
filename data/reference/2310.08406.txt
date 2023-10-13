@@ -1,0 +1,33 @@
+Abstract
+
+Probabilities of Causation (PoC) play a fundamental role in
+decision-making in law, health care and public policy. Nev-
+ertheless, their point identification is challenging, requiring
+strong assumptions, in the absence of which only bounds
+can be derived. Existing work to further tighten these bounds
+by leveraging extra information either provides numerical
+bounds, symbolic bounds for fixed dimensionality, or re-
+quires access to multiple datasets that contain the same treat-
+ment and outcome variables. However, in many clinical, epi-
+demiological and public policy applications, there exist ex-
+ternal datasets that examine the effect of different treatments
+on the same outcome variable, or study the association be-
+tween covariates and the outcome variable. These external
+datasets cannot be used in conjunction with the aforemen-
+tioned bounds, since the former may entail different treat-
+ment assignment mechanisms, or even obey different causal
+structures. Here, we provide symbolic bounds on the PoC for
+this challenging scenario. We focus on combining either two
+randomized experiments studying different treatments, or a
+randomized experiment and an observational study, assum-
+ing causal sufficiency. Our symbolic bounds work for arbi-
+trary dimensionality of covariates and treatment, and we dis-
+cuss the conditions under which these bounds are tighter than
+existing bounds in literature. Finally, our bounds parameter-
+ize the difference in treatment assignment mechanism across
+datasets, allowing the mechanisms to vary across datasets
+while still allowing causal information to be transferred from
+the external dataset to the target dataset.
+
+1
+

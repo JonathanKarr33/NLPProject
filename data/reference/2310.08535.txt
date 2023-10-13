@@ -1,0 +1,26 @@
+ABSTRACT
+
+LLM-based agents have recently emerged as promising tools for solving chal-
+lenging problems without the need for task-specific finetuned models that can be
+expensive to procure. Currently, the design and implementation of such agents
+is ad hoc, as the wide variety of tasks that LLM-based agents may be applied
+to naturally means there can be no one-size-fits-all approach to agent design. In
+this work we aim to alleviate the difficulty of designing and implementing new
+agents by proposing a minimalistic, high-level generation framework that simpli-
+fies the process of building agents. The framework we introduce allows the user to
+specify desired agent behaviors in Linear Temporal Logic (LTL). The declarative
+LTL specification is then used to construct a constrained decoder that guarantees
+the LLM will produce an output exhibiting the desired behavior. By designing
+our framework in this way, we obtain several benefits, including the ability to en-
+force complex agent behavior, the ability to formally validate prompt examples,
+and the ability to seamlessly incorporate content-focused logical constraints into
+generation. In particular, our declarative approach, in which the desired behavior
+is simply described without concern for how it should be implemented or en-
+forced, enables rapid design, implementation and experimentation with different
+LLM-based agents. We demonstrate how the proposed framework can be used to
+implement recent LLM-based agents, and show how the guardrails our approach
+provides can lead to improvements in agent performance. In addition, we release
+our code for general use.
+
+1
+

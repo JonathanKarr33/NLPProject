@@ -1,0 +1,11144 @@
+Introduction
+
+Probabilities of Causation (PoC) play a fundamental role
+in decision-making in law, health care and public policy
+(Mueller and Pearl 2022; Faigman, Monahan, and Slobogin
+2014). For example, in medical applications, if a medication
+for a disease has similar side effects to the disease itself,
+we must calculate the probability that the adverse side ef-
+fect was caused by the medication, for safety assessments.
+In epidemiology, we often need to determine the likelihood
+that a particular outcome is caused by a specific exposure, or
+if a particular subgroup that experienced an adverse outcome
+would benefit from an intervention. Probabilities of Causa-
+tion defined in (Pearl 2009) provide a logical framework to
+reason about such counterfactuals, as well as necessary as-
+sumptions required to identify them from the observed data.
+
+While causal parameters such as the Average Treatment
+Effect are point identified from the observed data distribu-
+tion, under reasonable assumptions, such as exogeneity, PoC
+are not. Specifically, in addition to exogeneity, these require
+monotonicity to hold for point identification (Pearl 2022;
+Khoury et al. 1989). However, when we do not have suffi-
+cient justification for assuming monotonicity, then, the PoC
+are no longer point identified. Rather, PoC are partially iden-
+tified, i.e. bounded as a function of the observed data.
+
+There exists a rich literature on partial identification and
+its use in bounding causal quantities; some examples in-
+clude (Manski 1990; Tian and Pearl 2000; Balke and Pearl
+1994; Robins and Greenland 1989; Dawid, Musio, and
+Murtas 2017). The specific question of bounding PoC has
+also been explored in (Tian and Pearl 2000; Zhang, Tian,
+and Bareinboim 2022; Cuellar 2018; Robins and Green-
+land 1989; Dawid, Musio, and Murtas 2017; Padh et al.
+2022; Sachs et al. 2022), however, this body of literature
+assumes the joint probability distribution for the variables
+of interest is known. Our contribution differs fundamen-
+tally from existing work in that we do not assume access
+to the joint probability distribution for the variables of in-
+terest. Rather, we consider the case where multiple datasets
+of non-overlapping treatments that study the same outcome
+are given. Specifically, consider the target dataset containing
+treatment X and outcome Z. In addition, we are given an ex-
+ternal dataset that studies the same outcome Z, and contains
+different treatment or covariates Y which are randomised
+and independent of X. We demonstrate how to merge the
+external dataset with the target dataset to tighten the bounds
+on the PoC of X on Z, while allowing for the treatment X
+to be confounded in the external dataset. We demonstrate the
+importance of this scenario using the following example.
+
+Suppose we have treatment X (medication) for a disease,
+and an adverse side effect Z, that could be caused by the
+disease or the medication itself. Suppose X is randomized,
+and for safety reasons, we are interested in calculating the
+probability that X caused Z. The Probabilities of Causation
+provide a logical framework to reason about this probability,
+so we aim to calculate it using the observed data. Since we
+don’t know whether the medication is protective or harm-
+ful, we are not justified in assuming monotonicity. Then,
+the Probabilities of Causation are no longer point identified,
+and we must settle for bounds on them. Given the target
+
+ 
+ 
+ 
+ 
+ 
+ 
+dataset containing observations on X and Z, these bounds
+can be calculated - however, these bounds may be too wide
+for us to arrive at a conclusion. Re-running the study on the
+same population while recording a richer set of covariates
+is not an option due to time and financial constraints. This
+raises the question “Can other external datasets, studying the
+same adverse effect on similar populations, but not necessar-
+ily studying the same treatment, be leveraged to tighten the
+bounds on the PoC in the target dataset?”
+
+While Zhang, Tian, and Bareinboim 2022; Li and Pearl
+2022; Pearl 2022; Cuellar 2018; Dawid, Musio, and Murtas
+2017 tighten bounds on the Probabilities of Causation (and
+more generally, other counterfactuals), they all assume ac-
+cess to a dataset recording all of the variables of interest.
+Therefore, such bounds cannot be straightforwardly applied
+to use cases like the one we described above. To address
+this gap, in this paper we focus on the challenging cases that
+assume only access to datasets that contain the same out-
+come, but do not record X and Y at the same time. These
+datasets can differ in their treatment assignment mechanism
+for X, allowing it to be randomized or confounded (as-
+suming a sufficient set of confounders is observed). While
+Duarte et al. 2021; Zeitler and Silva 2022 do not need ac-
+cess to the joint distributions over all the variables, the
+bounds that they provide are only numerical. Here, we pro-
+vide symbolic bounds. Additionally, the linear programming
+approach in (Balke and Pearl 1994) cannot be applied for the
+bound estimation since the dual of the linear program would
+still have symbolic constraints. From a non-causal perspec-
+tive, Charitopoulos, Papageorgiou, and Dua 2018 present a
+symbolic linear programming approach. However, knowing
+which constraints to supply to the linear program to derive
+bounds in the problem we describe requires knowledge of
+the causal graph and invariances. As we show in this paper,
+these constraints are not trivial to derive. Moreover, the so-
+lution in (Charitopoulos, Papageorgiou, and Dua 2018) only
+works for fixed dimensionality for Y , since different dimen-
+sionalities of Y correspond to different linear programs. In
+our work, we explicitly target the aforementioned use case
+allowing arbitrary dimensionality of Y .
+
+Structure and Contributions We start by reviewing the
+structural causal model (SCM) framework and its seman-
+tics for counterfactual reasoning (§2). Counterfactuals are
+the basis of the Probabilities of Causation, which we intro-
+duce in §3. In this section, we formally state the Probability
+of Sufficiency and Necessity, and we review existing bounds
+on it. In §4 we describe the data-generating process for the
+target and external datasets. We then describe the assumed
+invariances, and how these can be used to transfer informa-
+tion across datasets. Leveraging this invariance principle, we
+present theorems that provide symbolic bounds on the PoC
+in our target dataset, after merging it with an external dataset
+containing a randomized covariate or treatment of arbitrary
+dimensionality. In §4.3 we further relax the strict assumption
+of X being randomized in the external dataset, and provide
+symbolic bounds in the presence of observed confounding.
+We conclude with remarks in §5. We provide all our proofs
+and derivations in the Technical Appendix.
+
+2 Preliminaries
+While there exist many formulations of causal models in the
+literature, such as the Finest Fully Randomized Causally In-
+terpretable Structured Tree Graph (FFRCISTG) of (Robins
+1986) and the agnostic causal model of (Spirtes et al. 2000),
+in this work, we utilise the SCM defined in (Pearl 2009). For-
+mally, a SCM M is defined as a tuple ⟨U, V, F, P⟩ where U
+and V represent a set of exogenous and endogenous random
+variables respectively. F represents a set of functions that
+determine the value of V ∈ V through v ← fV (paV , uV )
+where paV denotes the parents of V and uV denotes the val-
+ues of the noise variables relevant to V . P denotes the joint
+distribution over the set of noise variables U, and since the
+noise variables U are assumed to be mutually independent,
+the joint distribution P(U) factorises into the product of the
+marginals of the individual noise distributions. M induces
+an observational data distribution on V, and is associated
+with a Directed Acyclic Graph (DAG) G.
+
+Defining an SCM allows us to define submodels, potential
+responses and counterfactuals, as defined in (Pearl 2009).
+Given a causal model M and a realisation x of random vari-
+ables X ⊂ V, a submodel Mx corresponds to deleting from
+F all functions that set values of elements in X and replac-
+ing them with constant functions X = x. The submodel
+captures the effect of intervention do(X = x) on M. Given
+a subset Y ⊂ V, the potential response Yx(u) denotes the
+values of Y that satisfy Mx given value u of the exogenous
+variables U. Thus, the counterfactual Yx(u) = y represents
+the scenario where the potential response Yx(u) is equal
+to y, if we possibly contrary to fact, set X = x. When u
+is generated from P (U), we obtain counterfactual random
+variables Yx that have a corresponding probability distri-
+bution. Counterfactual random variables lie on rung three of
+the Ladder of Causation (Pearl 2009), needing additional as-
+sumptions for their identification. In the following section,
+we explore a special class of counterfactual probabilities,
+known as the Probabilities of Causation.
+
+3 Probabilities of Causation
+An important class of counterfactual probabilities that have
+applications in law, medicine, and public policy are known
+as the Probabilities of Causation (Pearl 2009). These are a
+set of five counterfactual probabilities related to the Proba-
+bility of Necessity and Sufficiency (P N S), which we define
+as follows. Consider the causal graph in Fig. 1, where the
+outcome Z and treatment X are binary random variables.
+
+Figure 1: Causal graph containing treatment X and outcome
+Z, where treatment X is randomized
+
+Let x denote the event that the random variable X has
+value 1 and let x′ denote the event that X has value 0. Then,
+the P N S is defined as
+
+P N S ≡ P (Zx = 1, Zx′ = 0)
+
+(1)
+
+XZ1P N S represents the joint probability that the counterfactual
+random variable Zx takes on value 1 and the counterfactual
+random variable Zx′ takes on value 0. Under conditions of
+exogeneity, defined as Zx ⊥⊥ X, the rest of the Probabil-
+ities of Causation such as Probability of Necessity (P N )
+and Probability of Sufficiency (P S), are all defined as func-
+tions of P N S (see Theorem 9.2.11 in (Pearl 2009)). Conse-
+quently, when P N S is identified, all the other Probabilities
+of Causation are straightforwardly identified from the ob-
+served data as well.
+
+However, to identify P N S, we must make assumptions
+such as monotonocity (Tian and Pearl 2000), which may not
+be justified in settings involving experimental drugs, legal
+matters and occupational health. Without this assumption,
+P N S is no longer point identified, but it can still be mean-
+ingfully bounded using tools from the partial identification
+literature. Assuming still the graph in Fig. 1, an important
+bound on P N S is defined in Tian and Pearl (2000), and is
+presented below, with p11, p10 and p00 denoting P (Z = 1 |
+X = 1), P (Z = 1 | X = 0), and P (Z = 0 | X = 0)
+respectively.
+
+max
+
+(cid:21)
+
+(cid:20)
+0
+p11 − p10
+
+≤ P N S ≤ min
+
+(cid:21)
+
+(cid:20)p11
+p00
+
+(2)
+
+Given additional data (i.e. Y in Fig. 2), the bounds on P N S
+can be further tightened, as shown in Dawid, Musio, and
+Murtas (2017). We present one of their results here, as we
+utilize this to tighten the bounds on the Probabilities of Cau-
+sation by merging target and external datasets. In Fig. 2, X
+
+Dawid, Musio, and Murtas 2017 show that this interval
+is always contained in the one given in Eq. 2. Note that
+the bounds in Eq. 3 assume access to the joint distribution
+P (Z, X, Y ).
+
+In the use case we tackle in this paper, we do not have this
+luxury. On the contrary, we are given a target dataset that
+studies a treatment X and an outcome Z, and additional in-
+formation in the form of an external dataset with the same
+outcome Z, that studies a different treatment (or covariate)
+Y which is randomized and independent of X. We denote 2
+the distribution associated with the target dataset as P T , and
+the distribution associated with the external dataset as P E.
+We are interested in using this external dataset to tighten
+the bounds on the PNS of X on Z in our target dataset. In
+other words, we do not have access to the joint distribution
+P T (Z, X, Y ) for our target dataset, rather, we only have ac-
+cess to P T (Z, X). Hence, we cannot straightforwardly ap-
+ply the bounds in Eq. 3.
+
+To this end, we borrow information from the external
+dataset to constrain the possible choices for the target dis-
+tribution P T (Z, X, Y ). Typically, the target distribution is
+not identified, and as such, we constrain the set of possible
+distributions compatible with both our target and external
+datasets. Then, we can utilize Eq. 3 to pick the most conser-
+vative bounds implied by the set of joint distributions which
+are compatible with the target and the external dataset.
+
+Formally, let i index this set of compatible joint distribu-
+tions. Then the most conservative bound will be the small-
+est lower bound on P N S, and the greatest upper bound on
+P N S. Denoting P T (Z = 1 | X = 1) as pT
+11, the bounds
+are given as
+
+min
+P T
+i
+
+∆(P T
+
+i ) ≤ P N S ≤ max
+P T
+i
+
+11 − Γ(P T
+pT
+i )
+
+(4)
+
+From the properties of the max operator, and since pT
+known, the bounds in Eq. 4 and are re-written as
+
+11 is
+
+Figure 2: Causal graph containing binary treatment X, bi-
+nary outcome Z and additional treatment or covariate Y
+
+min
+P T
+i
+
+∆(P T
+
+i ) ≤ P N S ≤ pT
+
+11 − min
+P T
+i
+
+Γ(P T
+i )
+
+(5)
+
+and Z represent the treatment and outcome respectively, and
+Y represents additional treatments or an additional set of
+covariates. Then, Dawid, Musio, and Murtas 2017 show that
+given P (Z, X, Y ), the bounds on P N S can be further tight-
+ened as 1
+
+∆ ≤ P N S ≤ P (Z = 1 | X = 1) − Γ
+
+(3)
+
+Where
+
+∆ =
+
+Γ =
+
+(cid:88)
+
+y
+
+(cid:88)
+
+y
+
+P (Y = y) max{0, P (Z = 1 | X = 1, Y = y)
+
+− P (Z = 1 | X = 0, Y = y)}
+
+P (Y = y) max{0, P (Z = 1 | X = 1, Y = y)
+
+− P (Z = 0 | X = 0, Y = y)}
+
+1While Dawid, Musio, and Murtas 2017 provide bounds on a
+different counterfactual probability called P C, its relation to P N S
+is described in Theorem 9.2.11 in (Pearl 2009)
+
+This raises the question of how exactly to utilize the ex-
+ternal dataset over Z and Y to constrain the set of possi-
+ble possible joint distributions P T (Z, X, Y ) for our target
+dataset. To this end, we utilize the principle of indepen-
+dent causal mechanisms (see Definition 4 in Janzing and
+Sch¨olkopf (2010), Sch¨olkopf et al. (2012) and Principle 2.1
+in Peters, Janzing, and Sch¨olkopf (2017)) to transfer causal
+information across datasets.
+
+4 Merging Target and External Datasets
+To transfer causal information from our external dataset to
+our target dataset, we must first identify causal quantities
+that remain invariant across these different data sources.
+Similar approaches of defining invariant quantities and uti-
+lizing them to borrow information across datasets have been
+used in transportability, distribution shift and robustness
+(Pearl 2011; Christiansen et al. 2022; B¨uhlmann 2020).
+
+2We abuse notation by denoting all distributions associated with
+
+the target dataset by P T . A similar approach is used for P E
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+Figure 3: Causal graphs representing the different types of interactions between the outcome Z, the treatments X and Y , and
+the covariates C. (a) A causal graph where both treatments X and Y are assigned randomly, and together with C determine
+the outcome Z. (b) A causal graph where the causal mechanisms in the target and external datasets are the same for X and Y ,
+i.e. P T (X) = P E(X) and P T (Y ) = P E(Y ), and as such, P T (Z, X) and P E(Z, Y ) are the result of marginalizing Y and X
+from P (Z, X, Y ) respectively. (c) A causal graph describing the data-generating process for our target dataset. In the latter, the
+treatment X is assigned randomly and is observed (cyan node), and the node Y is not observed (grey node). (d) A causal graph
+describing the data-generating process for our external dataset. Here, although the treatment X is still assigned randomly, its
+mechanism differs from that in the target dataset and is not observed. As we have already stated, we assume P T (Y ) = P E(Y ).
+
+Throughout this paper, we assume we are given a treat-
+ment variable X, a set of covariates C, and either an ad-
+ditional treatment or covariate Y , along with outcome Z,
+where Z is a causal descendant of X, Y and C. Motivated
+by the principle of independent mechanisms (see Principle
+2.1 of Peters, Janzing, and Sch¨olkopf (2017)), we assume
+the interventional distribution P (Zx,y,c) is invariant across
+datasets. This assumption is justified given a rich enough set
+of covariates C, and similar assumptions have been made by
+other works in the literature (Christiansen et al. 2022; Muan-
+det, Balduzzi, and Sch¨olkopf 2013; Daume III and Marcu
+2006).
+
+This invariance is assumed in all the data-generating pro-
+cesses shown in Fig. 3 and Fig. 4, representing scenarios
+where we combine datasets with different study designs.
+Throughout this paper, to avoid cases with undefined quan-
+tities, we assume that 0 < P T (X) < 1, 0 < P T (Y ) < 1 as
+well as 0 < P E(X) < 1 and 0 < P E(Y ) < 1.
+
+4.1 Merging Datasets With Randomized
+
+Treatments
+
+First, we consider the case where the target dataset contains
+an outcome Z and a randomized treatment X, and the exter-
+nal dataset contains the same outcome Z, and either a differ-
+ent randomized treatment or additional randomized covari-
+ate Y , while still having X assigned randomly. Unobserved
+covariates C that are independent of X and Y can exist, and
+these are marginalized out.
+
+Under these assumptions, we derive invariances across
+our target and external datasets. We denote the distribution
+associated with our target dataset as P T (Z, X), and the one
+associated with our external dataset as P E(Z, Y ). In the sce-
+nario we consider, P T (Z, X, Y, C) and P E(Z, X, Y, C) 3
+obey the causal structure in Fig. 3a. Then the interventional
+
+3Note, that we do not have access to these joint distributions.
+
+distributions are:
+
+P T (Zx,y) = P T (Z | x, y) =
+
+P E(Zx,y) = P E(Z | x, y) =
+
+(cid:88)
+
+c
+(cid:88)
+
+c
+
+P (Z | x, y, c)P (c)
+
+P (Z | x, y, c)P (c)
+
+Consequently, when both the populations considered in our
+internal and external datasets have the same distribution of
+covariates P (C), we expect P (Zx,y) to be invariant across
+P T and P E. To transfer causal information from the ex-
+ternal dataset to the target dataset, we must also consider
+the data-generating process for P T (Z, X) and P E(Z, Y ).
+Specifically, the distribution for the target dataset P T can be
+factorized as
+P T (Z = 1 | X = 1) = P (Z | X = 1, Y = 1)P T (Y = 1)
++ P (Z | X = 1, Y = 0)P T (Y = 0)
+
+Here, P (Zx,y) = P (Z = 1 | X = 1, Y = 1) since Zx,y ⊥⊥
+X, Y . Similarly, the external distribution can be factorized
+as
+P E(Z = 1 | Y = 1) = P (Z | X = 1, Y = 1)P E(Y = 1)
++ P (Z | X = 0, Y = 1)P E(Y = 0)
+When P E(X) = P T (X), and P E(Y ) = P T (Y ), both
+P E(Z, Y ) and P T (Z, X) can be viewed as marginal-
+ized distributions obtained from a joint distribution over
+P (Z, X, Y ), where X, Y and Z follow the collider shaped
+causal structure given in Fig. 3b. Then, the target dataset and
+external dataset can be used to constrain P T (Z, X, Y ) as
+(cid:88)
+
+P T (Z = 1 | X = 1) =
+
+P (Z = 1 | X = 1, Y = y)
+
+...
+
+P E(Z = 1 | Y = 1) =
+
+y
+
+(cid:88)
+
+x
+
+× P E(Y = y)
+
+P (Z = 1 | X = x, Y = 1)
+
+× P T (X = x).
+
+XYZ1Since X ⊥⊥ Y , P E(X) = P T (X), and P E(Y ) = P T (Y ),
+these constraints form a system of equations with multiple
+solutions for P (Z | X, Y ). When Y is binary, these con-
+straints form a system of equations with a single free param-
+eter P (Z = 1 | X = 1, Y = 1). Then, bounds on P N S
+using P T (Z, X) and P E(Z, Y ) are obtained by solving
+
+min
+P (Z=1|X=1,Y =1)
+
+∆(P (Z = 1 | X = 1, Y = 1))
+
+≤ P N S ≤
+
+pT
+11 −
+
+min
+P (Z=1|X=1,Y =1)
+
+Γ(P (Z = 1 | X = 1, Y = 1)) (6)
+
+We present the bounds on P N S in our target dataset when
+Y is binary in Theorem 1.
+
+Theorem 1. Let X, Y and Z be binary random variables,
+obeying the causal structure in Fig. 3b. Then, given distri-
+butions P T (Z, X) and P E(Z, Y ) where P E(X) = P T (X)
+and P E(Y ) = P T (Y ), the bounds of P N S of X on Z in
+the target dataset are
+
+max
+
+(cid:21)
+
+(cid:20)
+0
+11 − pT
+pT
+10
+
+≤ P N S ≤ min
+
+(cid:20)pT
+11 − (cid:80)1
+00 − (cid:80)1
+pT
+
+i=0 Φi
+i=0 Θi
+
+(cid:21)
+
+(7)
+
+11 = P T (Z = 1 | X = 1), pT
+
+Where pT
+X = 0), pT
+and pyi = P E(Y = yi), and Φi and Θi are
+
+10 = P T (Z = 1 |
+00 = P T (Z = 0 | X = 0), px = P T (X = 1)
+
+Φi = I(pE
+
+1i ≥ max{1 − px, px})
+
+Θi = I(pE
+
+1i ≤ min{1 − px, px})
+
+pyi (pE
+
+1i − max{1 − px, px})
+min{1 − px, px}
+pyi(min{1 − px, px} − pE
+1i)
+min{1 − px, px}
+
+The bounds in Theorem 1 will be tighter than the bounds
+in Eq. 2 whenever either P (Z = 1 | Y = 1) or P (Z = 1 |
+Y = 0) is greater than the maximum of px and 1−px, or less
+than the minimum of px and 1 − px. Note that these bounds
+recover Proposition 4 in Gresele et al. (2022), showing the
+lower bound on P N S cannot be tightened. These bounds
+can be extended to the case when Y is discrete, taking values
+in {0, . . . , N }. We provide bounds for this case in Theorem
+2.
+
+Theorem 2. Let X and Z be binary random variables, and
+let Y be a discrete random variable taking on N + 1 dis-
+crete values in {0, 1, . . . , N }. Assume Z, X and Y obey
+the causal structure in Fig. 3b. Then, given distributions
+P T (Z, X) and P E(Z, Y ) where P E(X) = P T (X) and
+P E(Y ) = P T (Y ), the bounds of P N S of X on Z in the
+target dataset are
+
+max
+
+(cid:21)
+
+(cid:20)
+0
+11 − pT
+pT
+10
+
+≤ P N S ≤ min
+
+(cid:20)pT
+11 − (cid:80)N
+00 − (cid:80)N
+pT
+
+i=0 Φi
+i=0 Θi
+
+(cid:21)
+
+(8)
+
+The notation used is identical to that used in Theorem 1.
+
+The assumptions of P T (X) = P E(X) and P T (Y ) =
+P E(Y ) are very restrictive - so we discuss approaches to
+either satisfy or relax these assumptions.
+
+4.2 Mismatch Between Treatment Assignment
+
+Mechanisms
+
+First, the assumption P T (Y ) = P E(Y ) can be satisfied by
+choosing a suitable Y , such that P (Y ) is invariant across
+our target and external datasets. An example of such a Y
+would be the presence of a genetic mutation, which based
+on Mendelian Randomization, is assigned randomly, and
+is expected to have similar prevalence across populations
+that share similar characteristics. More generally, suitable
+choices of Y would be variables that do not affect the treat-
+ment assignment of X in the external or target dataset, and
+are expected to have identical prevalence across the target
+and external datasets. Next, the restrictive assumption on
+P T (X) = P E(X) can be relaxed by parameterizing the
+difference in data generating processes between the exter-
+nal and target dataset using a parameter δX , i.e. P E(X) =
+P T (X) + δX , where δX is adequately restricted to ensure
+valid probabilities as well as 0 < P E(X) < 1. Using this
+parameterization, we constrain P (Z | X, Y ) in terms of δX
+and the given target and external datasets as
+
+P E(Z = 1 | Y = 1) =
+
+(cid:88)
+
+P (Z = 1 | X = x, Y = 1)
+
+(cid:16)
+
+x
+P T (X = x) + δX
+
+(cid:17)
+
+×
+
+...
+
+P T (Z = 1 | X = 0) =
+(cid:88)
+
+P (Z = 1 | X = 0, Y = y)P T (Y = y)
+
+y
+
+Under this parameterization, the bounds in Theorem 1 and
+Theorem 2 can be re-derived in terms of the parameter δX ,
+and we present these in Theorem 3.
+Theorem 3. Let X and Z be binary random variables, and
+let Y be a discrete random variable taking on N + 1 dis-
+crete values in {0, 1, . . . , N }. Assume the target distribu-
+tion P T (Z, X) and external distribution P E(Z, Y ) obey the
+causal structure in Fig. 3c and Fig. 3d respectively. Then, as-
+suming P T (Y ) = P E(Y ) and P E(X) = P T (X) + δX , the
+bounds of P N S of X on Z in the target dataset are given as
+
+max
+
+(cid:21)
+
+(cid:20)
+0
+11 − pT
+pT
+10
+
+≤ P N S ≤ min
+
+(cid:20)pT
+11 − (cid:80)N
+00 − (cid:80)N
+pT
+
+i=0 Φi,δX
+i=0 Θi,δX
+
+(cid:21)
+
+(9)
+
+00 are defined in Theorem 1, and Φi,δX
+
+10 and pT
+
+11, pT
+Where pT
+and Θi,δX are defined as
+Φi = I(pE
+pyi(pE
+
+×
+
+Θi = I(pE
+
+1i ≥ max{1 − px − δX , px + δX })
+1i − max{1 − px − δX , px + δX })
+min{1 − px − δX , px + δX }
+1i ≤ min{1 − px − δX , px + δX })
+1i)
+
+×
+
+pyi(min{1 − px − δX , px + δX } − p′
+min{1 − px − δX , px + δX }
+So, introducing δX maintains the overall structure of the
+bounds introduced in Theorems 1 and 2, but it does require
+
+the external dataset to have a stronger treatment effect (pE
+1i)
+of Y on Z to tighten the bounds on the target dataset.
+
+While the above bounds relax the assumption P T (X) =
+P E(X) by parameterizing their difference, they still require
+the external dataset P E(Z, Y ) to have X randomized. As
+this does not always hold in practice, in the following section
+we tackle a more realistic scenario; one where the treatment
+assignment mechanism for X in P E is confounded by a set
+of covariates C. We assume that both the target and external
+datasets record this C.
+
+4.3 Merging Experimental And Observational
+
+Datasets
+
+When the treatment X in the external dataset is allowed to
+be confounded by a set of discrete observed confounders
+C, the causal graph representing the data generating pro-
+cess for the external dataset is given in Fig. 4b. Throughout
+this section, we assume that P T (C) = P E(C). Note that
+X is still randomized in the target dataset. The causal graph
+corresponding to the data-generating process for the target
+dataset is depicted in Fig. 4a. To employ a similar approach
+to deriving bounds as before, we must first derive bounds
+in the ideal case where we have access the the joint distri-
+bution P T (Z, X, Y, C) for our target dataset. Following a
+similar derivation to the bounds presented in Dawid, Mu-
+sio, and Murtas (2017), first, we derive bounds on P N S for
+when the joint P T (Z, X, Y, C) is observed in Theorem 4.
+Theorem 4. Let X and Z be binary random variables,
+and let C and Y be discrete random variables. If X, Y ,
+Z and C follow the causal graph in Fig. 4a, then given
+P (Z, X, Y, C), we can obtain bounds on P N S as
+
+(cid:88)
+
+C
+
+P (C)∆C ≤ P N S ≤ p11 −
+
+(cid:88)
+
+C
+
+P (C)ΓC
+
+(10)
+
+Where
+
+∆C =
+
+ΓC =
+
+(cid:88)
+
+y
+
+(cid:88)
+
+y
+
+P (Y = y) max{0, P (Z = 1 | X = 1, Y = y, C)
+
+− P (Z = 1 | X = 0, Y = y, C)}
+
+P (Y = y) max{0, P (Z = 1 | X = 1, Y = y, C)
+
+− P (Z = 0 | X = 0, Y = y, C)}
+
+The conditions under which these bounds are tighter than
+
+bounds in Eq. 3 are described in Lemma 5.
+Lemma 5. The bounds in Eq. 10 are contained in the
+bounds given in Eq. 3, and will be tighter when for any
+C, P (Z = 1 | X = 1, Y, C) is sometimes, but not all
+the time, greater than P (Z = 1 | X = 0, Y, C) or
+P (Z = 0 | X = 0, Y, C).
+
+Having established bounds when given access to the joint
+distribution P T (Z, X, Y, C), we now derive bounds on our
+target dataset when the joint distribution P T (Z, X, Y, C) is
+unknown, but additional information is available from the
+external dataset. Specifically, we consider the case where the
+target distribution P T (Z, X, C) obeys the causal structure
+in Fig. 4a, with treatment X being randomized, and does
+
+not measure Y . In addition, we are given access to an exter-
+nal distribution P E(Z, Y, C), which obeys the causal struc-
+ture in Fig. 4b. Note that in P E, the treatment X is con-
+founded by C, while this is not the case in P T . We assume
+P (Zx,y,c) is invariant across these datasets, however, since
+X is confounded by C in the external dataset, we must also
+parameterize the difference between the treatment assign-
+ment mechanism of X in P T and P E. This must be done
+for every level of covariates C. Hence we index this param-
+eter for every level C as δC
+X . Then, the following constraints
+can be utilized to restrict the set of choices of joint distribu-
+tions P T (Z, X, Y, C) compatible with the target and exter-
+nal dataset:
+
+P E(Z = 1 | Y = 1, C) =
+(cid:88)
+
+P (Z = 1 | X = x, Y = 1, C) ×
+
+(cid:16)
+
+P T (X = x) + δC
+X
+
+(cid:17)
+
+x
+
+...
+P T (Z = 1 | X = 0, C) =
+(cid:88)
+
+P (Z = 1 | X = 0, Y = y, C) × P (Y = y)
+
+y
+
+Note that when δC
+X = 0 for all levels of C, this corresponds
+to the case where the external dataset has X randomized as
+well, and additionally, both the target and external datasets
+are results of marginalizing the distribution P (Z, X, Y, C)
+over X and Y respectively. Similarly, note that when δc0
+X =
+X = · · · = δci
+δc1
+X for all levels of C, this corresponds to the
+case where X is randomized in the external dataset, but it
+has a different treatment mechanism than the target dataset.
+We provide bounds for arbitrary values of δC
+X (ensuring valid
+probabilities) in Theorem 6.
+
+Theorem 6. Let X and Z be binary random variables, and
+let Y be a discrete random variable taking on N + 1 dis-
+crete values in {0, 1, . . . , N }, and C be a discrete random
+variable taking on M + 1 discrete values in {0, . . . , M }.
+Assume P T (Z, X, C) and P E(Z, Y, C) are generated gen-
+erated according to the causal graphs given in Fig. 4a and
+4b respectively. Then, assuming P T (Y ) = P E(Y ), and
+X , then P T and P E can be
+P E(X | C) = P T (X) + δC
+merged to tighten the bounds on P N S for X on Z in the
+target dataset as
+
+∆ ≤ P N S ≤
+
+P T (C) min
+
+(cid:88)
+
+C
+
+(cid:34)pT
+11C − (cid:80)N
+00C − (cid:80)N
+pT
+
+i=0 ΦC
+i=0 ΘC
+
+i,δC
+X
+
+i,δC
+X
+
+(cid:35)
+
+Where pT
+X = 0, C), pE
+
+11C = P (Z = 1 | X = 1, C), pT
+
+1iC = P E(Z = 1 | Y = i, C) and ∆, ΦC
+
+(11)
+00C = P (Z = 0 |
+i,δC
+x
+
+(a)
+
+(b)
+
+Figure 4: Causal graphs representing the different types of interactions between the outcome Z, treatments X and Y , and
+covariates C. (a) A causal graph describing the data generating process for the target dataset where both X and Y are assigned
+randomly, and together with C determine the outcome Z. (b) A causal graph describing the data-generating process for the
+external dataset, where X is confounded by C. Here recall that P T (C) = P E(C). We parameterize the difference in treatment
+assignment mechanisms for X across datasets using δC
+X . We denote with cyan the observed
+nodes in each dataset and with grey the unobserved ones.
+
+X as P E(X | C) = P T (X) + δC
+
+and Θi,δC
+
+x
+
+are defined as
+
+∆ =
+
+(cid:88)
+
+C
+
+P T (C) max{0, P T (Z = 1 | X = 1, C)
+
+− P T (Z = 0 | X = 1, C)}
+
+ΦC
+
+i,δC
+X
+
+ΘC
+
+i,δC
+X
+
+= I(pE
+
+1iC ≥ max{1 − px − δC
+
+×
+
+pyi(pE
+
+1iC − max{1 − px − δC
+min{1 − px − δC
+1iC ≤ min{1 − px − δC
+
+= I(pE
+
+X })
+
+X , px + δC
+
+X })
+X , px + δC
+X , px + δC
+X }
+X , px + δC
+X })
+X } − pE
+X , px + δC
+X }
+
+pyi(min{1 − px − δC
+
+X , px + δC
+
+1iC)
+
+×
+
+min{1 − px − δC
+
+These bounds allow for the target and external datasets to
+have different treatment assignment mechanisms for X, al-
+lowing for a greater variety of external datasets to be used to
+tighten the bounds on P N S in the target dataset. Theorem 6
+shows that the lower bound on P N S in our setting is iden-
+tical to the lower bound in Eq. 3. However, the upper bound
+will be tighter whenever for any C, at least one pE
+1iC, but not
+all, is greater than px + δC
+X , or less than
+px + δC
+X . Theorem 6 enables us to use ge-
+nomics datasets that study the same outcome to tighten the
+bounds on PoC in the target dataset, without measuring or
+making restrictive assumptions on the treatment assignment
+mechanism for X in the external genomics dataset. Now,
+using the Theorems presented in this paper, a variety of ex-
+ternal datasets can be leveraged to tighten the bounds on the
+PoC.
+
+X and 1 − px − δC
+
+X and 1 − px − δC
+
+5 Discussion and Future Work
+Having presented various approaches to tightening the
+bounds on the Probabilities of Causation, we briefly high-
+light some key discussion points.
+
+Dealing with finite samples Throughout this paper, we
+assume that having access to the dataset is equivalent to hav-
+ing access to the joint distribution over the variables con-
+tained in the dataset. In finite samples, this will not hold,
+and there will be additional statistical considerations. In this
+case, Maximum likelihood (Bickel and Doksum 2015) based
+
+approaches, as well as approximations may be used to en-
+sure compatibility of target and external datasets.
+
+Assumption on prevalence parameter δX We provided
+theorems on bounds on PoC for the target dataset in terms
+of δX . Even though we may not know the true value of δX ,
+we think of it like a sensitivity parameter that can be var-
+ied to understand how the bounds change. Ranges on δX
+can be imposed based on domain knowledge, or by utilizing
+information about the study design of the external dataset.
+Additionally, the prevalence parameter δX makes the as-
+sumptions on the treatment assignment mechanism of X
+across datasets explicit, providing greater transparency in in-
+ference.
+
+Choice of Y In the bounds we present, the prevalence of
+Y is assumed to remained unchanged. As mentioned before,
+examples of such Y include genetic mutations; according to
+Mendelian Randomization genes are randomized by nature,
+hence their prevalence is expected to be similar across popu-
+lations with similar characteristics. This illustrates the useful
+role genetic mutations can play in tightening bounds on the
+PoC, and provides a way to leverage the growing number
+of genomics datasets. However, to relax the assumption on
+the unchanged prevalence of Y , a similar approach to the
+one used for δX could be employed to parameterize the dif-
+ference in the treatment assignment mechanism of Y , and
+subsequently re-derive the bounds in this paper. We leave
+this to future work.
+
+Invariance of Causal Mechanisms We assume that
+P (Zx,y,c) remains unchanged across datasets. This assump-
+tion is supported in the transportability, robustness and dis-
+tribution shift literature (Pearl 2011; Christiansen et al.
+2022; B¨uhlmann 2020). However, if someone wishes to, fol-
+lowing a similar approach used with δX , this assumption can
+be further weakened, albeit at the cost of transferring less in-
+formation across datasets.
+
+Data access and privacy In the case of trials, we may
+not have access to individual-level records due to privacy or
+intellectual property concerns. The merit of our approach is
+that it only requires population-level summaries of the data,
+such as the adverse effect prevalence in the treated and un-
+treated group, or these quantities within strata of the subject
+population.
+
+Conclusion In this paper, we presented approaches to
+tighten the bounds on the Probabilities of Causation via
+merging external datasets studying the same outcome vari-
+able, but examining different treatments or covariates. To
+this end, we tightened existing bounds on the Probabili-
+ties of Causation by merging external datasets with the tar-
+get dataset, allowing the external dataset to have a different
+treatment assignment mechanism. This is accomplished by
+parameterizing the difference in treatment mechanisms and
+providing bounds in terms of this parameter. Our approach
+could also be extended to derive bounds on counterfactual
+statements (rung 3 in Pearl’s ladder of causation) other than
+Probabilities of Causation.
+
+References
+Balke, A.; and Pearl, J. 1994. Counterfactual probabilities:
+Computational methods, bounds and applications. In Uncer-
+tainty Proceedings 1994, 46–54. Elsevier.
+Bickel, P. J.; and Doksum, K. A. 2015. Mathematical statis-
+tics: basic ideas and selected topics, volumes I-II package.
+CRC Press.
+B¨uhlmann, P. 2020. Invariance, causality and robustness.
+Charitopoulos, V. M.; Papageorgiou, L. G.; and Dua, V.
+2018. Multi-parametric mixed integer linear programming
+under global uncertainty. Computers & Chemical Engineer-
+ing, 116: 279–295.
+Christiansen, R.; Pfister, N.; Jakobsen, M. E.; Gnecco, N.;
+and Peters, J. 2022. A Causal Framework for Distribution
+Generalization. IEEE Transactions on Pattern Analysis and
+Machine Intelligence, 44(10): 6614–6630.
+Cuellar, M. 2018. Causal reasoning and data analysis in the
+law: definition, estimation, and usage of the probability of
+causation. Estimation, and Usage of the Probability of Cau-
+sation (May 31, 2018).
+Daume III, H.; and Marcu, D. 2006. Domain adaptation
+for statistical classifiers. Journal of artificial Intelligence
+research, 26: 101–126.
+Dawid, A. P.; Musio, M.; and Murtas, R. 2017. The probabil-
+ity of causation. Law, Probability and Risk, 16(4): 163–179.
+Dawid, P.; Humphreys, M.; and Musio, M. 2021. Bounding
+causes of effects with mediators. Sociological Methods &
+Research, 00491241211036161.
+Duarte, G.; Finkelstein, N.; Knox, D.; Mummolo, J.; and Sh-
+pitser, I. 2021. An automated approach to causal inference
+in discrete settings. arXiv preprint arXiv:2109.13471.
+Faigman, D. L.; Monahan, J.; and Slobogin, C. 2014. Group
+to individual (G2i) inference in scientific expert testimony.
+The University of Chicago Law Review, 417–480.
+Gresele, L.; Von K¨ugelgen, J.; K¨ubler, J.; Kirschbaum, E.;
+Sch¨olkopf, B.; and Janzing, D. 2022. Causal inference
+In In-
+through the structural causal marginal problem.
+ternational Conference on Machine Learning, 7793–7824.
+PMLR.
+Janzing, D.; and Sch¨olkopf, B. 2010. Causal inference using
+IEEE Transactions on
+the algorithmic Markov condition.
+Information Theory, 56(10): 5168–5194.
+
+Probabilities of Causation
+arXiv preprint
+
+Khoury, M. J.; Flanders, W. D.; Greenland, S.; and Adams,
+M. J. 1989. On the measurement of susceptibility in epi-
+demiologic studies. American Journal of Epidemiology,
+129(1): 183–190.
+Li, A.; and Pearl, J. 2022.
+with Nonbinary Treatment and Effect.
+arXiv:2208.09568.
+Manski, C. F. 1990. Nonparametric bounds on treatment
+effects. The American Economic Review, 80(2): 319–323.
+Muandet, K.; Balduzzi, D.; and Sch¨olkopf, B. 2013. Domain
+generalization via invariant feature representation. In Inter-
+national conference on machine learning, 10–18. PMLR.
+Mueller, S.; and Pearl, J. 2022.
+Personalized Deci-
+sion Making–A Conceptual Introduction. arXiv preprint
+arXiv:2208.09558.
+Padh, K.; Zeitler, J.; Watson, D.; Kusner, M.; Silva, R.;
+Stochastic Causal Program-
+and Kilbertus, N. 2022.
+arXiv preprint
+ming for Bounding Treatment Effects.
+arXiv:2202.10806.
+Pearl, J. 2009. Causality. Cambridge university press.
+Pearl, J. 2011. Transportability across studies: A formal ap-
+proach.
+Pearl, J. 2022. Probabilities of causation: three counterfac-
+tual interpretations and their identification. In Probabilistic
+and Causal Inference: The Works of Judea Pearl, 317–372.
+Peters, J.; Janzing, D.; and Sch¨olkopf, B. 2017. Elements of
+causal inference: foundations and learning algorithms. The
+MIT Press.
+Robins, J. 1986. A new approach to causal inference in mor-
+tality studies with a sustained exposure period—application
+to control of the healthy worker survivor effect. Mathemati-
+cal modelling, 7(9-12): 1393–1512.
+Robins, J.; and Greenland, S. 1989. The probability of cau-
+sation under a stochastic model for individual risk. Biomet-
+rics, 1125–1138.
+Sachs, M. C.; Jonzon, G.; Sj¨olander, A.; and Gabriel, E. E.
+2022. A general method for deriving tight symbolic bounds
+on causal effects. Journal of Computational and Graphical
+Statistics, (just-accepted): 1–23.
+Sch¨olkopf, B.; Janzing, D.; Peters, J.; Sgouritsa, E.; Zhang,
+K.; and Mooij, J. 2012. On causal and anticausal learning.
+arXiv preprint arXiv:1206.6471.
+Spirtes, P.; Glymour, C. N.; Scheines, R.; and Heckerman,
+D. 2000. Causation, prediction, and search. MIT press.
+Tian, J.; and Pearl, J. 2000. Probabilities of causation:
+Bounds and identification. Annals of Mathematics and Arti-
+ficial Intelligence, 28(1): 287–313.
+Zeitler, J.; and Silva, R. 2022.
+The Causal Marginal
+Polytope for Bounding Treatment Effects. arXiv preprint
+arXiv:2202.13851.
+Zhang, J.; Tian, J.; and Bareinboim, E. 2022. Partial coun-
+terfactual identification from observational and experimen-
+tal data. In International Conference on Machine Learning,
+26548–26558. PMLR.
+
+Appendix for Tightening Bounds on Probabilities of Causation By Merging
+Datasets
+
+A Proof of Theorem 1
+To prove Theorem 1, we first state lemmas we utilize as part of our proof. The lemmas are organized in subsections as follows.
+First, Lemma 1 and 2 are needed to constrain the set of target distributions using the external dataset (§A.1) and to express
+the set of target distributions compatible with the external distribution as a system of equations and its N corresponding free
+parameters, where N + 1 is the cardinality of the support of Y . Furthermore, they place bounds on the free parameters in this
+system. Lemma 3 and 4 examine the conditions that govern the bounds on the free parameters. Next, Lemma 5 and 6 re-express
+the bounds on P N S originally derived using the joint distributions P (Z, X, Y ) in terms of the free parameters derived in
+Lemma 1 and Lemma 2. Lemmas 7 through 20 examine the behavior of the maximum operators in the bounds provided in
+Lemma 5 and 6 under various constraints on the free parameters. Finally, we use these lemmas to provide the proof for the
+lower bound and upper bound of the PNS. The proof for the lemmas can be found in (§G).
+
+A.1 Constraining the Set of Target Distributions Using the External Dataset
+Lemma 7. Let X and Z be binary random variables, and let Y be a discrete random variable taking on values in 0, . . . , N .
+Let X, Y and Z obey the causal structure in Fig. 3(b). Then, given marginals P T (Z, X) and P E(Z, Y ), the conditional
+distributions P (Z | X, Y ) can be expressed in terms of free parameters P (Z = 1 | X = 1, Y = i) for i ∈ {1, . . . , N } as
+
+P(Z = 1 | X = 0, Y = 0) =
+
+P(Z = 1 | X = 1, Y = 0) =
+
+P(Z = 1 | X = 0, Y = 1) =
+
+P(Z = 1 | X = 0, Y = 2) =
+
+px
+1 − px
+
+pT
+11
+py0
+
+−
+
+pE
+11
+1 − px
+pE
+12
+1 − px
+
+...
+
+N
+(cid:88)
+
+n=1
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n)
+
+−
+
+−
+
+px
+1 − px
+px
+1 − px
+
+P(Z = 1 | X = 1, Y = 1)
+
+P(Z = 1 | X = 1, Y = 2)
+
+P(Z = 1 | X = 0, Y = N ) =
+
+pE
+1N
+1 − px
+
+−
+
+px
+1 − px
+
+P(Z = 1 | X = 1, Y = N )
+
+Where P (X = 1) is denoted as px, P (Y = n) is denoted as pyn, P T (Z = 1 | X = 1) is denoted as pT
+is denoted as pT
+Lemma 8. To ensure the solution to the system of equations in Lemma 7 form coherent probabilities, the following bounds on
+the free parameters must hold
+
+10, and P E(Z = 1 | Y = n) is denoted as pE
+
+11, P T (Z = 1 | X = 0)
+
+1n for n ∈ {0, . . . , N }.
+
+max
+
+(cid:34) pT
+
+11px−pE
+
+10py0
+
+px
+p11 − py0
+
+(cid:35)
+
+≤
+
+N
+(cid:88)
+
+n=1
+
+pyn
+
+P(Z = 1 | X = 1, Y = n) ≤ min
+
+(cid:34) (1−px)py0 +pT
+11px−pE
+px
+pT
+11
+
+10py0
+
+(cid:35)
+
+And for each i ∈ {1, . . . , N }, we the bounds on the following free parameters P (Z = 1 | X = 1, Y = i)
+
+(cid:34)
+
+max
+
+(cid:35)
+
+0
+pE
+1i−(1−px)
+px
+
+≤ P (Z = 1 | X = 1, Y = i) ≤ min
+
+(cid:35)
+
+(cid:34)
+
+1
+pE
+1i
+px
+
+(12)
+
+(13)
+
+A.2 Relation of Bounds on Free Parameters to the External Dataset
+Lemma 9 and Lemma 10 establish the relationship between the external dataset and the upper and lower bounds in Lemma 8.
+Lemma 9. The following implications hold:
+1.
+
+pE
+10 < px =⇒
+
+11px − pE
+pT
+px
+
+10py0
+
+> pT
+
+11 − py0
+
+2.
+
+pE
+10 ≥ px =⇒
+
+11px − pE
+pT
+px
+
+10py0
+
+≤ pT
+
+11 − py0
+
+3.
+
+4.
+
+10 < 1 − px =⇒ pT
+pE
+
+11 <
+
+10 ≥ 1 − px =⇒ pT
+pE
+
+11 ≥
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+Lemma 10. For i ∈ {1, . . . , N }, when pE
+
+1i ≥ 1 − px =⇒ pE
+
+11−(1−px)
+px
+
+≥ 0. When pE
+
+1i < px =⇒ pE
+
+11
+px
+
+≤ 1
+
+A.3 Bounds on PNS In Terms of Free Parameters
+In Lemma 11, we re-express bounds in Dawid, Musio, and Murtas (2017) on PC in terms of PNS under the assumption of
+exogenity.
+
+Lemma 11. Let X, Z be binary random variables, and let Y be a discrete multivalued random variable, obeying the causal
+structure in Fig 2. We define the P N S as
+
+P N S ≡ P (Zx = 1, Zx′ = 0)
+Where x and x′ denote the setting of X to 1 and 0 respectively. Bounds on the PNS under the causal graph in Fig. 2 given the
+joint distribution P (Z, X, Y ) are given in Dawid, Musio, and Murtas (2017) as
+
+∆ ≤ P N S ≤ P(Z = 1 | X = 1) − Γ
+
+Where
+
+And Γ is
+
+∆ =
+
+(cid:88)
+
+y
+
+Γ =
+
+(cid:88)
+
+y
+
+P(Y = y) max{0, P(Z = 1 | X = 1, Y = y) − P(Z = 1 | X = 0, Y = y)}
+
+P(Y = y) max{0, P(Z = 1 | X = 1, Y = y) − P(Z = 0 | X = 0, Y = y)}
+
+At this point we remind to the reader that the above bounds require access to the joint distribution P (Z, X, Y ). Given the
+scenario described in the paper, we do not have access to this. Therefore, in Lemma 12 we are expressing the joint P (Z | X, Y )
+in terms of the free parameters corresponding to the system of equations derived in Lemma 7.
+Lemma 12. Given P T (Z, X) and P E(Z, Y ), using the solution to the system of equations in Lemma 7, each of the terms in ∆
+and Γ defined in Lemma 11 are expressed in terms of the free parameters below. First, for Γ, each of the terms can be written
+as
+
+P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)
+(cid:32)
+
+(cid:80)N
+
+=
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+n=1 pyn P (Z = 1 | X = 1, Y = n) − pT
+11
+py0
+
+px
+1 − px
+
+And for the terms in Γ corresponding to Y = i, i ∈ {1, . . . , N }
+
+P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i)
+
+P (Z = 1 | X = 1, Y = i)
+
+1 −
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
++
+
+pE
+11 − (1 − px)
+1 − px
+
+Similarly, the terms in ∆ can be expressed in terms of the free parameter as
+
+P(Z = 1 | X = 1, Y = 0) − P(Z = 1 | X = 0, Y = 0)
+
+11 − pE
+pT
+
+10py0 − (cid:80)N
+
+n=1 pyn
+
+P(Z = 1 | X = 1, Y = n)
+
+And for the terms in ∆ corresponding to Y = i, i ∈ {1, . . . , N }
+
+(1 − px)py0
+
+P(Z = 1 | X = 1, Y = 1) − P(Z = 1 | X = 0, Y = 1)
+
+P(Z = 1 | X = 1, Y = i) − pE
+1i
+1 − px
+
+(cid:33)
+
+− 1
+
+(14)
+
+(15)
+
+(16)
+
+(17)
+
+A.4 Behavior of Max Operators in Γ
+The behavior of this function must be analyzed in two cases, one where px > 1 − px, and vice-versa. We present results for
+px > 1 − px, and analogous results can be derived for px < 1 − px.
+Lemma 13. Assume px > 1 − px. The function max{0, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)} defined in
+Lemma 12 will be greater than or equal to 0 when
+
+N
+(cid:88)
+
+n=1
+
+pyn P (Z = 1 | X = 1, Y = n) ≥
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+(18)
+
+Lemma 14. Assume px > 1 − px. If pE
+
+10 ≥ px, then
+
+pT
+11 − py0 ≥
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+Remark 15. Lemma 13 and Lemma 14 imply that when px > 1 − px, pE
+
+10 ≥ max{px, 1 − px} then
+
+max{0, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)}
+= P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)
+
+Analogously, when pE
+
+10 ≤ min{px, 1 − px}, i.e. pE
+
+10 ≤ 1 − px, similar results are obtained, and to show this, we state the
+
+following Lemmas.
+Lemma 16. Assume px > 1 − px. If pE
+
+10 < px, then
+11px − pE
+pT
+px
+
+10py0
+
+<
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+Lemma 17. Assume px > 1 − px. If pE
+
+10 ≤ 1 − px, then
+
+pT
+11 ≤
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+Remark 18. Lemma 16 and Lemma 17 imply that when px > 1 − px, pE
+
+10 ≤ min{px, 1 − px} then
+max{0, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)} = 0
+
+Lemma 19. Assume px > 1 − px. When 1 − px < pE
+
+10, the following inequality holds.
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+
+11 <
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+Now, we provide lemmas that similarly examine the behavior of max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 0 | X =
+0, Y = i)} for i ∈ {1, . . . , N }. As before, the behavior of this function needs to be analyzed in two cases, px > 1 − px and one
+where px < 1 − px. We provide lemmas for px > 1 − px, and lemmas for px < 1 − px can be analogously derived.
+Lemma 20. Assume px > 1 − px. The function max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 0 | X = 0, Y = i)} ≥ 0 for
+i ∈ {1, . . . , N } when
+
+Lemma 21. Assume px > 1 − px. If pE
+
+1i ≥ px for i ∈ {1, . . . , N }, then
+
+P (Z = 1 | X = 1, Y = i) ≤
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+1 ≤
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+Remark 22. Lemma 20 and Lemma 21 imply that when pE
+max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 0 | X = 0, Y = i)} = P(Z = 1 | X = 1, Y = i) − P(Z = 0 | X = 0, Y = i)
+Lemma 23. Assume px > 1 − px. If pE
+
+1i ≥ max{px, 1 − px}, then
+
+1i < px for i ∈ {1, . . . , N }, then
+
+pE
+11
+px
+
+>
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+Lemma 24. Assume px > 1 − px. If pE
+
+1i ≤ 1 − px for i ∈ {1, . . . , N }, then
+
+Remark 25. Lemma 23 and Lemma 24 imply that when pE
+
+0 ≥
+
+pE
+1i − (1 − px)
+px − (1 − px)
+1i ≤ min{px, 1 − px}, then
+
+max{0, P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i)} = 0
+
+> pE
+
+1i−(1−px)
+
+1i < px, then pE
+
+And when 1 − px < pE
+
+px−(1−px) and pE
+
+< pE
+1i−(1−px)
+px−(1−px) .
+11
+px
+Lemma 26. Assume px > 1 − px, and for all i ∈ {0, . . . , N }, 1 − px < pE
+1i < px. Then the space of the free parameters
+defined in Lemma 7 will contain a value of the free parameters such that every max operator corresponding in Γ defined in
+Lemma 11 will simultaneously satisfy the following condition
+max{0, P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i)} = P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i)
+(19)
+
+11−(1−px)
+px
+
+for all i if and only if pT
+
+11 + pT
+
+10 − 1 ≥ 0.
+
+A.5 Behavior of Max Operators in ∆
+Lemma 27. The function max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 1 | X = 0, Y = 0)} ≥ 0 when
+
+11 − pE
+pT
+
+10py0 ≥
+
+N
+(cid:88)
+
+n=1
+
+pyn
+
+P(Z = 1 | X = 1, Y = n)
+
+Lemma 28. The following inequalities hold
+1.
+
+11 ≥ pT
+pT
+
+11 − pE
+
+10py0
+
+2.
+
+3.
+
+4.
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+≥ pT
+
+11 − pE
+
+10py0
+
+11 − py0 ≤ pT
+pT
+
+11 − pE
+
+10y0
+
+11px − pE
+pT
+px
+
+10py0
+
+≤ pT
+
+11 − pE
+
+10py0
+
+Remark 29. Lemma 28 implies that max{0, P(Z = 1 | X = 1, Y = 0) − P(Z = 1 | X = 0, Y = 0)} can be either zero or
+non-zero over the range of the free parameters.
+
+Now, we similarly examine the behavior of max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 1 | X = 0, Y = i)}.
+
+Lemma 30. The function max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 1 | X = 0, Y = i)} ≥ 0 for i ∈ {1, . . . , N } when
+
+pE
+1i ≤ P (Z = 1 | X = 1, Y = 1)
+
+Lemma 31. The following inequalities hold
+1.
+
+2.
+
+3.
+
+4.
+
+1 ≥ pE
+1i
+
+pE
+1i
+px
+
+≥ pE
+1i
+
+pE
+1i ≥ 0
+
+pE
+1i ≥
+
+pE
+1i − (1 − px)
+px
+
+(24)
+
+(25)
+
+(26)
+
+(27)
+
+Remark 32. Lemma 30 and Lemma 31 imply that max{0, P (Z = 1|X = 1, Y = i) − P (Z = 1|X = 0, Y = i)} can be
+either zero or non-zero over the range of the free parameters.
+Lemma 33. All max operators in ∆ can simultaneously satisfy the following condition for all i ∈ {0, . . . , N } if and only if
+max{0, P (Z = 1 | X = 1, Y = i} − P (Z = 1 | X = 0, Y = i)} = P (Z = 1 | X = 1, Y = i} − P (Z = 1 | X = 0, Y = i)
+(28)
+
+if and only if pT
+
+11 − pT
+
+10 ≥ 0.
+
+(20)
+
+(21)
+
+(22)
+
+(23)
+
+A.6 Behavior of Upper Bound on PNS Under Special Conditions
+Here we analyze the behavior of the upper bound on the PNS in Theorem 1 and Theorem 2 when pE
+max{px, 1 − px} or always less than min{px, 1 − px}.
+Lemma 34. For the upper bound in Theorem 2, when px > 1 − px and all pE
+
+1i ≥ px for i ∈ {0, . . . , N }, then
+
+1i is always greater than
+
+Proof. Since pE
+
+1i ≥ px for all i, then all the indicators in Φi will evaluate to 1, as a result pT
+
+11 − (cid:80)N
+
+i=0 Φi will equal
+
+00 < pT
+pT
+
+11 −
+
+N
+(cid:88)
+
+i=0
+
+Φi
+
+pT
+11 −
+
+=⇒ =
+
+=⇒ =
+
+=⇒ =
+
+N
+(cid:88)
+
+pyi(pE
+
+1i − px)
+
+i=0
+
+1 − px
+11(1 − px) − (cid:80)N
+pT
+1 − px
+
+11(1 − px) − pT
+pT
+
+10(1 − px) + px
+
+11(1 − px) − pT
+pT
+
+00(1 − px) − (1 − px) + px
+
+i=0 pyi(pE
+
+1i − px)
+
+11px − pT
+1 − px
+11px + pT
+
+1 − px
+
+=⇒ = pT
+
+01(
+
+px
+1 − px
+
+− 1) + pT
+00
+
+And since px > 1 − px, this quantity will be greater than pT
+Lemma 35. For the upper bound in Theorem 2, when px > 1 − px and pE
+
+00.
+
+1i ≤ 1 − px for i ∈ {0, . . . , N } and , then
+
+pT
+00 −
+
+N
+(cid:88)
+
+i=0
+
+Θi > pT
+11
+
+Proof. Since pE
+
+1i ≤ 1 − px for all i, then all the indicators in Θi will evaluate to 1, as a result pT
+
+00 − (cid:80)N
+
+i=0 Θi will equal
+
+pT
+00 −
+
+N
+(cid:88)
+
+i=0
+
+pyi((1 − px) − pE
+1i)
+1 − px
+
+=⇒ =
+
+=⇒ =
+
+=⇒ =
+
+00(1 − px) − (1 − px) + (cid:80)N
+pT
+
+i=0 pyipE
+1i
+
+1 − px
+10(1 − px) + (cid:80)N
+
+−pT
+
+i=0 pyipE
+1i
+
+1 − px
+
+pT
+11px
+1 − px
+
+And since px > 1 − px, this concludes the proof.
+
+Similar Lemmas can be provided for the case where px < 1 − px as well.
+
+A.7 Proof Of Upper Bound In Theorem 1
+The upper bound in Theorem 1 is given as
+
+P N S ≤ min
+
+
+p11 − (cid:80)1
+
+p00 − (cid:80)1
+
+i=0
+
+i=0
+
+I(p′
+I(p′
+
+1i ≥ max{1 − px, px})
+1i ≤ min{1 − px, px})
+
+pyi (p′
+
+1i−max{1−px,px})
+min{1−px,px}
+pyi (min{1−px,px}−p′
+min{1−px,px}
+
+1i)
+
+The upper bound is obtained by solving
+
+P N S ≤ P(Z = 1 | X = 1) − min
+Pi
+
+Γ(Pi)
+
+
+
+
+
+(29)
+
+(30)
+
+We follow a proof by cases approach, and demonstrate on a case-by-case basis that bounds obtained Eq. 29 will equal the
+bounds obtained from Eq.30.
+
+First, since Y is binary, we can use Lemma 7 and Lemma 8 to obtain the following system of equations that constrain the set
+
+of possible choices for P (Z = 1|X, Y ) with respect to a single free parameter P (Z = 1 | X = 1, Y = 1).
+
+P (Z = 1 | X = 0, Y = 0) =
+
+P (Z = 1 | X = 1, Y = 0) =
+
+P (Z = 1 | X = 0, Y = 1) =
+
+px
+1 − px
+pT
+11
+py0
+pE
+11
+1 − px
+
+−
+
+P (Z = 1 | X = 1, Y = 1) +
+
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+P (Z = 1 | X = 1, Y = 1)
+
+py1
+py0
+py1
+py0
+
+−
+
+px
+1 − px
+
+P (Z = 1 | X = 1, Y = 1)
+
+And the following bounds on the free parameter P (Z = 1 | X = 1, Y = 1) must hold
+
+max
+
+Along with
+
+(cid:34) pT
+
+10py0
+
+11px−pE
+px
+pT
+11 − py0
+
+(cid:35)
+
+≤ py1 P (Z = 1 | X = 1, Y = 1) ≤ min
+
+(cid:34) (1−px)py0 +p11px−p′
+
+10py0
+
+px
+p11
+
+(cid:34)
+
+max
+
+(cid:35)
+
+0
+p′
+11−(1−px)
+px
+
+≤ P (Z = 1 | X = 1, Y = 1) ≤ min
+
+(cid:35)
+
+(cid:34)
+
+1
+p′
+11
+px
+
+(cid:35)
+
+(31)
+
+(32)
+
+In the binary case, from Lemma 11, Γ is expressed as
+
+Γ = P (Y = 0) max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)}
++ P (Y = 1) max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1)}
+
+And based on Lemma 12, each of these terms in Γ can be written in terms of the free parameter P (Z = 1 | X = 1, Y = 1)
+
+as
+1.
+
+2.
+
+P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+py1P (Z = 1 | X = 1, Y = 1) − pT
+11
+py0
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1)
+pE
+11 − (1 − px)
+1 − px
+
+P (Z = 1 | X = 1, Y = 1)(1 −
+
+px
+1 − px
+
+) +
+
+(33)
+
+(34)
+
+For ease of presentation, we group the cases we consider in our proof into three broad categories. The first category groups
+cases where px = 1 − px, the second groups cases where px > 1 − px and the third groups cases where px < 1 − px. We
+provide proofs for the first two, and analogous derivations can be performed for px < 1 − px.
+
+Category I In Category I, we provide proofs for when px = 1 − px. In this setting, we will prove the following
+equations hold:
+
+pT
+11 −
+
+min
+P (Z=1|X=1,Y =1)
+
+Γ(P (Z = 1 | X = 1, Y = 1)) = pT
+
+11 −
+
+1
+(cid:88)
+
+i=0
+
+I(pE
+
+1i ≥ max{1 − px, px})
+
+pyi (pE
+
+1i − max{1 − px, px})
+min{1 − px, px}
+
+(35)
+
+And
+
+pT
+11 −
+
+min
+P (Z=1|X=1,Y =1)
+
+Γ(P (Z = 1 | X = 1, Y = 1)) = pT
+
+00 −
+
+N
+(cid:88)
+
+i=0
+
+I(pE
+
+1i ≤ min{1 − px, px})
+
+pyi (min{1 − px, px} − pE
+1i)
+min{1 − px, px}
+
+(36)
+
+Note that when px = 1 − px, Γ is no longer a function of P (Z = 1 | X = 1, Y = 1) since 33 and 34 are no longer a function
+of P (Z = 1 | X = 1, Y = 1). Γ will equal
+
+Γ = py0 max{0,
+
+pE
+10 − (1 − px)
+1 − px
+
+} + py1 max{0,
+
+pE
+11 − (1 − px)
+1 − px
+
+}
+
+And the upper bound on PNS will equal
+
+pT
+11 − Γ
+
+Next, we can see on a case by case basis that pT
+the rest of the cases can be proved in a similar fashion.
+
+11 − Γ will always equal both 35 and 36. We provide the proof for one case, and
+
+1. Consider the case where p′
+
+10 ≥ px and p′
+
+11 ≥ px. Since px = 1 − px, Γ will equal
+
+py0 pE
+
+10 − py0 (1 − px)
+
+py1pE
+
+11 − py1(1 − px)
+
+Γ =
+
++
+
+1 − px
+py0pE
+
+10 − py0(1 − px)
+
+1 − px
+
+1 − px
+py1 pE
+
+11 − py1 (1 − px)
+
+1 − px
+
+−
+
+=⇒ pT
+
+11 − Γ = pT
+
+11 −
+
+By direct comparison, this is equal to 35. Next, to prove the equality to 36, note that
+
+pT
+11 −
+
+py0 pE
+
+10 − py0 (1 − px)
+
+1 − px
+
+−
+
+py1pE
+
+11 − py1(1 − px)
+
+1 − px
+
+Since px = 1 − px and pT
+
+11px + pT
+
+10(1 − px) = pE
+
+11py1 + pE
+
+10py0
+
+=⇒ =
+
+=⇒ =
+
+11px − py0pE
+pT
+
+10 + py0(1 − px) − py1 pE
+1 − px
+
+11 + py1 (1 − px)
+
+−pT
+
+10(1 − px) + (1 − px)
+
+1 − px
+
+=⇒ = pT
+00
+
+And by comparison to 36, we can see these are equal as well.
+This concludes the proof for when px = 1 − x. Next, we move on to the category of cases where px > 1 − px.
+
+Category II In Category II, we provide proofs for when px > 1 − px. Here we follow a similar proof by cases as
+well, with each case being defined by relation of pE
+11 to px and 1 − px. Note that since px > 1 − px, from Lemma 12
+we see that max{0, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)} is an increasing function of the free parameter,
+while max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 0 | X = 0, Y = i)} is a decreasing function of the free parameter. Now,
+we proceed to use a proof by cases. We provide proofs for a set of representative cases, and a similar approach can be used to
+derive the rest of the cases.
+1. Case I: We prove the upper bound in Theorem 1 in the following case
+
+10 and pE
+
+px ≤ pE
+10
+px ≤ pE
+11
+
+10 ≥ max{px, 1 − px}, and pE
+
+Since pE
+max{0, P(Z = 1 | X = 1, Y = 0)−P(Z = 0 | X = 0, Y = 0)} = P(Z = 1 | X = 1, Y = 0)−P(Z = 0 | X = 0, Y = 0)
+
+11, Lemma 13 and Lemma 14 imply
+
+And Lemma 23 and Lemma 24 imply
+max{0, P(Z = 1 | X = 1, Y = 1)−P(Z = 0 | X = 0, Y = 1)} = P(Z = 1 | X = 1, Y = 1)−P(Z = 0 | X = 0, Y = 1)
+
+And from Lemma 11, Γ is equal to the weighted sum of these two max functions, hence
+
+Γ = P (Y = 0)(P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)
++ P (Y = 1)(P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1))
+
+Since X ⊥⊥ Y
+
+= P (Z = 1 | X = 1) + P (Z = 1 | X = 0) − 1
+
+(37)
+(38)
+
+(39)
+
+And in notation introduced before, this is written as pT
+evaluate to pT
+
+00. And based on Lemma 34, this will equal the upper bound result in Theorem 1.
+
+11 + p10 − 1. Since the upper bound on P N S is pT
+
+11 − Γ, this will
+
+2. Case II: We prove the upper bound in Theorem 1 in the following case
+
+pE
+10 ≤ 1 − px
+pE
+11 ≤ 1 − px
+
+Lemma 16 and Lemma 17 along with Lemma 23 and Lemma 24 imply that both max operators will equal 0 over the entire
+range of the free parameter. Hence Γ = 0, hence p11 − Γ = p11, and from Lemma 35 this matches the bound in Theorem 1.
+
+3. Case III: We prove the upper bound in Theorem 1 in the following case
+
+px ≤ pE
+10
+pE
+11 ≤ 1 − px
+
+10 ≥ max{px, 1 − px}, and pE
+
+11 ≤ min{px, 1 − px}, Lemma 23 and Lemma 24 imply that max{0, P(Z = 1 | X = 1, Y = 1) − P(Z = 0 | X =
+
+Since pE
+0, Y = 1)} = 0 over the entire range of the free parameter.
+Since pE
+max{0, P(Z = 1 | X = 1, Y = 0)−P(Z = 0 | X = 0, Y = 0)} = P(Z = 1 | X = 1, Y = 0)−P(Z = 0 | X = 0, Y = 0)
+Consequently, from Lemma 12, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0) can be expressed in terms of the
+free parameter, and min Γ is obtained by solving
+
+11, Lemma 13 and Lemma 14 imply
+
+min
+P (Z=1|X=1,Y =1)
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+py1 P (Z = 1 | X = 1, Y = 1) − pT
+11
+py0
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+(40)
+
+This is an increasing function of the free parameter, and the minimum will be attained at the lower bound of the free
+parameter. Note that from Eq. 31 and Eq. 32, the lower bound on P (Z = 1 | X = 1, Y = 1) will equal max{0, p11 − py0}.
+Substituting both of these lower bounds into Eq. 40 and noting that Γ is a linearly increasing function of the free parameter
+gives
+
+Γ = max{
+
+py0(pE
+
+10 − px)
+
+1 − px
+
+, (p11 + p10 − 1) +
+
+py1 ((1 − px) − pE
+1 − px
+
+11)
+
+}
+
+And since the upper bound is pT
+
+11 − Γ, then
+
+pT
+11 − max{
+
+= min{pT
+
+11 −
+
+py0(pE
+
+10 − px)
+
+1 − px
+py0(pE
+
+10 − px)
+
+1 − px
+
+, (p11 + p10 − 1) +
+
+py1 ((1 − px) − pE
+1 − px
+11)
+
+11)
+
+}
+
+, pT
+
+00 −
+
+py1 ((1 − px) − pE
+1 − px
+
+}
+
+This is equal to the upper bound in Theorem 1.
+
+4. Case IV: We prove the upper bound in Theorem 1 in the following case
+
+1 − px < px ≤ pE
+10
+1 − px < pE
+11 < px
+
+Since pE
+10 ≥ max{px, 1 − px}, Lemma 13 and Lemma 14 imply the following over the range of the free parameters:
+max{0, P(Z = 1 | X = 1, Y = 0)−P(Z = 0 | X = 0, Y = 0)} = P(Z = 1 | X = 1, Y = 0)−P(Z = 0 | X = 0, Y = 0)
+(41)
+However, from Lemma 23, max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1)} is not restricted in this way
+and can take on values of either 0 or P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0) depending on the lower
+bounds on P (Z = 1 | X = 1, Y = 1) in Eq. 31 and Eq. 32.
+First, when the range on P (Z = 1 | X = 1, Y = 1) allows max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y =
+1)} to equal either P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1) or 0, then min Γ = p11 + p10 − 1. This is
+because any decrease in P (Z = 1 | X = 1, Y = 1) would increase the value of P (Z = 1 | X = 1, Y = 1) − P (Z =
+0 | X = 0, Y = 1), but this would be offset by the decrease in the value of P (Z = 1 | X = 1, Y = 0) − P (Z = 0 |
+X = 0, Y = 0), since their weighted sum always adds up to p11 + p10 − 1, as seen in Eq. 37. Similarly, any increase in
+
+P (Z = 1 | X = 1, Y = 1) would increase the value of P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0) while
+driving the value of P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1) lower until
+
+max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1)} = 0
+
+at which point it can no longer counterbalance the increase in P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0),
+increasing the value of Γ, and hence cannot be a minimum either. So we have showed, min Γ = p11 + p10 − 1 in this
+situation.
+But, in the case where the lower bound on P (Z = 1 | X = 1, Y = 1) is large enough to force max{0, P (Z = 1 | X =
+1, Y = 1) − P (Z = 0 | X = 0, Y = 1)} = 0 over the range of the free parameter, then min Γ will be achieved at the lower
+bound of P (Z = 1 | X = 1, Y = 1) since this is an increasing function of P (Z = 1 | X = 1, Y = 1). From Lemma 23,
+the only lower bound on P (Z = 1 | X = 1, Y = 1) capable of doing this is pT
+So, the value of min Γ is decided by whether the lower bound on P (Z = 1 | X = 1, Y = 1) is sufficiently large to
+force max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1)} = 0. This can be equivalently stated as
+min Γ = max{pT
+
+. And here, min Γ =
+
+11−py0
+py1
+
+py0 (pE
+
+py0 (pE
+
+10−px)
+
+10−px)
+
+1−px
+
+}.
+
+11 + pT
+
+10 − 1,
+
+.
+
+1−px
+
+11 − min Γ = pT
+pT
+
+11 − max{pT
+
+11 + pT
+
+10 − 1, pT
+
+11 −
+
+py0 (pE
+
+10 − px)
+
+1 − px
+
+}
+
+And this matches the bounds proposed in Theorem 1.
+
+= min{pT
+
+11 −
+
+py0 (pE
+
+10 − px)
+
+1 − px
+
+, p00}
+
+Similar approaches can be used for the rest of the cases, as well as for the case when px < 1 − px.
+
+A.8 Proof Of Lower Bound In Theorem 1
+Based on Lemma 12, every term in ∆ can be expressed in terms of the free parameter as
+
+1. P (Z = 1 | X = 1, Y = 0) − P (Z = 1 | X = 0, Y = 0)
+
+11 − pE
+pT
+
+10py0 − py1
+
+P(Z = 1 | X = 1, Y = 1)
+
+(1 − px)py0
+
+2. P(Z = 1 | X = 1, Y = 1) − P(Z = 1 | X = 0, Y = 1)
+
+P(Z = 1 | X = 1, Y = 1) − pE
+11
+1 − px
+
+(42)
+
+(43)
+
+First, consider the case when the following conditions can be simultaneously satisfied.
+
+max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 1 | X = 0, Y = 0)} = P (Z = 1 | X = 1, Y = 0) − P (Z = 1 | X = 0, Y = 0)
+(44)
+
+11 < P (Z = 1 | X = 1, Y = 1) ≤ p11−p′
+
+max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 1 | X = 0, Y = 1)} = P (Z = 1 | X = 1, Y = 1) − P (Z = 1 | X = 0, Y = 1)
+(45)
+This can happen when pE
+, and as proved in Lemma 33, happens when
+p11 − p10 ≥ 0. In this case, min ∆ = pT
+10. A similar counterbalancing argument utilized in the proof for the upper
+bound is employed here. We first examine how to decrease Eq. 42. This would be accomplished by increasing the value of
+P (Z = 1 | X = 1, Y = 1), however, this also increases the value of Eq. 43. Since their weighted sum is a constant, it
+means that the increase of one counterbalances the decrease in another, however, after a certain point since the max operator
+corresponding to Eq. 42 starts evaluating to 0, this increase is no longer counterbalanced, leading to Eq. 43 taking on a value
+greater than pT
+
+10 (the value of the sum of both max operators).
+
+11 − pT
+
+10y0
+
+y1
+
+10 < 0, based on Lemma 33, both Eq. 44 and Eq. 45 cannot simultaneously hold. First
+
+we check whether any lower bounds are large enough to make P (Z = 1 | X = 1, Y = 1) − pE
+
+11 > 0.
+
+First, note that when the lower bound is 0 or pE
+
+, from Lemma 31 we have seen these are not large enough to make
+max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 1 | X = 0, Y = 1)} equal to a non-zero value. We now check the remaining
+possibilities for lower bounds using a proof by contradiction.
+
+11−(1−px)
+px
+
+11 − pT
+Next, consider the case when pT
+
+11 − pT
+
+1. When the lower bound on P (Z = 1 | X = 1, Y = 1) is equal to pT
+
+: Assume
+
+11−py0
+py1
+pT
+11 − py0
+py1
+10) > py0pE
+00
+
+> pE
+11
+
+=⇒ (1 − px)(pT
+
+11 − pT
+
+This is a contradiction since pT
+
+11 − pT
+
+10 ≤ 0, hence
+
+2. The lower bound is pT
+
+11px−pE
+pxpy1
+
+10py0
+
+pT
+11 − py0
+py1
+
+≤ pE
+11
+
+: Assume
+
+pT
+11px − pE
+pxpy1
+10 > pE
+
+=⇒ pT
+
+11 − pT
+
+10py0
+
+10py0
+
+> pE
+11
+
+And this is a contradiction as well for the same reasons as before, hence
+
+11px − pE
+pT
+pxpy1
+
+10py0
+
+≤ pE
+11
+
+Hence, we have shown the lower bounds are always going to allow max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 1 | X =
+0, Y = 1)} to take on the value of 0.
+
+From Lemma 28, and a similar proof by contradiction applied to the remaining bounds, we can show that the upper bounds
+11−pE
+. Since we have shown that the lower bound of P (Z =
+y1
+10py0
+
+10y0
+11 and the upper bound is always greater than pT
+11, there will always be a value of P (Z = 1 | X = 1, Y = 1) allowed such that both max operators equal 0.
+
+on P (Z = 1 | X = 1, Y = 1) will always be greater than pT
+1 | X = 1, Y = 1) is always less than pE
+pT
+11−pE
+y1
+
+10 < 0 =⇒
+
+11−pE
+py1
+
+11 − pT
+
+and pT
+
+So we have shown that when p11 − p10 > 0, ∆ will evaluate to p11 − p10, and 0 otherwise. This concludes the proof of the
+
+< pE
+
+10y0
+
+lower bound.
+
+B Proof of Theorem 2
+The proof for Theorem 2 follows a similar logic with the proof of Theorem 1. We prove the lower bounds and upper bounds
+separately for arbitrary cardinality of support of Y .
+
+Based on Lemma 8, the following bounds hold for the free parameters.
+(cid:35)
+
+max
+
+(cid:34) pT
+
+11px−pE
+
+10py0
+
+px
+pT
+11 − py0
+
+≤
+
+N
+(cid:88)
+
+n=1
+
+pyn
+
+P(Z = 1 | X = 1, Y = n) ≤ min
+
+(cid:34) (1−px)py0 +pT
+11px−pE
+px
+pT
+11
+
+10py0
+
+(cid:35)
+
+And for each i ∈ {1, . . . , N }, we the bounds on the following free parameters P (Z = 1 | X = 1, Y = i)
+
+(cid:34)
+
+max
+
+(cid:35)
+
+0
+pE
+1i−(1−px)
+px
+
+≤ P (Z = 1 | X = 1, Y = i) ≤ min
+
+(cid:35)
+
+(cid:34)
+
+1
+pE
+1i
+px
+
+B.1 Proof for Upper Bound in Theorem 2
+From Lemma 12, each of these terms in Γ defined in Lemma 11 can be written as
+1.
+
+P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+(cid:80)N
+
+n=1 pyn P (Z = 1 | X = 1, Y = 1) − pT
+11
+py0
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+2. For all i ∈ {1, . . . , N }:
+
+P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 1)
+pE
+1i − (1 − px)
+1 − px
+
+P (Z = 1 | X = 1, Y = i)(1 −
+
+px
+1 − px
+
+) +
+
+(46)
+
+(47)
+
+(48)
+
+(49)
+
+As before, we split the proof into three categories of cases, and provide proofs for when px = 1 − px, and when px > 1 − px.
+Analogous proofs can be derived for when px < 1 − px.
+
+Category I In Category I, we provide proofs for when px = 1 − px. In this setting, we will prove the following
+equations hold
+
+And
+
+pT
+11 − min
+Pi
+
+Γ(Pi) = pT
+
+11 −
+
+N
+(cid:88)
+
+i=0
+
+I(pE
+
+1i ≥ max{1 − px, px})
+
+pyi(pE
+
+1i − max{1 − px, px})
+min{1 − px, px}
+
+pT
+11 − min
+Pi
+
+Γ(Pi) = pT
+
+00 −
+
+N
+(cid:88)
+
+i=0
+
+I(pE
+
+1i ≤ min{1 − px, px})
+
+pyi(min{1 − px, px} − pE
+1i)
+min{1 − px, px}
+
+(50)
+
+(51)
+
+Note that when px = 1 − px, Γ is no longer a function of the free parameters since 48 and 49 are no longer a function of the
+free parameters. Γ will equal
+
+Γ =
+
+N
+(cid:88)
+
+i=0
+
+pyi max{0,
+
+pE
+1i − (1 − px)
+1 − px
+
+}
+
+Next, we show on a case by case basis that p11 − Γ will always equal both 50 and 51. Partition the set {0, . . . , N } into two
+disjoint subsets R and L such that ∀r ∈ R, pE
+
+1l ≤ px. Then, p11 − Γ will evaluate to
+
+1r ≥ px, ∀l ∈ L, pE
+
+11 − Γ = pT
+pT
+
+11 −
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
+(52)
+
+By direct comparison, this is equal to Eq. 50. Next, since px = 1 − px Eq. 52 can be written as
+r∈R pyr (pE
+1 − px
+
+11px − (cid:80)
+pT
+
+1r − (1 − px))
+
+Using the identity pT
+
+11px + pT
+
+10(1 − px) = (cid:80)N
+
+1ipyi
+
+i=0 pE
+10(1 − px) + (cid:80)
+
+−pT
+
+=⇒ =
+
+=⇒ = pT
+
+00 −
+
+1 − px
+pyl ((1 − px) − pE
+1l)
+1 − px
+
+(cid:88)
+
+l∈L
+
+l∈L pyl pE
+
+1l + (1 − (cid:80)
+
+l∈L pyl )(1 − px)
+
+And by comparison to Eq. 51, we can see these are equal as well. This proves that in the case x = 1 − x, p11 − Γ will equal 50
+and 51. Now, we move on to the category of cases where px > 1 − px.
+
+Category II In Category II, we provide proofs for when px > 1 − px. Broadly, the proof utilizes the fact that Eq. 47
+provide bounds on the individual values of the free parameters, while Eq. 46 provide bounds on the weighted sum of the free
+parameters. Depending on which of these two bounds are more restrictive, we get two different upper bound on the P N S. And
+we show that choosing the more restrictive bounds on the free parameter is equivalent to evaluating the minimum operator in
+the upper bound.
+1. Case I: We prove the upper bound in Theorem 2 in the following case. pE
+
+10 ≤ min px, 1 − px. Partition {1, . . . N } into three
+1r ≥ max{px, 1 − px}, and
+
+1s < px.
+
+1l ≤ min{px, 1 − px}, ∀r ∈ R pE
+
+non-empty disjoint subsets L, R and S such that ∀l ∈ L pE
+∀s ∈ S 1 − px < pE
+Then, fromLemma 16 and Lemma 17, max{P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)} = 0 over the entire
+range of the free parameters. Similarly,from Lemma 23 and Lemma 24, ∀l max{P (Z = 1 | X = 1, Y = l) − P (Z = 0 |
+X = 0, Y = l)} = 0 over the entire range of free parameters.
+For the remaining max operators in Γ corresponding to S and R, they will all vary independently and be decreasing functions
+of their corresponding free parameter. Hence, to minimize Γ over the range of free parameters, we want to minimize each
+of the max operators in Γ corresponding to S and R while obeying the bounds on the free parameters.
+From Lemma 20 and Lemma 21, ∀r ∈ R max{P (Z = 1 | X = 1, Y = r) − P (Z = 0 | X = 0, Y = r)} = P (Z = 1 |
+X = 1, Y = r) − P (Z = 0 | X = 0, Y = r). Similarly, all the max operators corresponding to S can be zero or non-zero.
+The following values of free parameters will minimize Γ.
+
+(a) ∀l ∈ L P (Z = 1 | X = 1, Y = l) = 0
+
+(b) ∀r ∈ R P (Z = 1 | X = 1, Y = l) = 1
+
+(c) ∀s ∈ S P (Z = 1 | X = 1, Y = l) = pE
+
+1s−(1−px)
+px−(1−px)
+
+This setting of free parameters minimizes Γ because it sets all the max operators capable of attaining 0 equal to 0, while
+minimizing the remaining max operators. This would result in Γ evaluating as
+
+Γ =
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − px
+1 − px
+
+However, we must check whether this setting of the free parameters obeys the restrictions on the weighted sum of free
+parameters. To this end, we must check whether the weighted sum of the free parameters satisfies the bounds in Eq. 46,
+which equals the bounds below from an application of Lemma 9 along with pE
+
+10 ≤ min{px, 1 − px}.
+
+11px − pE
+pT
+px
+
+10py0
+
+≤
+
+(cid:88)
+
+s∈S
+
+ys
+
+pE
+1s − (1 − px)
+px − (1 − px)
+
++
+
+(cid:88)
+
+r∈R
+
+pyr ≤ pT
+11
+
+(53)
+
+s∈S ys
+
+pE
+px−(1−px) +(cid:80)
+1s−(1−px)
+
+With respect to the lower bound, even if (cid:80)
+r∈R pyr is not sufficiently large enough to uphold the lower
+bound, any increase in the free parameters will not change the value of Γ since all the max operators that are decreasing
+functions of the free parameter are either already minimized or set to value that makes them evaluate to 0. This will not
+change the value of Γ since the corresponding max operators will still remain 0 even with the increase in the value of free
+parameters.
+However, when this upper bound does not hold, then, we must minimize Γ while obeying (cid:80)N
+i=1 pyiP (Z = 1 | X = 1, Y =
+i) ≤ pT
+11. To evaluate this, note that any solution to min Γ will set all the max operators ∀s ∈ S P (Z = 1 | X = 1, Y =
+s) − P (Z = 0 | X = 0, Y = s) to exactly 0 or greater, since further reduction still gives a zero, while restricting the
+range of the other free parameters, thereby increasing the value of Γ since other max operators cannot be minimized more
+by increasing the value of the free parameter. Therefore, ∀s ∈ S max{0, P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X =
+0, Y = s)} = P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X = 0, Y = s) = 0. Now, since the remaining max operators
+corresponding to L along with max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 0 | X = 0, Y = 0) will equal 0, Γ will be
+evaluated as
+
+Γ = min
+
+P
+
+(cid:88)
+
+s∈S
+
+P (Y = s)(P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X = 1, Y = s))
+
++
+
+(cid:88)
+
+r∈R
+
+P (Y = r)(P (Z = 1 | X = 1, Y = r) − P (Z = 0 | X = 1, Y = r))
+
+(54)
+
+And expressing this in terms of free parameters as
+
+Γ = min
+
+P
+
+(cid:88)
+
+i∈R,S
+
+pyi(P (Z = 1 | X = 1, Y = i)
+
+1 −
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
+(cid:88)
+
++
+
+pyi
+
+i∈R,S
+
+pE
+11 − (1 − px)
+1 − px
+
+)
+
+(cid:32)
+
+=
+
+1 −
+
+px
+1 − px
+
+(cid:33)
+
+(cid:88)
+
+i∈R,S
+
+pyiP (Z = 1 | X = 1, Y = i) +
+
+(cid:88)
+
+i∈R,S
+
+pE
+11 − (1 − px)
+1 − px
+
+Since Γ is a decreasing function of the weighted sum of free parameters, it will be minimized at the upper bound
+of (cid:80)N
+i=1 P (Z = 1 | X = 1, Y = i), which in this case equals p11. And since the solution for min Γ will set
+∀l ∈ L P (Z = 1 | X = 1, L = l) = 0, (cid:80)
+11. Plugging this into the
+
+i∈R,S pyi(P (Z = 1 | X = 1, Y = i) = pT
+
+expression of Γ evaluates to
+
+(cid:32)
+
+1 −
+
+(cid:33)
+
+pT
+11 +
+
+px
+1 − px
+
+(cid:88)
+
+i∈R,S
+
+pyi
+
+pE
+11 − (1 − px)
+1 − px
+
+=⇒ = pT
+
+11 +
+
+=⇒ = pT
+
+11 +
+
+=⇒ = pT
+
+11 +
+
+−pT
+
+11px + (cid:80)
+
+11 − (1 − px))
+
+i∈R,S pyi(pE
+1 − px
+l∈l pyl pE
+
+p10(1 − px) − (cid:80)
+
+1l − (cid:80)
+
+i∈R,S pyi(1 − px)
+
+1 − px
+p10(1 − px) − (1 − px) − (cid:80)
+
+l∈l pyl pE
+
+1l − (cid:80)
+
+i∈R,S pyi(1 − px) + (1 − px)
+
+=⇒ = pT
+
+11 + pT
+
+10 − 1 +
+
+=⇒ = pT
+
+11 + pT
+
+10 − 1 +
+
+(cid:88)
+
+l∈L
+
+pyl
+
+− (cid:80)
+
+l∈l pyl pE
+
+1l + (cid:80)
+1 − px
+(1 − px) − pE
+1l
+1 − px
+
+1 − px
+l∈L pyl (1 − px)
+
+Hence, min Γ will be decided by whether pT
+function of the free parameters, this is equivalent to choosing max{(cid:80)
+Since this this is subtracted from pT
+
+11, this can be written as
+
+s∈S ys
+
+11 < (cid:80)
+
+pE
+px−(1−px) + (cid:80)
+1s−(1−px)
+r∈R pyr
+
+r∈R pyr or not. And since Γ is a decreasing
+pE
+1r−px
+}.
+1−px
+
+(1−px)−pE
+1l
+1−px
+
+10 −1+(cid:80)
+
+11 +pT
+
+l∈L pyl
+
+, pT
+
+p11 − max{
+
+(cid:88)
+
+pyr
+
+r∈R
+
+pE
+1r − px
+1 − px
+
+, pT
+
+11 + pT
+
+10 − 1 +
+
+pyl
+
+(1 − px) − pE
+1l
+1 − px
+
+}
+
+(cid:88)
+
+l∈L
+
+= min{pT
+
+11 −
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − px
+1 − px
+
+, pT
+
+00 −
+
+pyl
+
+(1 − px) − pE
+1l
+1 − px
+
+}
+
+(cid:88)
+
+l∈L
+
+This concludes the proof for this case.
+
+1s < px.
+
+2. Case II: We prove the upper bound in Theorem 2 in the following case. pE ≥ max px, 1 − px. Partition {1, . . . N } into three
+1r ≥ max{px, 1 − px}, and
+
+non-empty disjoint subsets L, R and S such that ∀l ∈ L pE
+∀s ∈ S 1 − px < pE
+Then, from Lemma 13 and Lemma 14, max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)} = P (Z = 1 |
+X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0) over the entire range of the free parameters. Similarly, following a similar
+argument as the previous case, ∀l max{P (Z = 1 | X = 1, Y = l) − P (Z = 0 | X = 0, Y = l)} = 0, and ∀r max{P (Z =
+1 | X = 1, Y = r) − P (Z = 0 | X = 0, Y = r)} = P (Z = 1 | X = 1, Y = r) − P (Z = 0 | X = 0, Y = r) over the
+entire range of free parameters.
+Consequently, Γ will evaluate to
+
+1l ≤ min{px, 1 − px}, ∀r ∈ R pE
+
+(cid:88)
+
+Γ =
+
+P (Y = i)(P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i))
+
+i∈{0,R}
+(cid:88)
+
++
+
+P (Y = s) max{0, P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X = 0, Y = s)
+
+s∈S
+
+Expressing this in terms of free parameters we get
+
+Γ =py0
+
+pE
+10 − (1 − px)
+1 − px
+
++ (
+
+N
+(cid:88)
+
+n=1
+
+pyn P (Z = 1 | X = 1, Y = n) − pT
+
+11)
+
+(cid:32)
+
+(cid:33)
+
+− 1
+
+px
+1 − px
+
+pyi{P (Z = 1 | X = 1, Y = r)
+
+1 −
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
++
+
+(cid:32)
+
+pE
+11 − (1 − px)
+1 − px
+(cid:33)
+
+}
+
+P (Y = s) max{0, P (Z = 1 | X = 1, Y = s)
+
+1 −
+
+px
+1 − px
+
++
+
+pE
+1s − (1 − px)
+1 − px
+
++
+
++
+
+(cid:88)
+
+r∈R
+
+(cid:88)
+
+s∈S
+
+(55)
+
+}
+
+(56)
+
+The above can be simplified to
+
+Γ =py0
+
+pE
+10 − (1 − px)
+1 − px
+(cid:32)
+
+− p11
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+(cid:32)
+
+− 1
+
++
+
+px
+1 − px
+
+− 1
+
+(cid:33) N
+(cid:88)
+
+n=1
+
+pynP (Z = 1 | X = 1, Y = n)
+
+1 −
+
+px
+1 − px
+
+(cid:33)
+
+pyi P (Z = 1 | X = 1, Y = r) +
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
+pys max{0, P (Z = 1 | X = 1, Y = s)
+
+1 −
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
++
+
+pE
+1s − (1 − px)
+1 − px
+
+}
+
+=⇒ Γ = py0
+
+pE
+10 − (1 − px)
+1 − px
+
+(cid:32)
+
+− p11
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
++
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+px
+1 − px
+(cid:33)
+
+− 1
+
+− 1
+
+(cid:88)
+
+n∈N \R
+(cid:32)
+
+pys max{0, P (Z = 1 | X = 1, Y = s)
+
+1 −
+
+pyn P (Z = 1 | X = 1, Y = n)
+
+(cid:33)
+
+px
+1 − px
+
++
+
+pE
+1s − (1 − px)
+1 − px
+
+}
+
++
+
++
+
+(cid:88)
+
+r∈R
+
+(cid:88)
+
+s∈S
+
++
+
++
+
+(cid:88)
+
+r∈R
+
+(cid:88)
+
+s∈S
+
+This quantity will be minimized when Eq. 57 in minimized, since px > 1 − px and probabilities are non-negative and
+N \ R ≡ {S, L}.
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+(cid:88)
+
+l∈L
+
+pyl P (Z = 1 | X = 1, Y = l) +
+
+(cid:32)
+
+pys max{0, P (Z = 1 | X = 1, Y = s)
+
+1 −
+
+(cid:32)
+
++
+
+(cid:88)
+
+s∈S
+
+px
+1 − px
+
+px
+1 − px
+(cid:33)
+
+(cid:33)
+
+− 1
+
+(cid:88)
+
+s∈S
+
+pysP (Z = 1 | X = 1, Y = s)
+
++
+
+pE
+1s − (1 − px)
+1 − px
+
+}
+
+(57)
+
+First, to minimize Γ (in the later part of this proof we explore the behavior when the following does not hold) all the
+free parameters corresponding to l will be minimized when set to 0, which the individual bounds on the free parameters
+allow, based on our assumptions for this case. Note that the max operator equal to max{0, P (Z = 1 | X = 1, Y =
+
+(cid:32)
+
+(cid:33)
+
+s)
+
+1 − px
+1−px
+
++ p′
+
+1s−(1−px)
+1−px
+
+}, which has a counterbalancing effect (similar to that described in Case IV in Category II of
+
+the upper bound proof in Theorem 1) with
+
+(cid:32)
+
+px
+1−px
+
+(cid:33)
+
+− 1
+
+pysP (Z = 1 | X = 1, Y = s).
+
+Hence the minimum of Eq. 57 is attained when each max operator is exactly P (Z = 1 | X = 1, Y = s)
+
+1 − px
+1−px
+
++
+
+p′
+1s−(1−px)
+1−px
+
+, since any deviation away from this will only increase the value of the free parameters without counterbalancing
+their increase with the max operator since it would be 0. Plugging this minimum quantity back into the equation for Γ we
+get:
+
+(cid:32)
+
+(cid:33)
+
+Γ = py0
+
+pE
+10 − (1 − px)
+1 − px
+
+− p11
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
++
+
+(cid:88)
+
+i∈R
+
+pyr
+
+pE
+11 − (1 − px)
+1 − px
+
++
+
+(cid:88)
+
+s∈S
+
+pys
+
+pE
+1s − (1 − px)
+1 − px
+
+}
+
+And following a similar calculation as the previous case, this can be simplified to
+
+Γ = pT
+
+11 + pT
+
+10 − 1 +
+
+pyl
+
+(1 − px) − pE
+1l
+1 − px
+
+(cid:88)
+
+l∈L
+
+However, the above calculations assume that the constraints on the free parameters allow them to take on values such that
+the max operators behave as we describe. Specifically, this involves P (Z = 1 | X = 1, Y = r) = p′
+, letting all the
+1r
+px
+variables corresponding to S equal p′
+1s−(1−px)
+px−(1−px) , and all the variables in L equal to 0. Based on the individual bounds on the
+free parameter described in Eq. 47, this setting of free parameter obeys these bounds. However, in the case where Eq. 46 are
+the more restrictive bounds, i.e. (cid:80)N
+i=1 pyN P (Z = 1 | X = 1, Y = i) ≥ p11 − py0, then this setting of free parameters may
+no longer hold.
+
+In this case, as before, the max operator equal to max{0, P (Z = 1 | X = 1, Y = s)
+
+1 − px
+1−px
+
+(cid:32)
+
+(cid:33)
+
++ p′
+
+1s−(1−px)
+1−px
+
+}, which
+
+has a counterbalancing effect described in Theorem 1 with
+
+(cid:32)
+
+px
+1−px
+
+(cid:33)
+
+− 1
+
+pysP (Z = 1 | X = 1, Y = s), following a similar
+
+argument for counterbalancing the increase in the representation of max operators corresponding to S as presented in Case
+I, and so, Γ will evaluate to
+
+(cid:88)
+
+Γ =
+
+P (Y = i)(P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i))
+
+i∈{0,R}
+(cid:88)
+
++
+
+P (Y = s)(P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X = 0, Y = s))
+
+s∈S
+
+= py0
+
+pE
+10 − (1 − px)
+1 − px
+
+− pT
+11
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+(cid:32)
+
+− 1
+
++
+
+px
+1 − px
+
+(cid:32)
+
+1 −
+
+px
+1 − px
+
+(cid:33)
+
+pyiP (Z = 1 | X = 1, Y = i) +
+
+(cid:88)
+
+pyr
+
+pys(P (Z = 1 | X = 1, Y = s)
+
+1 −
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
+r∈R
+pE
+1s − (1 − px)
+1 − px
+
++
+
+)
+
+n=1
+pE
+1r − (1 − px)
+1 − px
+
++
+
++
+
+(cid:88)
+
+i∈R
+
+(cid:88)
+
+s∈S
+
+(cid:33) N
+(cid:88)
+
+− 1
+
+pyn P (Z = 1 | X = 1, Y = n)
+
+And canceling out relevant terms yields
+
+= py0
+
+pE
+10 − (1 − px)
+1 − px
+
+− pT
+11
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+(cid:32)
+
+− 1
+
++
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+(cid:88)
+
+l∈L
+
++
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
++
+
+(cid:88)
+
+s∈S
+
+pys
+
+pE
+1s − (1 − px)
+1 − px
+
+pyl P (Z = 1 | X = 1, Y = l)
+
+(58)
+
+(59)
+
+l∈L pyl P (Z = 1 | X = 1, Y = l) while still respecting (cid:80)N
+
+This is an increasing function of the free parameters, hence, to minimize this quantity, we must find the minimum allowed
+value of (cid:80)
+11 − py0 and
+having the max operators behave the same way. To corresponds to setting ∀r ∈ R, set P (Z = 1 | X = 1, Y = r) = 1 to the
+highest possible value since these cancel out. Next, set ∀s ∈ S, set P (Z = 1 | X = 1, S = s) = pE
+1s−(1−px)
+px−(1−px) , since any value
+(cid:33)
++ pE
+
+greater than this loses the counterbalancing effect between max{0, P (Z = 1 | X = 1, Y = s)
+
+i=1 pyN P (Z = 1 | X = 1, Y = i) ≥ pT
+
+(cid:32)
+
+}
+
+1 − px
+1−px
+
+1s−(1−px)
+1−px
+
+(cid:32)
+
+(cid:33)
+
+and
+
+px
+1−px
+
+−1
+
+pys P (Z = 1 | X = 1, Y = s), increasing the value of Γ. This entails the following bounds on the weighted
+
+sum of the free parameters (cid:80)N
+
+i=1 pyn P (Z = 1 | X = 1, Y = n).
+
+pT
+11 − py0 ≤
+
+(cid:88)
+
+l∈L
+
+pyl P (Z = 1 | X = 1, Y = l) +
+
+pys
+
+pE
+1s − (1 − px)
+px − (1 − px)
+
+(cid:88)
+
+s∈S
+
++
+
+(cid:88)
+
+r∈R
+
+pyr
+
+Substituting the lowest possible value for (cid:80)
+
+l∈L pyl P (Z = 1 | X = 1, Y = l) into Eq. 59
+
+= py0
+
+pE
+10 − (1 − px)
+1 − px
+
+− p11
+
+px
+1 − px
+
+(cid:32)
+
+(cid:33)
+
+− 1
+
++
+
++
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)(cid:32)
+
+− 1
+
+p11 − py0 −
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
++
+
+(cid:88)
+
+s∈S
+
+(cid:88)
+
+s∈S
+
+pys
+
+pys
+
+pE
+1s − (1 − px)
+px − (1 − px)
+
+−
+
+(cid:88)
+
+r∈R
+
+pyr
+
+(cid:33)
+
+pE
+1s − (1 − px)
+1 − px
+
+And this can be simplified as
+
+= py0
+
+pE
+10 − px
+1 − px
+
++
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)(cid:32)
+
+− 1
+
+−
+
+(cid:88)
+
+s∈S
+
+pys
+
+pE
+1s − (1 − px)
+px − (1 − px)
+
+−
+
+(cid:88)
+
+r∈R
+
+pyr
+
+(cid:33)
+
++
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
++
+
+(cid:88)
+
+s∈S
+
+pys
+
+pE
+1s − (1 − px)
+1 − px
+
+=⇒ = py0
+
+pE
+10 − px
+1 − px
+
++
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − px
+1 − px
+
+And subtracting this from pT
+bounds on the free parameter with the bounds can be used to match the bounds in Theorem 2.
+
+11, and applying a similar argument as presented in Case I between the correspondence of the
+
+3. Case III: We prove the upper bound in Theorem 2 in the following case. 1 − px < pE
+
+non-empty three disjoint subsets L, R and S such that ∀l ∈ L pE
+and ∀s ∈ S 1 − px < pE
+
+1s < px. Following the argument used in previous cases, Γ will equal:
+Γ =P (Y = 0) max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)}
+
+1l ≤ min{px, 1 − px}, ∀r ∈ R pE
+
+10 < px. Partition {1, . . . N } into
+1r ≥ max{px, 1 − px},
+
++
+
++
+
+(cid:88)
+
+r∈R
+(cid:88)
+
+s∈S
+
+P (Y = i)(P (Z = 1 | X = 1, Y = r) − P (Z = 0 | X = 0, Y = r))
+
+P (Y = s) max{0, P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X = 0, Y = s)}
+
+(60)
+
+The first approach to minimize Γ is to find values of the free parameters such that ∀s ∈ S max{0, P (Z = 1 | X = 1, Y =
+s) − P (Z = 0 | X = 0, Y = s)} = 0 and similarly, every max operator corresponding to R is minimized. The following
+setting of the free parameters accomplish this:
+
+(a) ∀r ∈ R P (Z = 1 | X = 1, Y = l) = 1
+(b) ∀s ∈ S P (Z = 1 | X = 1, Y = l) = pE
+Additionally, we must choose values of the free parameters such that max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X =
+0, Y = 0)} is still 0, which from Lemma 13 will happen when
+N
+(cid:88)
+
+1s−(1−px)
+px−(1−px)
+
+pyn P (Z = 1 | X = 1, Y = n) ≤
+
+n=1
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+Since ∀l ∈ L max{0, P (Z = 1 | X = 1, Y = l) − P (Z = 0 | X = 0, Y = 0) = 0, checking whether the above equation
+holds for ∀l ∈ L P (Z = 1 | X = 1, Y = l) = 0 holds is sufficient, since any increase in the value of the free parameters
+can only increase the value P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0). This is equivalent to checking the
+following inequality:
+
+ys
+
+pE
+1s − (1 − px)
+px − (1 − px)
+
+(cid:88)
+
+s∈S
+
++
+
+(cid:88)
+
+r∈R
+
+pyr ≤
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+(61)
+
+This is inequality may or may not hold, depending on the values of P T (Z, X) and P E(Z, Y ). When it does hold, min Γ
+will have all max operators except those corresponding to R equal 0, and hence min Γ will equal:
+
+min Γ =
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+px
+
+11 − min Γ = pT
+pT
+
+11 −
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+px
+
+However, when the inequality in Eq. 61 does not hold, we must use the following approach.
+When the max operators corresponding to S, along with max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)}
+cannot simultaneously be set to 0 as above, we utilize the property that max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 |
+X = 0, Y = 0)}, ∀r ∈ R max{0, P (Z = 1 | X = 1, Y = r) − P (Z = 0 | X = 0, Y = r)} and ∀l ∈ L max{0, P (Z =
+1 | X = 1, Y = l) − P (Z = 0 | X = 0, Y = l)} counterbalance each other, i.e. increasing the value of the free parameter
+in P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i) for i ∈ S, R equally decreases the value of that free parameter
+in P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0, and a similar behavior is seen when decreasing the value of
+the free parameter. So, Γ will be minimized with respect to P (Z = 1 | X = 1, Y = r)∀r ∈ R and similarly for S when
+max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0)} ≥ 0, ∀r ∈ R max{0, P (Z = 1 | X = 1, Y =
+r) − P (Z = 0 | X = 0, Y = r)} ≥ 0 and ∀l ∈ L max{0, P (Z = 1 | X = 1, Y = l) − P (Z = 0 | X = 0, Y = l)} ≥ 0.
+And in this case Γ will equal
+
+Γ =P (Y = 0)(P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X = 0, Y = 0))
+
++
+
++
+
+(cid:88)
+
+r∈R
+(cid:88)
+
+s∈S
+
+P (Y = i)(P (Z = 1 | X = 1, Y = r) − P (Z = 0 | X = 0, Y = r))
+
+P (Y = s)(0, P (Z = 1 | X = 1, Y = s) − P (Z = 0 | X = 0, Y = s))
+
+Expressing this in terms of free parameters equals
+
+Γ = py0
+
+pE
+10 − (1 − px)
+1 − px
+
+− pT
+11
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+(cid:32)
+
+− 1
+
++
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+(cid:88)
+
+l∈L
+
+pyl P (Z = 1 | X = 1, Y = l)
+
++
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+1 − px
+
++
+
+(cid:88)
+
+s∈S
+
+pys
+
+pE
+1s − (1 − px)
+1 − px
+
+And following a similar calculation as Case II, this will be minimized when P (Z = 1 | X = 1, Y = l) = 0∀l ∈ L, and this
+simplifies to
+
+min Γ = pT
+
+11 + pT
+
+10 − 1 +
+
+pyl
+
+(1 − px) − pE
+1l
+1 − px
+
+(cid:88)
+
+l∈L
+
+So, when Eq. 61 holds, we get min Γ = (cid:80)
+A similar argument to that presented in Case I can be used to obtain the following bound:
+
+and min Γ = pT
+
+pE
+1r−(1−px)
+px
+
+11 + pT
+
+r∈R pyr
+
+10 − 1 + (cid:80)
+
+l∈L pyl
+
+(1−px)−pE
+1l
+1−px
+
+otherwise.
+
+11 − min Γ = min{pT
+pT
+
+11 −
+
+(cid:88)
+
+r∈R
+
+pyr
+
+pE
+1r − (1 − px)
+px
+
+, pT
+
+00 −
+
+pyl
+
+(1 − px) − pE
+1l
+1 − px
+
+}
+
+(cid:88)
+
+l∈L
+
+4. Case IV: Next, we consider the case where for all i ∈ {0, . . . , N }, 1 − px < pE
+
+1i < px. Then, from Lemma 26, for all max
+10 − 1 ≥ 0. Here, by a similar argument as Theorem 1, if
+10 − 1 ≥ 0, then all max operators will cancel out the values for the free parameter, and any shift from this will be
+
+operators to be greater than or equal to 0 simultaneously, pT
+pT
+11 + pT
+greater that pT
+
+10 − 1 since max operators will not be able to offset the increase in each other.
+
+11 + pT
+
+11 + pT
+
+11 + pT
+
+5. Case V: Next, consider the case where pT
+
+10 − 1 < 0. Here all max operators cannot simultaneously be greater than
+or equal to 0 from 26, and we prove that there is always a valid setting of the free parameters such that all max operators
+evaluate to 0.
+When P (Z = 1 | X = 1, Y = i) = pE
+1i−(1−px)
+px−(1−px) , then the max{0, P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X =
+0, Y = i} = 0. However, we still need to examine the behavior of max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 | X =
+0, Y = 0} at this value of the free parameters. Using a proof by contra positive, we can show that pT
+10 − 1 < 0 =⇒
+(cid:80)N
+1i−(1−px)
+px−(1−px) , all the max operators
+
+px−(1−px) + p11, implying this setting of the free parameters pE
+
+pE
+1i−(1−px)
+px−(1−px) <
+
+py0 ((1−px)−pE
+
+11 + pT
+
+i=1 pyi
+
+10)
+
+to evaluate to 0.
+Since Lemma 19 shows the upper bound is greater than py0 ((1−px)−pE
+10)
+px−(1−px) + p11, only the lower bound needs to be checked
+against the presented value of the free parameters. However, even if the lower bound on the weighted sum of the free
+p′
+parameters is greater than (cid:80)N
+1i−(1−px)
+px−(1−px) , this still allows for max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 0 |
+X = 0, Y = 0)} = 0 from Lemma 16, and the remaining max operators are will continue to evaluate to 0 since they are
+decreasing functions of the max operators. This demonstrates the bounds on the P N S will equal min{pT
+00} in this case.
+
+i=1 pyi
+
+11, pT
+
+B.2 Proof for Lower Bound in Theorem 2
+
+As seen in Lemma 33, when pT
+
+11 − pT
+
+10 ≥ 0, for all i ∈ {0, . . . , N }, the following conditions can simultaneously hold:
+
+max{0, P (Z = 1 | X = 1, Y = 1) − P (Z = 1 | X = 0, Y = 1)} = P (Z = 1 | X = 1, Y = i) − P (Z = 1 | X = 0, Y = i)
+(62)
+
+In this case, p11 − p10 will be the minimum since
+
+P (Y )(P (Z = 1 | X = 1, Y ) − P (Z = 1 | X = 0, Y )) = pT
+
+11 − pT
+10
+
+(cid:88)
+
+Y
+
+and any change to this requires changing the value of the free parameters such that a max operator evaluates to 0. However,
+similar to the argument present in the proof for the lower bound of Theorem 1, this change to the value of the free parameter
+results in the loss of the the counterbalancing effect that max operators have on each other, leading to an increase in the overall
+value of ∆.
+
+Next, consider the case where pT
+
+10 < 0, then all ∀i ∈ {0, . . . , N } Eq. 62 cannot simultaneously hold, as seen in Lemma
+33. Here we show that a setting of the free parameters such that all max operators in equal 0 will be a valid solution to the
+system of equations. For i ∈ {1, . . . , N }, each of their corresponding max operators will equal 0 when P (Z = 1 | X = 1, Y =
+i) = pE
+1i, as seen from Lemma 12. As seen in Lemma 31, the individual bounds on P (Z = 1 | X = 1, Y = 1) allow this point
+to exist. Next, we check whether setting of P (Z = 1 | X = 1, Y = i) = pE
+
+1i makes the following hold
+
+11 − pT
+
+max{0, P (Z = 1 | X = 1, Y = 0) − P (Z = 1 | X = 1, Y = 0)} = 0
+
+(63)
+
+From Lemma 27, this is equivalent to checking (cid:80)N
+11 − pE
+pT
+However, this still requires us to ensure (cid:80)N
+
+i=1 pyipE
+
+10py0 . Hence for this setting of the free parameters, Eq. 63 would equal 0.
+
+whether this is less than both the upper bounds on the weighted sum of the free parameter stated in Lemma 8, i.e.
+
+1i is a valid setting for the free parameter, and therefore we must check
+
+i=1 pyipE
+
+1i ≥ p11 − pE
+
+10py0 . And since p11 − p10 < 0, (cid:80)N
+
+i=1 pyipE
+
+1i >
+
+N
+(cid:88)
+
+i=1
+
+pyipE
+
+1i ≤ min
+
+(cid:34)
+
+pT
+11
+(1−px)py0 +pT
+11px−pE
+px
+
+10py0
+
+(cid:35)
+
+(64)
+
+When either of the values are the upper bound, and are less than (cid:80)N
+
+i=1 pyi P (Z = 1 | X = 1, Y = i) = pT
+
+1i, Lemma 28 shows that there exists a setting
+for the free parameters such that max{P (Z = 1 | X = 1, Y = 0) − P (Z = 1 | X = 0, Y = 0) = 0. So, we set
+(cid:80)N
+10py0 < (cid:80)N
+1ipyi, this
+means the values of the individual free parameters can be lowered even more than pE
+1i, allowing the remaining max operators
+∀i ∈ {1, . . . , N } max{P (Z = 1 | X = 1, Y = i) − P (Z = 1 | X = 0, Y = i) to still equal 0 as well since they are
+increasing functions of P (Z = 1 | X = 1, Y = i). This shows that in all cases, a setting of the free parameters such that all
+max operators evaluate to 0 will be always be allowed.
+10 ≥ 0, ∆ = pT
+
+10 and 0 otherwise. This shows ∆ = max{0, pT
+
+10py0. Since p11 − p10 < 0, then pT
+
+So, when pT
+
+i=1 pyipE
+
+11 − pE
+
+11 − pE
+
+11 − pT
+
+11 − pT
+
+11 − pT
+
+i=1 pE
+
+10}.
+
+C Proof of Theorem 3
+
+Theorem 3 provides bounds on P N S for arbitrary cardinality of the support of Y , while parameterizing the difference in
+treatment assignment mechanism of X by δX . To prove Theorem 3, we first state lemmas we utilize in the proof. Proofs can be
+found in (§G).
+
+Lemma 36. Let X and Z be binary random variables, and let Y be a discrete random variable taking on values in 0, . . . , N .
+Assume access to two distributions P T (Z, X) and P E(Z, Y ), where P T (Y ) = P E(Y ), P E(X) = P T (X) + δX , X ⊥⊥ Y in
+both P E and P T and P T (Z = 1 | X, Y ) = P E(Z = 1 | X, Y ). The conditional distributions P (Z | X, Y ) can be expressed
+as a system of equations with free parameters P (Z = 1 | X = 1, Y = i) for i ∈ {1, . . . , N } as
+
+P (Z = 1 | X = 0, Y = 0) =
+
+px + δX
+1 − px − δX
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P T (Z = 1 | X = 1, Y = n) +
+
+10py0 − pT
+pE
+(1 − px − δX )py0
+
+11(px + δX )
+
+P (Z = 1 | X = 1, Y = 0) =
+
+pT
+11
+py0
+
+−
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P T (Z = 1 | X = 1, Y = n)
+
+P (Z = 1 | X = 0, Y = 1) =
+
+P (Z = 1 | X = 0, Y = 2) =
+
+pE
+11
+1 − px − δX
+pE
+12
+1 − px − δX
+
+−
+
+−
+
+px + δX
+1 − px − δX
+px + δX
+1 − px − δX
+
+P T (Z = 1 | X = 1, Y = 1)
+
+P T (Z = 1 | X = 1, Y = 2)
+
+...
+
+P (Z = 1 | X = 0, Y = N ) =
+
+px + δX
+1 − px − δX
+Where P T (X = 1) is denoted as px , P T (Y = n) = P E(Y = n) is denoted as pyn, P T (Z = 1 | X = 1) is denoted as pT
+11,
+P T (Z = 1 | X = 0) is denoted as pT
+Lemma 37. To ensure the solution to the system of equations in Lemma 36 form coherent probabilities, the following bounds
+on the free parameters must hold
+
+10, and P T (Z = 1 | Y = n) is denoted as pE
+
+P T (Z = 1 | X = 1, Y = N )
+
+1n for n ∈ {0, . . . , N }.
+
+pE
+1N
+1 − px − δX
+
+−
+
+max
+
+(cid:34) pT
+
+10py0
+
+11(px+δX )−pE
+px+δX
+pT
+11 − py0
+
+(cid:35)
+
+≤
+
+N
+(cid:88)
+
+n=1
+
+ynP T (Z = 1 | X = 1, Y = n) ≤ min
+
+(cid:34) (1−px−δX )py0 +pT
+px+δX
+pT
+11
+
+11(px+δX )−pE
+
+10y0
+
+And for each i ∈ {1, . . . , N }, we the bounds on the following free parameters P (Z = 1 | X = 1, Y = i)
+
+(cid:34)
+
+max
+
+(cid:35)
+
+0
+pE
+1i−(1−px−δX )
+px+δX
+
+≤ P T (Z = 1 | X = 1, Y = i) ≤ min
+
+(cid:35)
+
+(cid:34)
+
+1
+pE
+1i
+px+δX
+
+(cid:35)
+
+(65)
+
+(66)
+
+Lemma 37 can be proved using a similar approach as Lemma 8. Similar lemmas to Lemma 9 through Lemma 35 can be
+derived for this case, but px will be replaced with px + δX and 1 − px with 1 − px − δX . Then, a similar approach to the one
+utilized in Theorem 2, combined with the identity (cid:80)N
+1jpyj − pT
+11(px + δX ) = 0 (proved in Lemma
+36) can be used to prove this Theorem. The cases to consider will be when px + δX = 1 − px − δX , px + δX > 1 − px − δX
+and px + δX < 1 − px − δX . Additionally, the indicators and bounds will be updated as well, replacing px + δX and 1 − px
+with 1 − px − δX .
+
+10(1 − px − δX ) − pT
+
+j=0 pE
+
+D Proof of Theorem 4
+
+Theorem 4 provides bounds for the causal graph in Fig. 3(a), given access to a joint distribution over P (Z, X < Y, C).
+
+Proof.
+We start by expressing bounds on the joint probability P (Zx = 1, Zx′ = 0, C, Y ) as
+
+max
+
+(cid:20)
+
+(cid:21)
+0
+P (Zx = 1, C, Y ) − P (Zx′ = 1, C, Y )
+
+≤ P (Zx = 1, Zx′ = 0, C, Y ) ≤ min
+
+(cid:21)
+(cid:20) P (Zx = 1, C, Y )
+P (Zx′ = 0, C, Y )
+
+Where the upper bound follows from P (A, B) ≤ min{P (A), P (B)} for random variables A and B. The lower bound is
+proved below.
+
+P (Zx = 1, C, Y ) − P (Zx′ = 1, C, Y ) = P (Zx = 1, Zx′ = 0, C, Y ) + P (Zx = 1, Zx′ = 1, C, Y )
+− P (Zx = 1, Zx′ = 1, C, Y ) − P (Zx = 0, Zx′ = 1, C, Y )
+= P (Zx = 1, Zx′ = 0, C, Y ) − P (Zx = 0, Zx′ = 1, C, Y )
+
+And since probabilities are non-negative, we obtain the lower bound
+(cid:21)
+
+(cid:20)
+0
+P (Zx = 1, C, Y ) − P (Zx′ = 1, C, Y )
+
+max
+
+≤ P (Zx = 1, Zx′ = 0, C, Y )
+
+Next, the P N S is obtained by marginalizing out C and Y , giving a lower bound of
+
+max
+
+(cid:20)
+0
+P (Zx = 1, C, Y ) − P (Zx′ = 1, C, Y )
+
+(cid:21)
+
+(cid:88)
+
+C,Y
+
+≤ P (Zx = 1, Zx′ = 0)
+
+And the upper bound is given as
+
+P (Zx = 1, Zx′ = 0) ≤
+
+min
+
+(cid:20) P (Zx = 1, C, Y )
+P (Zx′ = 0, C, Y )
+
+(cid:21)
+
+(cid:88)
+
+C,Y
+
+Since Zx ⊥⊥ X, an application of consistency allows the above bounds to be re-written as
+
+P (C, Y ) max
+
+(cid:20)
+
+(cid:21)
+0
+P (Z = 1 | X = 1, C, Y ) − P (Z = 1 | X = 0, C, Y )
+
+≤ P (Zx = 1, Zx′ = 0)
+
+(cid:88)
+
+C,Y
+
+P (Zx = 1, Zx′ = 0) ≤
+
+P (C, Y ) min
+
+(cid:20)P (Z = 1 | X = 1, C, Y )
+P (Z = 0 | X = 0, C, Y )
+
+(cid:21)
+
+(cid:88)
+
+C,Y
+
+Exploiting the independence of C and Y , the lower bound is written as
+
+(cid:88)
+
+C
+
+P (C)∆C ≤P (Zx = 1, Zx′ = 0)
+
+Where
+
+∆C =
+
+(cid:88)
+
+Y
+
+P (Y ) max{0, P (Z = 1 | X = 1, C, Y ) − P (Z = 1 | X = 0, C, Y )}
+
+Next, the minimum operator in the upper bound can be re-written as
+(cid:20)P (Z = 1 | X = 1, C, Y )
+P (Z = 0 | X = 0, C, Y )
+
+min
+
+(cid:21)
+
+= P (Z = 1 | X = 1, C, Y ) − max
+
+(cid:21)
+(cid:20)
+0
+P (Z = 1 | X = 1, C, Y ) − P (Z = 0 | X = 0, C, Y )
+
+Consequently, the upper bound is expressed as
+
+P (Zx = 1, Zx′ = 0) ≤ P (Z = 1 | X = 1) −
+
+(cid:88)
+
+C
+
+P (C)ΓC
+
+Where
+
+(cid:88)
+
+ΓC =
+
+P (Y ) max{0, P (Z = 1 | X = 1, C, Y ) − P (Z = 0 | X = 0, C, Y )}
+
+This concludes the proof of Theorem 4.
+
+E Proof of Lemma 5
+
+Proof.
+Lemma 5 provides the conditions under which the bounds in Theorem 4 are tighter than the bounds provided in (Dawid, Musio,
+and Murtas 2017). The bounds on PNS in Equation 2 are given as
+
+∆ ≤ P N S ≤ P (Z = 1 | X = 1) − Γ
+
+(67)
+
+Where
+
+∆ =
+
+Γ =
+
+(cid:88)
+
+c
+(cid:88)
+
+c
+
+P(C = c) max{0, P(Z = 1 | X = 1, C = c) − P(Z = 1 | X = 0, C = c)}
+
+P(C = c) max{0, P(Z = 1 | X = 1, C = c) − P(Z = 0 | X = 0, C = c)}
+
+And the bounds in Lemma 5 are given as
+
+(cid:88)
+
+C
+
+P (C)∆C ≤ P N S ≤ P (Z = 1 | X = 1) −
+
+(cid:88)
+
+C
+
+P (C)ΓC
+
+(68)
+
+Where
+
+∆C =
+
+ΓC =
+
+(cid:88)
+
+y
+(cid:88)
+
+y
+
+P(Y = y) max{0, P(Z = 1 | X = 1, Y = y, C) − P(Z = 1 | X = 0, Y = y, C)}
+
+P(Y = y) max{0, P(Z = 1 | X = 1, Y = y, C) − P(Z = 0 | X = 0, Y = y, C)}
+
+Starting with the lower bound, note that both lower bounds consist of an identical weighted sum P (C), hence understanding
+the difference of these bounds comes down to examining max{0, P(Z = 1 | X = 1, C = c) − P(Z = 1 | X = 0, C = c)}
+versus (cid:80)
+y
+
+P(Y = y) max{0, P(Z = 1 | X = 1, Y = y, C) − P(Z = 1 | X = 0, Y = y, C)}. First, note that
+
+P(Z = 1 | X = 1, C = c) − P(Z = 1 | X = 0, C = c) =
+(cid:88)
+
+(cid:17)
+P(Z = 1 | X = 1, Y = y, C) − P(Z = 1 | X = 0, Y = y, C)
+
+P (Y = y)
+
+(cid:16)
+
+y
+
+Consequently, max{0, P(Z = 1 | X = 1, C = c) − P(Z = 1 | X = 0, C = c)} can be written as
+
+max{0, P(Z = 1 | X = 1, C = c) − P(Z = 1 | X = 0, C = c)}
+
+(cid:40)
+
+= max
+
+0,
+
+(cid:88)
+
+y
+
+(cid:16)
+
+P (Y = y)
+
+(cid:17)
+P(Z = 1 | X = 1, Y = y, C) − P(Z = 1 | X = 0, Y = y, C)
+
+(cid:41)
+
+And (cid:80)
+y
+
+P(Y = y) max{0, P(Z = 1 | X = 1, Y = y, C) − P(Z = 1 | X = 0, Y = y, C)} is written as
+(cid:17)
+}
+
+P(Z = 1 | X = 1, Y = y, C) − P(Z = 1 | X = 0, Y = y, C)
+
+(cid:16)
+max{0, P(Y = y)
+
+(cid:88)
+
+y
+
+Since the maximum of a sum is less than or equal to the sum of maximums, the lower bound in Equation 68 will be greater
+than or equal to the lower bound in Equation 67. And when for any C, if for some values of Y , P(Z = 1 | X = 1, Y = y, C)
+is greater than P(Z = 1 | X = 0, Y = y, C), and form some values P(Z = 1 | X = 1, Y = y, C) is less than P(Z = 1 | X =
+0, Y = y, C), than the lower bound in Equation 68 will be greater than the lower bound in 67.
+
+A similar approach can be utilized for the upper bound as well, thereby completing the proof.
+
+Proof.
+Theorem 6 provides bounds on the PNS when the treatment assignment mechanism for X in the external dataset is confounded
+by a set of observed covariates C or arbitrary dimensionality, and the target dataset records this C as well.
+
+F Proof of Theorem 6
+
+Lemma 38. Let X and Z be binary random variables, and let C and Y be discrete random variables taking values in
+{0, . . . , M } and {0, . . . , N } respectively. Let δC
+X represent the link between the treatment assignment mechaism between the
+P E and P T as follows
+
+P E(X = 1 | C) = P T (X = 1) + δC
+X
+For notational ease, we introduce the following terms. Let P T (Z = 1 | X = j, C = i) be denoted by pT 1ji and let P E(Z =
+1 | Y = j, C = i) be denoted as pE
+
+1ji. Given distributions P T (Z, X, C) and P E(Z, Y, C) obeying the following contraints
+
+pT
+10i =
+
+pT
+11i =
+
+N
+(cid:88)
+
+j=0
+
+N
+(cid:88)
+
+j=0
+
+P (Z = 1 | X = 0, Y = j, C = i)pyj
+
+P (Z = 1 | X = 1, Y = j, C = i)pyj
+
+10i = P (Z = 1 | X = 0, Y = 0, C = i)(1 − px − δi
+pE
+X )
++ P (Z = 1 | X = 1, Y = 0, C = i)(px + δi
+X )
+
+...
+
+1N i = P (Z = 1 | X = 0, Y = N, C = i)(1 − px − δi
+pE
+X )
++ P (Z = 1 | X = 1, Y = N, C = i)(px + δi
+X )
+
+Then this system of equations can be expressed in terms of free parameters P (Z = 1 | X = 1, Y = i, C) for i ∈ {1, . . . , N }
+and all C as
+
+P(Z = 1 | X = 0, Y = 0, C) =
+
+P(Z = 1 | X = 1, Y = 0, C) =
+
+px + δC
+X
+1 − px − δC
+X
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n, C) +
+
+pT
+11C
+py0
+
+−
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n, C)
+
+10C py0 − pT
+pE
+
+11C (px + δC
+X )
+X )py0
+
+(1 − px − δC
+
+P(Z = 1 | X = 0, Y = 1, C) =
+
+P(Z = 1 | X = 0, Y = 2, C) =
+
+pE
+11C
+1 − px − δC
+X
+pE
+12C
+1 − px − δC
+X
+
+−
+
+−
+
+px + δC
+X
+1 − px − δC
+X
+px + δC
+X
+1 − px − δC
+X
+
+P(Z = 1 | X = 1, Y = 1, C)
+
+P(Z = 1 | X = 1, Y = 2, C)
+
+...
+
+P(Z = 1 | X = 0, Y = N, C) =
+
+pE
+1N
+1 − px − δC
+X
+
+−
+
+px + δC
+X
+1 − px − δC
+X
+
+P(Z = 1 | X = 1, Y = N, C)
+
+To prove this Lemma, we apply a similar proof to the proof for Theorem 3, but apply it for every level of C, noting that in the
+case we consider, the minimum of the sum of independently varying quantities equals the sum of the minimum, and a similar
+result holds for the maximum. Specifically, following a similar proof as Theorem 3,
+
+(cid:88)
+
+Y
+
+P (Y ) max{0, P (Z = 1 | X = 1, C, Y )−P (Z = 1 | X = 0, C, Y )} = max{0, P (Z = 1 | X = 1, C)−P (Z = 1 | X = 0, C)}
+
+Similarly, the upper bound in Theorem 4 can be similarly derived by writing the upper bound as
+
+(cid:88)
+
+C
+
+P (C)(P (Z = 1 | X = 1, C) − ΓC)
+
+And then applying a similar proof used in Theorem 2 for each level of C to obtain the upper bound.
+
+G Proofs For Auxiliary Lemmas
+
+Proof for Lemma 7. This lemma is proved using mathematical induction performed on the the Reduced Row Echelon Form
+(RREF) of the matrix representation of the system of equations that in Equation X that impose constraints on P (Z | X, Y )
+using P T (Z, X) and P E(Z, Y ).
+
+Using the invariances defined in Section X, we obtain the following equations for P (Z = 1 | X, Y ) in terms of P T (Z, X)
+and P T (Z, Y ). For ease of notation, we introduce the following terms. P T (X = 1) is denoted as px , P T (Y = n) is denoted
+10, and P E(Z = 1 | Y = n) is denoted as
+11, P T (Z = 1 | X = 0) is denoted as pT
+as pyn, P T (Z = 1 | X = 1) is denoted as pT
+pE
+1n for n ∈ {0, . . . , N }.
+
+pT
+10 =
+
+pT
+11 =
+
+N
+(cid:88)
+
+i=0
+
+N
+(cid:88)
+
+n=0
+
+P (Z = 1 | X = 0, Y = n)pyn
+
+P (Z = 1 | X = 1, Y = n)pyn
+
+pE
+10 = P (Z = 1 | X = 0, Y = 0)(1 − px) + P (Z = 1 | X = 1, Y = 0)px
+...
+
+pE
+1N = P (Z = 1 | X = 0, Y = N )(1 − px) + P (Z = 1 | X = 1, Y = N )px
+
+The above equations can be represented in matrix form Ax = b as
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A =
+
+b =
+
+py0
+0
+1 − px
+0
+.
+.
+.
+0
+0
+
+0
+py0
+px
+0
+. . .
+0
+0
+
+py1
+0
+
+0
+1 − px
+
+. . .
+. . .
+
+0
+py1
+0
+px
+
+0
+0
+
+. . .
+
+. . .
+
+. . .
+. . .
+
+0
+
+pyN −1
+0
+
+0
+0
+
+0
+pyN −1
+0
+0
+
+pyN
+0
+
+0
+0
+
+1 − px
+0
+
+px
+0
+
+0
+1 − px
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+pyN
+0
+0
+.
+.
+.
+0
+px
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+x =
+
+pT
+10
+pT
+11
+pE
+10
+pE
+11
+.
+.
+.
+
+pE
+12
+
+pE
+1(N −1)
+pE
+1N
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+P (Z = 1 | X = 0, Y = 0)
+P (Z = 1 | X = 1, Y = 0)
+P (Z = 1 | X = 0, Y = 1)
+P (Z = 1 | X = 1, Y = 1)
+.
+.
+.
+P (Z = 1 | X = 0, Y = N )
+P (Z = 1 | X = 1, Y = N )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Next, denote the augmented matrix A|b as
+py1
+0
+0
+1 − px
+
+0
+py1
+0
+px
+
+. . .
+. . .
+. . .
+. . .
+
+pyN −1
+0
+0
+0
+
+0
+pyN −1
+0
+0
+
+pyN
+0
+0
+0
+
+py0
+0
+1 − px
+0
+...
+0
+0
+
+
+
+
+
+
+
+
+
+
+
+
+0
+py0
+px
+0
+. . .
+0
+0
+
+pT
+10
+pT
+11
+pE
+10
+pE
+11
+...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+pyN
+0
+0
+...
+0
+px
+
+1 − px
+0
+The augmented matrix A|b when expressed in RREF will express the system of equations in terms of basic variables and free
+
+0
+1 − px
+
+. . .
+. . .
+
+pE
+1(N −1)
+pE
+1N
+
+px
+0
+
+0
+0
+
+0
+
+parameters. Then, this can be compared to the system of equations presented in the Lemma to complete the proof.
+
+First, we utilize mathematical induction to provide a general form for the RREF of A|b for any N . Formally, let P (N ) denote
+
+the following proposition.
+Proposition: Let P (N ) denote the proposition that when X and Z are binary, and Y has support in {0, . . . , N }, then A|b will
+be a matrix with N + 3 rows and 2(N + 1) + 1 columns. The following steps when executed will put A|b in RREF, where Ri
+denotes the i-th row of A|b
+
+1.
+
+2.
+
+3.
+
+R1 = R1/py0
+R3 = R3 − (1 − px)R1
+
+R2 = R2/py0
+R3 = R3 − pxR2
+
+R3 = R3/(−
+
+(1 − px)py1
+py0
+
+)
+
+R1 = R1 −
+
+py1
+py0
+
+R3
+
+R4 = R4 − (1 − px)R3
+
+4. If N ≥ 2, then loop through the following steps for i ∈ {2, . . . , N }:
+
+R2+i = R2+i/(−
+
+R1+i = R1+i −
+
+)
+
+pyi(1 − px)
+pyi−1
+pyi
+pyi−1
+
+R2+i
+
+R3+i = R3+i − (1 − px)R2+i
+
+(69)
+(70)
+
+(71)
+(72)
+
+(73)
+
+(74)
+
+(75)
+
+(76)
+
+(77)
+
+(78)
+
+And the corresponding matrix will evaluate to
+
+0
+
+0 1
+
+(1−px)py0
+py1
+py0
+px
+1−px
+
+
+1 0 0 − pxpy1
+
+
+
+
+
+
+
+
+
+
+
+
+
+0 0
+...
+0 0
+
+0
+
+1
+
+0
+
+0 0
+
+0
+
+0
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+
+0 −
+
+0
+
+0
+
+0
+
+0
+
+pxpyN −1
+(1−px)py0
+pyN −1
+py0
+0
+
+0
+
+0
+
+0
+
+0
+. . .
+1
+
+0
+
+0 − pxpyN
+
+(1−px)py0
+pyN
+py0
+0
+
+11px
+
+10py0 −pT
+pE
+(1−px)py0
+pT
+11
+py0
+pE
+11
+1−px
+
+px
+1−px
+
+0
+
+pT
+10(1−px)+pT
+
+11px−(cid:80)N −1
+
+i=0 pE
+
+1ipyi
+
+pyN (1−px)
+
+10(1−px)−pT
+
+11px
+
+(cid:80)N
+
+i=0 pE
+
+1ipyi −pT
+pyN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(79)
+
+Base Case: Starting with the base case of N = 1, i.e. Y is binary. For the case when Y is binary, we can enumerate the
+following equations for the P (Z, X, Y )
+
+P(Z = 1 | X = 1) = P(Z = 1 | X = 1, Y = 1)P(Y = 1) + P(Z = 1 | X = 1, Y = 0)P(Y = 0)
+P(Z = 1 | X = 0) = P(Z = 1 | X = 0, Y = 1)P(Y = 1) + P(Z = 1 | X = 0, Y = 0)P(Y = 0)
+P(Z = 1 | Y = 1) = P(Z = 1 | X = 0, Y = 1)P(X = 0) + P(Z = 1 | X = 1, Y = 1)P(X = 1)
+P(Z = 1 | Y = 0) = P(Z = 1 | X = 0, Y = 0)P(X = 0) + P(Z = 1 | X = 1, Y = 0)P(X = 1)
+
+And the augmented matrix A|b will be written as
+
+A|b =
+
+
+
+
+
+
+
+py0
+0
+1 − px
+0
+
+0
+py0
+px
+0
+
+py1
+0
+0
+1 − px
+
+0
+py1
+0
+px
+
+
+
+
+
+
+
+pT
+10
+pT
+11
+pE
+10
+pE
+11
+
+x =
+
+Executing the row operations on A|b gives the following matrix
+
+
+
+
+
+
+P (Z = 1 | X = 0, Y = 0)
+P (Z = 1 | X = 1, Y = 0)
+P (Z = 1 | X = 0, Y = 1)
+P (Z = 1 | X = 1, Y = 1)
+
+
+
+
+
+
+0 0 − pxpy1
+
+
+1
+
+0
+1 0
+
+
+
+0 0 1
+0
+0 0
+
+(1−px)py0
+py1
+py0
+px
+1−px
+0
+
+11px
+
+10py0 −pT
+pE
+(1−px)py0
+pT
+11
+py0
+a
+b
+
+
+
+
+
+
+
+
+Where a is:
+
+And b is
+
+a =
+
+10(1 − px) + pT
+pT
+
+11px − pE
+
+10py0
+
+py1(1 − px)
+
+b =
+
+−pT
+
+10(1 − px) − pT
+
+10py0 + pE
+
+11py1
+
+11px + pE
+py1
+
+This proves that the A|b for N = 1 satisfies P (1), proving the base case.
+
+Induction Step: Next, we prove that if P (N − 1) holds, then P (N ) holds as well. For P (N ), A|b will look like
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+py0
+0
+1 − px
+0
+.
+.
+.
+0
+0
+
+0
+py0
+px
+0
+. . .
+0
+0
+
+py1
+0
+
+0
+1 − px
+
+0
+0
+
+0
+py1
+0
+px
+
+0
+0
+
+. . .
+
+. . .
+
+. . .
+. . .
+
+. . .
+. . .
+
+pyN −1
+0
+
+0
+0
+
+0
+pyN −1
+0
+0
+
+yN
+0
+
+0
+0
+
+0
+pyN
+0
+0
+
+pT
+10
+pT
+11
+pE
+10
+pE
+11
+.
+.
+.
+
+1 − px
+0
+
+px
+0
+
+0
+1 − px
+
+0
+px
+
+pE
+1(N −1)
+pE
+1N
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Now, since we assume P (N − 1) holds, the submatrix of A|b corresponding to P (N − 1) can be put into the assumed RREF
+form. However, since we added two extra columns to A | b the P (N ) compared to a | b for P (N − 1), all of the row operations
+
+performed on the submatrix corresponding to P (N − 1) must be performed on these added columns as well. None of these row
+operations apply to the final row, since it is newly added and therefore not touched by RREF computations for P (N − 1).
+
+The row operations must be applied to the newly added columns, and we calculate these now. We use cN to denote the matrix
+
+of the newly added columns, and track the results on cN of the row operations applied to P (N − 1).
+Applying the row operations in 1 to cN
+
+cN =
+
+
+
+pyN
+py0
+
+0
+
+− (1−px)pyN
+
+
+py0
+
+0
+
+
+...
+
+
+1 − px
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+pyN
+0
+0
+
+px
+
+cN =
+
+
+
+pyN
+py0
+
+0
+
+
+− (1−x)pyN
+
+py0
+
+
+0
+
+...
+
+
+1 − px
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+pyN
+py0
+− pxpyN
+py0
+0
+
+px
+
+Next, applying the operations in 2 to cN
+
+Next, applying the operations in 3 to cN
+
+cN =
+
+
+
+0
+
+0
+
+
+pyN
+
+py1
+
+− pyN (1−px)
+
+
+py1
+
+...
+
+
+1 − px
+
+Next, applying the operations in 4 to cN for i = 2, we get
+
+cN =
+
+
+
+0
+0
+
+
+
+0
+
+pyN
+
+
+py2
+
+− (1−px)pyN
+
+py2
+
+
+0
+
+
+...
+
+1 − px
+
+− pxpyN
+(1−px)py0
+pyN
+py0
+pxpyN
+(1−px)py1
+− pxpyN
+py1
+
+px
+
+− pxpyN
+(1−px)py0
+pyN
+py0
+0
+pxpyN
+(1−px)py2
+− pxpyN
+py2
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+px
+
+As we repeat the row operations in 4 for i ∈ {3, . . . , N − 1}, cN will ultimately become
+
+cN =
+
+
+
+0
+
+0
+
+
+0
+
+
+0
+
+
+...
+
+
+
+0
+
+pyN
+
+
+pyN −1
+
+− (1−px)pyN
+
+
+pyN −1
+1 − px
+
+− xpyN
+(1−px)py0
+pyN
+py0
+0
+0
+
+0
+pxpyN
+pyN −1 (1−px)
+− pxpyN
+pyN −1
+px
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Consequently, the matrix A | b corresponding to P (N ) will contain a submatrix corresponding to the RREF in P (N − 1),
+
+with the resulting cN and extra row appended. Formally, it will look like the matrix presented below.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1
+
+0
+
+0
+
+.
+.
+.
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0 −
+
+0
+
+1
+
+0
+
+0
+
+0
+
+px py1
+(1−px)py0
+py1
+py0
+px
+1−px
+
+0
+
+0
+
+0
+
+. . .
+
+0 −
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+
+0
+
+0
+
+1
+
+0
+
+0
+
+px pyN −1
+(1−px )py0
+pyN −1
+py0
+0
+
+0
+
+0
+
+0
+
+−
+
+pxpyN
+(1−px)py0
+pyN
+py0
+0
+
+.
+
+.
+
+.
+pyN
+pyN −1
+(1−px)pyN
+pyN −1
+1 − x
+
+px
+1−px
+
+0
+
+0
+
+−
+
+pxpyN
+
+pyN −1
+
+(1−px )
+
+−
+
+pxpyN
+pyN −1
+x
+
+11px
+
+pE
+−pT
+10py0
+(1−px )py0
+pT
+11
+py0
+pE
+11
+1−px
+.
+.
+.
+
+10(1−px)+pT
+pT
+
+(cid:80)N −1
+i=0
+
+pE
+1ipyi
+
+pyN −1
+
+pE
+1ipyi
+
+11px−(cid:80)N −2
+i=0
+(1−px)
+10(1−px)−pT
+
+11px
+
+−pT
+pyN −1
+pE
+1N
+
+This matrix is not in RREF yet, so we perform the following row operations to put the matrix in RREF
+
+RN +2 =
+
+RN +1 = RN +1 −
+
+RN +2
+− (1−px)pyN
+pyN −1
+pyN
+pyN −1
+
+RN +2
+
+RN +3 = RN +3 − (1 − px)RN +2
+
+Resulting in the following matrix:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1
+
+0
+
+0
+
+.
+.
+.
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0 −
+
+0
+
+1
+
+0
+
+0
+
+0
+
+pxpy1
+(1−px )py0
+py1
+py0
+px
+1−px
+
+0
+
+0
+
+0
+
+. . .
+
+0 −
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+
+0
+
+0
+
+1
+
+0
+
+0
+
+px pyN −1
+(1−px)py0
+pyN −1
+py0
+0
+
+px
+1−px
+
+0
+
+0
+
+0
+
+0
+
+0
+
+. .
+
+.
+
+0
+
+1
+
+0
+
+−
+
+[xpyN
+(1−px )py0
+pyN
+py0
+0
+
+0
+
+px
+1−px
+
+0
+
+11px
+
+pE
+−pT
+10py0
+(1−px)py0
+pT
+11
+py0
+pE
+11
+1−px
+.
+.
+.
+
+pE
+
+10(1−px )+pT
+pT
+pyN
+
+pT
+10(1−px)+pT
+
+1(N −1)
+1−px
+11 px−(cid:80)N −1
+i=0
+(1−px)
+11px−(cid:80)N −1
+i=0
+pyN
+
+pE
+1ipyi
+
+pE
+1ipyi
+
+pE
+1N −
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(80)
+
+(81)
+
+And by comparison, this matrix is equal to the matrix stated in our proposition. So, if P (N − 1), then P (N ) holds, and this
+
+concludes the induction proof.
+
+Finally, since P (Z, X) and P (Z, Y ) are marginalized distributions obtained from marginalizing out Y and X from
+
+P (Z, X, Y ) respectively, they must agree on P (Z). This gives the identity
+
+11px + pT
+pT
+
+10(1 − px) −
+
+N
+(cid:88)
+
+i=0
+
+pE
+1ipyi = 0
+
+And substituting this identity into the RREF form of A|b, we obtain
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1
+
+0
+
+0
+
+.
+.
+.
+
+0
+
+0
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+0
+
+0 −
+
+0
+
+1
+
+0
+
+0
+0
+
+px py1
+(1−px)py0
+py1
+py0
+px
+1−px
+
+0
+
+0
+0
+
+. . .
+
+0 −
+
+. . .
+
+. . .
+
+. . .
+
+. . .
+. . .
+
+0
+
+0
+
+1
+
+0
+0
+
+pxpyN −1
+(1−px )py0
+pyN −1
+py0
+0
+
+px
+1−px
+
+0
+0
+
+0
+
+0
+
+0
+
+.
+
+.
+
+.
+
+0
+
+1
+0
+
+−
+
+px pyN
+(1−px )py0
+pyN
+py0
+0
+
+0
+
+px
+1−px
+0
+
+11px
+
+10py0 −pT
+pE
+(1−px)py0
+pT
+11
+py0
+pE
+11
+1−px
+.
+.
+.
+
+pE
+
+1(N −1)
+1−px
+pE
+1N
+1−px
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(82)
+
+Expressing this matrix in the form of its corresponding equations completes the proof for this Lemma.
+
+Proof of Lemma 8. Using the result presented in Lemma 7, when Y has support {0, . . . , N } and we are given marginals
+P T (Z, X) and P T (Z, Y ), we can write the system of equations using free parameters as
+
+P(Z = 1 | X = 0, Y = 0) =
+
+P(Z = 1 | X = 1, Y = 0) =
+
+P(Z = 1 | X = 0, Y = 1) =
+
+P(Z = 1 | X = 0, Y = 2) =
+
+px
+1 − px
+
+pT
+11
+py0
+
+−
+
+pE
+11
+1 − px
+pE
+12
+1 − px
+
+...
+
+N
+(cid:88)
+
+n=1
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n)
+
+−
+
+−
+
+px
+1 − px
+px
+1 − px
+
+P(Z = 1 | X = 1, Y = 1)
+
+P(Z = 1 | X = 1, Y = 2)
+
+P(Z = 1 | X = 0, Y = N ) =
+
+pE
+1N
+1 − px
+
+−
+
+px
+1 − px
+
+P(Z = 1 | X = 1, Y = N )
+
+Now, each of the basic variables in the system above must be a valid probability, i.e. between zero and one, inclusive.
+
+Employing these constraints on the free parameters gives
+
+=⇒ 0 ≤
+
+px
+1 − px
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+pE
+10py0 − pT
+(1 − px)py0
+
+11px
+
+≤ 1
+
+0 ≤ P (Z = 1 | X = 0, Y = 0) ≤ 1
+
+Solving for the lower bound first, we have
+N
+(cid:88)
+
+0 ≤
+
+px
+1 − px
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+Next, with the upper bound
+
+=⇒
+
+11px − pE
+pT
+px
+
+10py0
+
+≤
+
+N
+(cid:88)
+
+n=1
+
+P (Z = 1 | X = 1, Y = n)
+
+px
+1 − px
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+≤ 1
+
+=⇒ x
+
+N
+(cid:88)
+
+pyn
+
+P(Z = 1 | X = 1, Y = n) + pE
+
+10py0 − pT
+
+11px ≤ (1 − px)py0
+
+n=1
+
+N
+(cid:88)
+
+n=1
+
+=⇒
+
+ynP(Z = 1 | X = 1, Y = n) ≤
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+Following a similar calculation for P (Z = 1 | X = 1, Y = 0), we have
+
+pT
+11 − py0 ≤
+
+N
+(cid:88)
+
+n=1
+
+ynP(Z = 1 | X = 1, Y = n) ≤ pT
+11
+
+Since all of the bounds need to hold simultaneously, we can re-express them using using maximum and minimum operators
+
+as
+
+max
+
+(cid:34) pT
+
+10py0
+
+11px−pE
+px
+pT
+11 − py0
+
+(cid:35)
+
+≤
+
+N
+(cid:88)
+
+n=1
+
+ynP(Z = 1 | X = 1, Y = n) ≤ min
+
+(cid:34) (1−px)py0 +pT
+px
+pT
+11
+
+11px−pE
+
+10py0
+
+(cid:35)
+
+Next, for i ∈ {1, . . . , N }, we have the following constraints on the basic variables P (Z = 1 | X = 0, Y = i)
+
+0 ≤ P (Z = 1 | X = 0, Y = i) ≤ 1
+
+px
+1 − px
+
+0 ≤
+
+−
+
+pE
+11
+1 − px
+pE
+1i − (1 − px)
+px
+
+=⇒
+
+P(Z = 1 | X = 1, Y = 1) ≤ 1
+
+≤ P (Z = 1 | X = 1, Y = i) ≤
+
+pE
+1i
+px
+
+And since the free parameters are probabilities themselves, they must be between 0 and 1 and hence the bounds for P (Z =
+
+1 | X = 1, Y = i) become
+
+(cid:34)
+
+max
+
+(cid:35)
+
+0
+pE
+1i−(1−px)
+px
+
+≤ P (Z = 1 | X = 1, Y = i) ≤ min
+
+(cid:35)
+
+(cid:34)
+
+1
+pE
+1i
+px
+
+Proof for Lemma 9. Each of the implications is proved using a proof by contra-positive. Starting with pE
+pT
+11px−pE
+px
+
+11 − py0 , the contra-positive of this statement is
+
+> pT
+
+10py0
+
+10 < px =⇒
+
+To see this holds, note that
+
+11px − pE
+pT
+px
+
+10py0
+
+≤ pT
+
+11 − py0 =⇒ pE
+
+10 ≥ px
+
+11px − pE
+pT
+px
+
+10py0
+
+≤ pT
+
+11 − py0
+
+pE
+10py0
+px
+=⇒ pE
+
+≤ −py0
+
+10 ≤ px
+
+=⇒ −
+
+> pT
+
+11 − py0.
+
+This proves pE
+
+10 < px =⇒ pT
+
+Next, for pE
+
+10 ≥ px =⇒ pT
+
+10py0
+
+11px−pE
+px
+11px−pE
+10py0
+px
+
+≤ pT
+
+11 − py0, following a similar proof strategy, the contra-positive can be written as
+
+To see this holds, note that
+
+11px − pE
+pT
+px
+
+10py0
+
+> pT
+
+11 − py0 =⇒ pE
+
+10 < px
+
+11px − pE
+pT
+px
+
+10py0
+
+> pT
+
+11 − py0
+
+=⇒ −
+
+pE
+10py0
+px
+=⇒ pE
+
+> −py0
+
+10 < px
+
+This proves pE
+
+Next, for pE
+
+10 ≥ px =⇒ pT
+10 < 1 − px =⇒ pT
+
+11px−pE
+px
+11 <
+
+10py0
+
+≤ pT
+(1−px)py0 +pT
+px
+
+11 − py0.
+
+11px−pE
+
+10py0
+
+, the contra-positive is written as
+
+pT
+11 ≥
+
+To see this holds, note that
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+=⇒ pE
+
+10 ≥ 1 − px
+
+pT
+11 ≥
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+=⇒ 0 ≥ (1 − px)py0 − pE
+=⇒ pE
+10 ≥ 1 − px
+
+10py0
+
+This proves pE
+
+10 < 1 − px =⇒ pT
+
+11 <
+
+(1−px)py0 +pT
+px
+
+11px−pE
+
+10py0
+
+.
+
+Next, for pE
+
+10 ≥ 1 − px =⇒ pT
+
+11 ≥ (1−px)py0 +pT
+
+px
+
+11px−pE
+
+10py0
+
+the contra-positive is written as
+
+pT
+11 <
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+=⇒ pE
+
+10 < 1 − px
+
+To see this holds, note that
+
+pT
+11 <
+
+(1 − px)py0 + pT
+px
+
+11px − pE
+
+10py0
+
+This concludes the proof.
+
+=⇒ 0 < (1 − px)py0 − pE
+=⇒ pE
+10 < 1 − px
+
+10py0
+
+The proofs for Lemma 10 follow from the properties of probability and Lemma 11 can be found in Dawid, Humphreys, and
+
+Musio (2021).
+
+Proof for Lemma 12. Using the system of equations obtained in Lemma 7, each term in Γ can be expressed using these free
+parameters. Starting with max{0, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0)}. First, expressing each of these
+terms using the free parameters, we get
+
+P (Z = 1 | X = 1, Y = 0) =
+
+pT
+11
+py0
+
+−
+
+(cid:32)
+
+P (Z = 0 | X = 0, Y = 0) = 1 −
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n)
+
+px
+1 − px
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+(cid:33)
+
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+Subtracting these two,
+
+=
+
++
+
+=
+
+=
+
+=
+
+=
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) − 1
+
+N
+(cid:88)
+
+n=1
+
+N
+(cid:88)
+
+pT
+11
+py0
+
+−
+
+px
+1 − px
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) +
+
+pE
+10py0 − pT
+(1 − px)py0
+
+11px
+
++
+
+pT
+11
+py0
+
+− 1 +
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P (Z = 1 | X = 1, Y = n)
+
+(cid:32)
+
+(cid:33)
+
+− 1
+
+px
+1 − px
+
+n=1
+10py0 − pT
+pE
+(1 − px)py0
+
+11px
+
+pE
+10py0 − pT
+
+11px + pT
+
+11(1 − px) − (1 − px)py0
+
+(1 − px)py0
+
++
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P (Z = 1 | X = 1, Y = n)
+
+pE
+10 − (1 − px)
+1 − px
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
++
+
+(cid:16)
+
+pT
+11
+py0
+(cid:80)N
+
+1 −
+
+px
+1 − px
+
+N
+(cid:88)
+
+(cid:17)
+
++
+
+pyn
+py0
+
+P (Z = 1 | X = 1, Y = n)
+
+n=1
+n=1 pynP (Z = 1 | X = 1, Y = n) − pT
+11
+py0
+
+(cid:32)
+
+px
+1 − px
+
+− 1
+
+(cid:32)
+
+px
+1 − px
+(cid:33)
+
+(cid:33)
+
+− 1
+
+(cid:32)
+
+px
+1 − px
+(cid:33)
+
+− 1
+
+Moving on to max{0, P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i)}, the probability P (Z = 0 | X = 0, Y = i)
+
+for i ∈ {1, . . . , N } can be expressed in terms of the free parameters as
+
+P (Z = 0 | X = 0, Y = i) = 1 −
+
+(cid:32)
+
+pE
+1i
+1 − px
+
+−
+
+px
+1 − px
+
+P(Z = 1 | X = 1, Y = i)
+
+(cid:33)
+
+=⇒ P (Z = 1 | X = 1, Y = i) − P (Z = 0 | X = 0, Y = i)
+
+= P (Z = 1 | X = 1, Y = i) − 1 +
+
+= P (Z = 1 | X = 1, Y = i)
+
+1 −
+
+(cid:32)
+
+pE
+1i
+1 − px
+(cid:33)
+
+−
+
+px
+1 − px
+
+px
+1 − px
+pE
+11 − (1 − px)
+1 − px
+
++
+
+P(Z = 1 | X = 1, Y = i)
+
+This concludes the proof for the terms in Γ. Following a similar approach for the terms in ∆, first consider
+
+P(Z = 1 | X = 1, Y = 0) − P(Z = 1 | X = 0, Y = 0)
+
+N
+(cid:88)
+
+−
+
+pT
+11
+py0
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n) −
+
+(cid:32)
+
+px
+1 − px
+
+N
+(cid:88)
+
+n=1
+
+pyn
+py0
+
+P(Z = 1 | X = 1, Y = n)
+
+n=1
+pE
+10py0 − pT
+(1 − px)py0
+
+11px
+
+(cid:33)
+
+11 − pE
+pT
+
+10py0 − (cid:80)N
+
+n=1 pyn
+
+P(Z = 1 | X = 1, Y = n)
+
+(1 − px)py0
+
+=
+
++
+
+=
+
+P(Z = 1 | X = 0, Y = i) =
+
+And for the terms of the form max{0, P(Z = 1 | X = 1, Y = i) − P(Z = 1 | X = 0, Y = i)} for i ∈ {1, . . . , N }
+pE
+1i
+1 − px
+=⇒ P(Z = 1 | X = 1, Y = i) − P(Z = 1 | X = 0, Y = i) =
+pE
+1i
+1 − px
+P(Z = 1 | X = 1, Y = i) − pE
+1i
+1 − px
+
+P(Z = 1 | X = 1, Y = i) −
+
+P(Z = 1 | X = 1, Y = i)
+
+P(Z = 1 | X = 1, Y = i)
+
+px
+1 − px
+
+px
+1 − px
+
+−
+
+=
+
++
+
+This concludes the proof of the Lemma.
+Proof for Lemma 13. From the result of Lemma 7, P(Z = 1 | X = 1, Y = 0) − P(Z = 0 | X = 0, Y = 0) can be expressed
+in terms of the free parameter as
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+(cid:80)N
+
+n=1 pyn P (Z = 1 | X = 1, Y = n) − pT
+11
+py0
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
+− 1
+
+Now, we use a proof by contra-positive to first show that
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+(cid:80)N
+
+n=1 pyn P (Z = 1 | X = 1, Y = n) − pT
+11
+py0
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+< 0
+
+=⇒
+
+N
+(cid:88)
+
+n=1
+
+pynP (Z = 1 | X = 1, Y = n) <
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+To see this, note that
+
+pE
+10 − (1 − px)
+1 − px
+
++
+
+(cid:80)N
+
+n=1 pyn P (Z = 1 | X = 1, Y = n) − pT
+11
+py0
+
+(cid:32)
+
+px
+1 − px
+
+(cid:33)
+
+− 1
+
+< 0
+
+=⇒ py0
+
+pE
+10 − (1 − px)
+py0 (1 − px)
+
++
+
+(cid:80)N
+
+n=1 pyn P (Z = 1 | X = 1, Y = n) − pT
+11
+py0
+
+(cid:32)
+
+(cid:32)
+
+px − (1 − px)
+1 − px
+
+(cid:33)
+
+< 0
+
+(cid:33)
+
+=⇒ py0 (pE
+
+10 − (1 − px)) + (
+
+N
+(cid:88)
+
+n=1
+
+pyn P (Z = 1 | X = 1, Y = n) − pT
+
+11)
+
+px − (1 − px)
+
+< 0
+
+=⇒
+
+N
+(cid:88)
+
+n=1
+
+pyn P (Z = 1 | X = 1, Y = n) <
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+This concludes the proof.
+
+Proof for Lemma 14. Following a proof by contra-positive, the contra-positive is given as
+
+pT
+11 − y0 <
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+
+11 =⇒ pE
+
+10 < px
+
+To see this, note that
+
+pT
+11 − py0 <
+
+=⇒ −1 <
+
+10)
+
+py0((1 − px) − pE
+px − (1 − px)
+((1 − px) − pE
+10)
+px − (1 − px)
+
++ pT
+11
+
+=⇒ px > pE
+10
+
+This concludes the proof.
+
+Proof for Lemma 16. Following a proof by contra-positive, the contra-positive is given as
+
+11px − pE
+pT
+px
+
+10py0
+
+≥
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
+To see this, note that
+
++ pT
+
+11 =⇒ pE
+
+10 ≥ px
+
+≥
+
+=⇒
+
+10py0
+
+11px − pE
+pT
+px
+−pE
+10
+px
+=⇒ −pE
+10px + pE
+=⇒ pE
+
+10 ≥ px
+
+≥
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+11
+
+((1 − px) − pE
+10)
+px − (1 − px)
+10(1 − px) ≥ (1 − px)px − pE
+
+10px
+
+This concludes the proof.
+
+Proof for Lemma 17 and Lemma 19. A similar proof by contra positive approach can be used to prove this Lemma.
+
+Proof for Lemma 20. From the result of Lemma 12, P(Z = 1 | X = 1, Y = i) − P(Z = 0 | X = 0, Y = i)} can be expressed
+in terms of the free parameter as
+
+P (Z = 1 | X = 1, Y = i)
+
+1 −
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
++
+
+pE
+11 − (1 − px)
+1 − px
+
+Following a proof by contra-positive, we write the contra-positive as
+
+P (Z = 1 | X = 1, Y = i)
+
+1 −
+
+(cid:32)
+
+(cid:33)
+
+px
+1 − px
+
++
+
+pE
+11 − (1 − px)
+1 − px
+
+< 0
+
+=⇒ P (Z = 1 | X = 1, Y = i) >
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+To see this, note that
+
+P (Z = 1 | X = 1, Y = i)
+
+1 −
+
+(cid:32)
+
+=⇒ P (Z = 1 | X = 1, Y = i)
+
+(cid:33)
+
++
+
+px
+1 − px
+(cid:32)
+
+pE
+11 − (1 − px)
+1 − px
+(cid:33)
+
+< 0
+
+(1 − px) − px
+1 − px
+
+<
+
+(1 − px) − pE
+11
+1 − px
+
+=⇒ P (Z = 1 | X = 1, Y = i)
+
+(1 − px) − px
+
+< (1 − px) − pE
+11
+
+(cid:32)
+
+(cid:33)
+
+=⇒ P (Z = 1 | X = 1, Y = i) >
+
+pE
+11 − (1 − px)
+px − (1 − px)
+
+This concludes the proof.
+
+Proof for Lemma 21. A similar proof by contra positive approach as before can be carried out to see this.
+
+Proof for Lemma 23. Following a proof by contra-positive, the contra-positive is given as
+
+pE
+11
+px
+
+≤
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+=⇒ pE
+
+1i ≥ px
+
+To see this, note that
+
+≤
+
+pE
+11
+px
+=⇒ pE
+=⇒ pE
+
+pE
+1i − (1 − px)
+px − (1 − px)
+11px − pE
+11 ≥ px
+
+11(1 − px) ≤ pE
+
+1ipx − px(1 − px)
+
+This concludes the proof.
+
+Proof for Lemma 18. A similar proof by contra positive approach can be applied here.
+
+Proof for Lemma 26. To prove an if and only if, we first prove the forward implication, i.e. the existence of a set of values
+for the free parameter such that every max operator satisfies Eq. 19 implies p11 + p10 − 1 ≥ 0, and then we prove the reverse
+implication, thereby establishing the if and only if.
+
+First, from Lemma 13 and Lemma 20, note that the free parameters must satisfy the following conditions simultaneously to
+
+satisfy Eq. 19.
+
+N
+(cid:88)
+
+n=1
+
+pyn P (Z = 1 | X = 1, Y = n) ≥
+
+py0 ((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ p11
+
+And for all i ∈ {1, . . . N }
+
+pE
+1i − (1 − px)
+px − (1 − px)
+For the bounds in Eq. 83 and Eq. 84 to hold simultaneously, the following must hold
+
+P (Z = 1 | X = 1, Y = i) ≤
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+
+11 ≤
+
+N
+(cid:88)
+
+i=1
+
+pyi
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+(83)
+
+(84)
+
+=⇒ py0 ((1 − px) − pE
+
+10) + pT
+
+11(px − (1 − px))+ ≤
+
+N
+(cid:88)
+
+i=1
+
+pyi(pE
+
+1i − (1 − px))
+
+=⇒ (1 − px) + pT
+
+11(px − (1 − px))+ ≤
+
+N
+(cid:88)
+
+pyipE
+
+1i + pE
+
+10py0
+
+=⇒ (1 − px) − pT
+11 + pT
+=⇒ 0 ≤ pT
+
+11(1 − px)+ ≤ pT
+10 − 1
+
+i=1
+10(1 − px)
+
+Next, to prove the backward implication, we utilize a proof by contra positive, i.e. we show that
+
+To see this, note that
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+
+11 >
+
+N
+(cid:88)
+
+i=1
+
+pyi
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+py0((1 − px) − pE
+px − (1 − px)
+
+10)
+
++ pT
+
+11 >
+
+N
+(cid:88)
+
+i=1
+
+pyi
+
+pE
+1i − (1 − px)
+px − (1 − px)
+
+=⇒ pT
+
+11 + pT
+
+10 − 1 < 0
+
+=⇒ py0((1 − px) − pE
+
+10) + pT
+
+11(px − (1 − px)) >
+
+N
+(cid:88)
+
+i=1
+
+pyi(pE
+
+1i − (1 − px))
+
+=⇒ (1 − px) − pT
+11 + pT
+=⇒ 0 > pT
+
+11(1 − px) > pT
+10 − 1
+
+10px
+
+This concludes the proof for the lemma.
+
+Lemmas 27 through 31 can be proved using a similar approach as presented for operators in Γ.
+
+Proof for Lemma 33. To prove an if and only if, we first show that all max operators simultaneously satisfying Eq. 28 implies
+11 − pT
+pT
+Starting with the forward implication, note that for all max operators to simultaneously satisfy Eq. 28 the following conditions
+
+10 ≥ 0, and then we prove the backward implication.
+
+(obtained from Lemma 27 and Lemma 30) must hold
+
+And for all i ∈ {1, . . . N }
+
+This is equivalent to
+
+11 − pE
+pT
+
+10py0 ≥
+
+N
+(cid:88)
+
+n=1
+
+pyn P (Z = 1 | X = 1, Y = n)
+
+P (Z = 1 | X = 1, Y = i) ≥ pE
+1i
+
+N
+(cid:88)
+
+i=1
+
+pyipE
+
+1i ≤ pT
+
+11 − pE
+
+10py0
+
+N
+(cid:88)
+
+=⇒
+
+pyipE
+
+1i ≤ pT
+11
+
+i=0
+11px + pT
+=⇒ pT
+=⇒ 0 ≤ (1 − px)(pT
+
+10(1 − px) ≤ pT
+11
+11 − pT
+
+10)
+
+This proves the forward implication. A similar proof for the backward implication can be provided using a proof by contra
+
+positive as well, concluding the proof for this lemma.
+
+Proof for Lemma 34. Since pE
+equal
+
+1i ≥ px for all i, then all the indicators in Φi will evaluate to 1, as a result pT
+
+11 − (cid:80)N
+
+i=0 Φi will
+
+pT
+11 −
+
+=⇒ =
+
+=⇒ =
+
+=⇒ =
+
+N
+(cid:88)
+
+pyi (pE
+
+1i − px)
+
+i=0
+
+1 − px
+11(1 − px) − (cid:80)N
+pT
+1 − px
+
+11(1 − px) − pT
+pT
+
+10(1 − px) + px
+
+11(1 − px) − pT
+pT
+
+00(1 − px) − (1 − px) + px
+
+i=0 pyi(pE
+
+1i − px)
+
+11px − pT
+1 − px
+11px + pT
+
+1 − px
+
+=⇒ = pT
+
+01(
+
+px
+1 − px
+
+− 1) + pT
+00
+
+And since px > 1 − px, this quantity will be greater than pT
+
+00.
+
+Proof for Lemma 35. Since pE
+will equal
+
+1i ≤ 1 − px for all i, then all the indicators in Θi will evaluate to 1, as a result pT
+
+00 − (cid:80)N
+
+i=0 Θi
+
+pT
+00 −
+
+N
+(cid:88)
+
+i=0
+
+pyi((1 − px) − pE
+1i)
+1 − px
+
+=⇒ =
+
+=⇒ =
+
+=⇒ =
+
+00(1 − px) − (1 − px) + (cid:80)N
+pT
+
+i=0 pyipE
+1i
+
+1 − px
+10(1 − px) + (cid:80)N
+
+−pT
+
+i=0 pyipE
+1i
+
+1 − px
+
+pT
+11px
+1 − px
+
+And since px > 1 − px, this concludes the proof.
+
+Proof for Lemma 36. This lemma is proven in two steps, first using mathematical induction, and then simplifying the final
+RREF based on properties of probability distributions.
+
+First, given the following constraints,
+
+pT
+10 =
+
+pT
+11 =
+
+N
+(cid:88)
+
+j=0
+
+N
+(cid:88)
+
+j=0
+
+P T (Z = 1 | X = 0, Y = j)pyj
+
+P T (Z = 1 | X = 1, Y = j)pyj
+
+10 = P T (Z = 1 | X = 0, Y = 0)(1 − px − δX )
+pE
++ P T (Z = 1 | X = 1, Y = 0)(px + δX )
+
+...
+
+1N = P T (Z = 1 | X = 0, Y = N )(1 − px − δX )
+pE
++ P T (Z = 1 | X = 1, Y = N )(px + δX )
+
+The above equations can be represented in matrix form Ax = b as
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A =
+
+b =
+
+py0
+0
+
+0
+py0
+
+1 − px − δX px + δX
+
+0
+.
+.
+.
+0
+0
+
+0
+. . .
+0
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pT
+10
+pT
+11
+pE
+10
+pE
+11
+.
+.
+.
+
+pE
+12
+
+pE
+1(N −1)
+pE
+1N
+
+0
+py1
+0
+
+0
+0
+
+py1
+0
+
+. . .
+. . .
+
+x =
+
+0
+
+. . .
+1 − px − δX px + δX . . .
+
+0
+0
+
+. . .
+
+. . .
+
+pyN −1
+0
+
+0
+pyN −1
+0
+0
+
+pyN
+0
+
+0
+0
+
+0
+
+0
+pyN
+0
+0
+.
+.
+.
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+
+1 − px − δX px + δX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+P (Z = 1 | X = 0, Y = 0)
+P (Z = 1 | X = 1, Y = 0)
+P (Z = 1 | X = 0, Y = 1)
+P (Z = 1 | X = 1, Y = 1)
+.
+.
+.
+P (Z = 1 | X = 0, Y = N )
+P (Z = 1 | X = 1, Y = N )
+
+0
+
+1 − px − δX px + δX
+
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Next, denote the augmented matrix A|b as
+
+py0
+0
+
+0
+py0
+
+1 − px − δX px + δX
+
+py1
+0
+0
+
+. . .
+. . .
+. . .
+1 − px − δX px + δX . . .
+
+0
+py1
+0
+
+pyN −1
+0
+0
+0
+
+0
+pyN −1
+0
+0
+
+pyN
+0
+0
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+...
+0
+0
+
+0
+. . .
+0
+0
+
+0
+
+. . .
+. . .
+
+1 − px − δX px + δX
+
+0
+0
+An identical induction approach to Lemma 7 can be used to prove the RREF of A|b will equal
+
+(px+δX )pyN −1
+(1−px−δX )py0
+pyN −1
+py0
+0
+
+(px+δX )pyN
+(1−px−δX )py0
+pyN
+py0
+0
+
+0 − (px+δX )py1
+(1−px−δX )py0
+py1
+py0
+px+δX
+1−px−δX
+
+0 −
+
+0 −
+
+. . .
+
+. . .
+
+. . .
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+1
+
+0
+
+0
+
+0
+
+10py0 −pT
+pE
+
+11(px+δX )
+
+(1−px−δX )py0
+pT
+11
+py0
+pE
+11
+1−px−δX
+
+1 − px − δX px + δX
+
+0
+. . .
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+. . .
+
+. . .
+
+0
+
+0
+
+0
+
+0
+
+px+δX
+1−px−δX
+0
+
+10(1−px−δX )+pT
+pT
+pyN
+1ipyi −pT
+
+11(px+δX )−(cid:80)N −1
+(1−px−δX )
+10(1−px−δX )−pT
+
+i=0 pE
+
+(cid:80)N
+
+i=0 pE
+
+1ipyi
+
+11(px+δX )
+
+Next, to complete this proof for this lemma, we prove the following identities.
+j=0 pE
+
+10(1 − px − δX ) − pT
+
+1jpyj − pT
+
+(cid:80)N
+
+11(px + δX )
+
+pyN
+
+pyN
+
+= 0
+
+0
+pyN
+0
+0
+...
+0
+
+p10
+p11
+pE
+10
+pE
+11
+...
+
+pE
+1(N −1)
+pE
+1N
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(85)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+...
+0
+
+0
+
+To prove this, note that
+
+Along with
+
+Consequently,
+
+pT
+10(1 − px − δX ) =
+
+pT
+11(px + δX ) =
+
+N
+(cid:88)
+
+j=0
+
+N
+(cid:88)
+
+j=0
+
+P T (Z = 1 | X = 0, Y = j)pyj (1 − px − δX )
+
+P T (Z = 1 | X = 1, Y = j)pyj (px + δi
+
+X )
+
+10(1 − px − δ0
+pT
+(cid:32)
+N
+(cid:88)
+
+X ) + pT
+
+11(px + δi
+
+X ) =
+
+pyj
+
+P T (Z = 1 | X = 0, Y = j)(1 − px − δ0
+
+X ) + P T (Z = 1 | X = 1, Y = j)(px + δi
+
+X )
+
+j=0
+
+=
+
+=
+
+N
+(cid:88)
+
+j=0
+
+N
+(cid:88)
+
+j=0
+
+(cid:32)
+
+(cid:17)
+P E(Z = 1 | X = 0, Y = j)P E(X = 0) + P E(Z = 1 | X = 1, Y = j)P E(X = 1)
+
+pyj
+
+pyj pE
+1j
+
+(cid:33)
+
+And this will be subtracted from (cid:80)N
+
+j=0 pyj pE
+10i(1 − px − δi
+pT
+
+1ji, hence it equals 0.
+11i(px + δi
+pyN (1 − px − δi
+
+X ) + pT
+
+j=0 pE
+
+1jipyj
+
+X ) − (cid:80)N −1
+X )
+
+=
+
+Following a similar approach as before, this will simplify to
+1j − (cid:80)N −1
+j=0 pyj pE
+1j
+pyN (1 − px − δi
+X )
+
+j=0 pyj pE
+
+(cid:80)N
+
+=
+
+pE
+1N
+1 − px − δi
+X
+
+This concludes the proof of the Lemma.
+
+Proof for Lemma 38. The proof for this Lemma follows two major steps, the first being a proof by double mathematical
+induction to represent the Reduced Row Echelon Form (RREF) for the system of equations for arbitrary dimensionality of Y
+and C. The second part of the proof applies properties of probability distributions to express the system of equations in the
+form given in the Lemma.
+
+We start start with the proof by double mathematical induction, and state the proposition we prove.
+Proposition: Let P (m, n) denote the proposition that given the system of equations corresponding to the constraints provided
+
+in Lemma, represented in matrix form Am,nxm,n = bm,n provided below.
+
+Am,n =
+
+A0,n
+[0]
+
+[0]
+[0]
+
+[0]
+A1,n
+
+[0]
+[0]
+
+[0]
+[0]
+
+. . .
+. . .
+. . .
+. . . Am,n
+
+[0]
+
+
+
+
+
+
+
+
+
+
+bm,n =
+
+
+
+
+
+
+
+
+b0,n
+.
+.
+.
+bm,n
+
+
+
+
+
+
+
+
+xm,n =
+
+
+
+
+
+
+
+
+x0,n
+.
+.
+.
+xm,n
+
+
+
+
+
+
+
+
+Where Ai,n, bi,n and xi,n will be of the form
+
+0
+py0
+
+py1
+0
+
+. . .
+
+. . .
+
+pyN −1
+0
+
+0
+py1
+0
+
+X px + δi
+
+X
+
+0
+1 − px − δi
+
+X px + δi
+
+. . .
+X . . .
+
+0
+0
+
+0
+pyN −1
+0
+0
+
+pyN
+0
+
+0
+0
+
+py0
+0
+1 − px − δi
+0
+.
+.
+.
+0
+0
+
+0
+. . .
+0
+0
+
+. . .
+. . .
+
+0
+
+0
+0
+
+1 − px − δi
+0
+
+X px + δi
+
+X
+
+0
+
+0
+1 − px − δi
+
+X px − δi
+
+X
+
+0
+pyN
+0
+0
+.
+.
+.
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pT
+10i
+pT
+11i
+pE
+10i
+pE
+11i
+.
+.
+.
+
+pE
+12i
+
+pE
+1(n−1)i
+pE
+1ni
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+xi,n =
+
+P (Z = 1 | X = 0, Y = 0, C = i)
+P (Z = 1 | X = 1, Y = 0, C = i)
+P (Z = 1 | X = 0, Y = 1, C = i)
+P (Z = 1 | X = 1, Y = 1, C = i)
+.
+.
+.
+P (Z = 1 | X = 0, Y = N, C = i)
+P (Z = 1 | X = 1, Y = N, C = i)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ai,n =
+
+bi,n =
+
+Given this system of equations, the RREF of the augmented matrix A | bm,n corresponding to this system of equations will be
+of the form
+
+A | bR
+
+m,n =
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0]
+[0]
+
+0
+...
+0
+
+AR
+[0]
+0,n
+[0] AR
+1,n
+
+[0]
+[0]
+. . .
+[0]
+. . . AR
+
+m,n
+
+. . .
+
+. . .
+
+. . .
+
+0
+
+0
+
+0
+
+Where AR
+
+i,n and bR
+
+i,n will be of the form
+
+bR
+0,n
+bR
+1,n
+...
+bR
+m,n
+10(1−px−δ0
+pyN
+...
+10(1−px−δ0
+pyN
+
+(cid:80)N
+
+j=0 pE
+
+1j0pyj −pT
+
+X )−pT
+
+110(px+δ0
+
+X )
+
+(cid:80)N
+
+j=0 pE
+
+1j0pyj −pT
+
+X )−pT
+
+110(px+δ0
+
+X )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AR
+
+i,n =
+
+
+1
+
+
+
+
+
+
+
+
+
+
+0 1
+
+0 0
+...
+0 0
+
+X )py1
+
+X )py0
+
+0 0 − (px+δi
+(1−px−δi
+py1
+py0
+px+δi
+X
+1−px−δi
+X
+
+0
+
+1
+
+. . .
+
+. . .
+
+. . .
+
+0 −
+
+0
+
+0
+
+X )pyN −1
+X )py0
+
+(px+δi
+(1−px−δi
+pyN −1
+py0
+0
+
+X )pyN
+X )py0
+
+0 − (px+δi
+(1−px−δi
+pyN
+0
+py0
+0
+
+0
+
+0
+
+. . .
+
+0
+
+0
+
+px+δi
+X
+1−px−δi
+X
+
+
+
+
+
+
+
+
+
+
+
+
+
+And bR
+
+i,n will be of the form
+
+
+
+
+
+
+
+
+
+
+
+pE
+10ipy0 −pT
+(1−px−δi
+
+11ipx
+X )py0
+
+pT
+11i
+py0
+...
+11i(px+δi
+pyN (1−px−δi
+
+10i(1−px−δi
+pT
+
+X )+pT
+
+j=0 pE
+
+X )−(cid:80)N −1
+X )
+
+1jipyj
+
+0
+. . .
+1
+
+
+
+
+
+
+
+
+
+
+
+To prove P (m, n) using double mathematical induction, we first prove the base case with m = n = 1.
+
+Base Case: Using a symbolic solver to put the matrix in RREF, we obtain the RREF form of A | b as
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0 −
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+)
+
+(δ0
+py1
+X +px)
+py0 (1−px−δ0
+X
+py1
+py0
+δ0
+X +x
+1−x−δ0
+X
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0 −
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+)
+
+py1
+
+(δ1
+X +x)
+py0 (1−px−δ1
+X
+py1
+py0
+px+δ1
+X
+1−x−δ1
+X
+
+0
+
+0
+
+100py0
+
+pE
+100 py0
+
+X +px )
+)
+
+110 (δ0
+−pT
+py0 (1−px−δ0
+X
+pT
+110
+py0
+110(δ0
+100(1−px−δ0
+X +x)−pE
+X )+pT
+pT
+(1−px−δ0
+py1
+)
+X
+111 (δ1
+−pT
+pE
+X +px )
+101 py0
+py0 (1−px−δ1
+)
+X
+pT
+111
+py0
+101(1−px−δ1
+pT
+111(δ1
+X +x)−pE
+X )+pT
+(1−px−δ1
+)
+py1
+X
+−p100(1−px−δ0
+X )−p110 (δ0
+py1
+
+100py0
+
+101py0
+
++pE
+
+pE
+110py1
+
+X +px )
+
+pE
+111py1
+
++pE
+
+101py0
+
+−pT
+
+101(1−px−δ1
+
+X )−p111 (δ1
+
+X +px )
+
+py1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+And by comparison, this matches the base case. Hence the base case holds.
+
+Induction Step I: Here we prove that if P (1, n − 1) holds, then P (1, n) holds as well. For P (1, n), A|b will look
+like
+
+A | b1,n =
+
+(cid:20)A0,n
+
+[0]
+[0] A1,n
+
+(cid:21)
+
+b0,n
+b1,n
+
+Since A0,n and A1,n are non-overlapping diagional sub-matrices of A | b1,n, a similar proof to Lemma X for each level of
+of C can be applied, i.e. for each pair A0,n, b0,n and A1,n, b1,n to put each of them in their RREF matrix separately. Then the
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ai,n =
+
+bi,n =
+
+last rows correspoding to the RREF of A0,n, b0,n and A1,n, b1,n can be shuffled as needed to put A | b1,n in RREF, proving the
+first step of the induction.
+
+Induction Step II: Next, we must prove that for all n ≥ 1, P (m, n) is true then P (m + 1, n) is true. For P (m + 1, n), the
+system of equations is represented in matrix form as
+
+Am,n =
+
+A0,n
+[0]
+
+[0]
+[0]
+[0]
+
+[0]
+A1,n
+
+[0]
+[0]
+[0]
+
+[0]
+[0]
+
+. . .
+. . .
+. . .
+. . . Am,n
+. . .
+
+[0]
+
+[0]
+
+
+
+
+
+
+
+
+
+
+
+
+[0]
+[0]
+
+[0]
+[0]
+Am+1,n
+
+bm,n =
+
+
+
+
+
+
+
+
+
+
+b0,n
+.
+.
+.
+bm,n
+bm+1,n
+
+
+
+
+
+
+
+
+
+
+xm,n =
+
+
+
+
+
+
+
+
+
+
+x0,n
+.
+.
+.
+xm,n
+xm+1,n
+
+
+
+
+
+
+
+
+
+
+Where Ai,n, bi,n and xi,n will be of the form
+
+0
+pyN
+0
+0
+.
+.
+.
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0
+py0
+
+py1
+0
+
+. . .
+
+. . .
+
+pyN −1
+0
+
+0
+py1
+0
+
+X px + δi
+
+X
+
+0
+1 − px − δi
+
+X px + δi
+
+. . .
+X . . .
+
+0
+0
+
+0
+pyN −1
+0
+0
+
+pyN
+0
+
+0
+0
+
+py0
+0
+1 − px − δi
+0
+.
+.
+.
+0
+0
+
+0
+. . .
+0
+0
+
+. . .
+. . .
+
+0
+
+0
+0
+
+1 − px − δi
+0
+
+X px + δi
+
+X
+
+0
+
+0
+1 − px − δi
+
+X px − δi
+
+X
+
+pT
+10i
+pT
+11i
+pE
+10i
+pE
+11i
+.
+.
+.
+
+pE
+12i
+
+pE
+1(n−1)i
+pE
+1ni
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+xi,n =
+
+P (Z = 1 | X = 0, Y = 0, C = i)
+P (Z = 1 | X = 1, Y = 0, C = i)
+P (Z = 1 | X = 0, Y = 1, C = i)
+P (Z = 1 | X = 1, Y = 1, C = i)
+.
+.
+.
+P (Z = 1 | X = 0, Y = N, C = i)
+P (Z = 1 | X = 1, Y = N, C = i)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Since we assume P (m, n) is true, the submatrix corresponding to A | bm,n in A | bm+1,n is non-overlapping with Am+1,n and
+bm+1,n, and can be put into RREF form, presented below.
+
+
+
+
+A | bm+1,n =
+
+(cid:80)N
+
+j=0 pE
+
+1j0pyj −pT
+
+X )−pT
+
+110(px+δ0
+
+X )
+
+AR
+[0]
+0,n
+[0] AR
+1,n
+
+[0]
+[0]
+
+0
+...
+0
+0
+
+[0]
+[0]
+
+. . .
+
+. . .
+
+. . .
+. . .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0]
+[0]
+
+. . .
+. . .
+. . .
+[0]
+. . . AR
+
+m,n
+
+0
+
+0
+
+0
+0
+
+0
+
+0
+
+0
+0
+
+[0]
+[0]
+
+[0]
+[0]
+
+[0]
+
+[0]
+
+[0]
+Am+1,n
+
+bR
+0,n
+bR
+1,n
+...
+bR
+m,n
+10(1−px−δ0
+pyN
+...
+10(1−px−δ0
+pyN
+bm+1,n
+
+(cid:80)N
+
+j=0 pE
+
+1j0pyj −pT
+
+X )−pT
+
+110(px+δ0
+
+X )
+
+Now, putting Am+1,n and bm+1,n in RREF form using a similar approach to Lemma 7, and shuffling all the rows that only have
+0 in every entry except the last gives us the RREF as stated and proved P (m + 1, n). This concludes the proof of the double
+induction.
+
+Next, to complete this proof, we prove the following identities.
+
+(cid:80)N
+
+j=0 pE
+
+1jipyj − pT
+
+10i(1 − px − δi
+pyN
+
+X ) − pT
+
+11i(px + δi
+
+X )
+
+= 0
+
+To prove this, note that
+
+Along with
+
+10i(1 − px − δ0
+pT
+
+X ) =
+
+11i(px + δi
+pT
+
+X ) =
+
+N
+(cid:88)
+
+j=0
+
+N
+(cid:88)
+
+j=0
+
+P (Z = 1 | X = 0, Y = j, C = i)pyj (1 − px − δ0
+
+X )
+
+P (Z = 1 | X = 1, Y = j, C = i)pyj (px + δi
+
+X )
+
+Consequently,
+
+X ) + pT
+
+11i(px + δi
+
+X ) =
+
+10i(1 − px − δ0
+pT
+(cid:32)
+N
+(cid:88)
+
+pyj
+
+P (Z = 1 | X = 0, Y = j, C = i)(1 − px − δ0
+
+X ) + P (Z = 1 | X = 1, Y = j, C = i)(px + δi
+
+X )
+
+(cid:17)
+
+j=0
+
+=
+
+N
+(cid:88)
+
+j=0
+
+pyj
+
+(cid:32)
+
+P (Z = 1 | X = 0, Y = j, C = i)P E(X = 0 | C = i)
+
++ P (Z = 1 | X = 1, Y = j, C = i)P E(X = 1 | C = i)
+
+(cid:17)
+
+=
+
+N
+(cid:88)
+
+j=0
+
+pyj pE
+
+1ji
+
+And this will be subtracted from (cid:80)N
+
+j=0 pyj pE
+
+1ji, hence it equals 0.
+
+10i(1 − px − δi
+pT
+
+X ) + pT
+
+11i(px + δi
+pyN (1 − px − δi
+
+X ) − (cid:80)N −1
+X )
+
+j=0 pE
+
+1jipyj
+
+Following a similar approach as before, the above will simplify to
+
+(cid:80)N
+
+j=0 pyj pE
+
+1ji − (cid:80)N −1
+j=0 pyj pE
+1ji
+pyN (1 − px − δi
+X )
+
+=
+
+pE
+1N i
+1 − px − δi
+X
+
+This concludes the proof of the Lemma.
+
+References
+Balke, A.; and Pearl, J. 1994. Counterfactual probabilities: Computational methods, bounds and applications. In Uncertainty
+Proceedings 1994, 46–54. Elsevier.
+Bickel, P. J.; and Doksum, K. A. 2015. Mathematical statistics: basic ideas and selected topics, volumes I-II package. CRC
+Press.
+B¨uhlmann, P. 2020. Invariance, causality and robustness.
+Charitopoulos, V. M.; Papageorgiou, L. G.; and Dua, V. 2018. Multi-parametric mixed integer linear programming under global
+uncertainty. Computers & Chemical Engineering, 116: 279–295.
+Christiansen, R.; Pfister, N.; Jakobsen, M. E.; Gnecco, N.; and Peters, J. 2022. A Causal Framework for Distribution General-
+ization. IEEE Transactions on Pattern Analysis and Machine Intelligence, 44(10): 6614–6630.
+Cuellar, M. 2018. Causal reasoning and data analysis in the law: definition, estimation, and usage of the probability of causation.
+Estimation, and Usage of the Probability of Causation (May 31, 2018).
+Daume III, H.; and Marcu, D. 2006. Domain adaptation for statistical classifiers. Journal of artificial Intelligence research, 26:
+101–126.
+Dawid, A. P.; Musio, M.; and Murtas, R. 2017. The probability of causation. Law, Probability and Risk, 16(4): 163–179.
+Dawid, P.; Humphreys, M.; and Musio, M. 2021. Bounding causes of effects with mediators. Sociological Methods & Research,
+00491241211036161.
+Duarte, G.; Finkelstein, N.; Knox, D.; Mummolo, J.; and Shpitser, I. 2021. An automated approach to causal inference in
+discrete settings. arXiv preprint arXiv:2109.13471.
+Faigman, D. L.; Monahan, J.; and Slobogin, C. 2014. Group to individual (G2i) inference in scientific expert testimony. The
+University of Chicago Law Review, 417–480.
+Gresele, L.; Von K¨ugelgen, J.; K¨ubler, J.; Kirschbaum, E.; Sch¨olkopf, B.; and Janzing, D. 2022. Causal inference through the
+structural causal marginal problem. In International Conference on Machine Learning, 7793–7824. PMLR.
+Janzing, D.; and Sch¨olkopf, B. 2010. Causal inference using the algorithmic Markov condition. IEEE Transactions on Infor-
+mation Theory, 56(10): 5168–5194.
+Khoury, M. J.; Flanders, W. D.; Greenland, S.; and Adams, M. J. 1989. On the measurement of susceptibility in epidemiologic
+studies. American Journal of Epidemiology, 129(1): 183–190.
+Li, A.; and Pearl, J. 2022. Probabilities of Causation with Nonbinary Treatment and Effect. arXiv preprint arXiv:2208.09568.
+Manski, C. F. 1990. Nonparametric bounds on treatment effects. The American Economic Review, 80(2): 319–323.
+
+Muandet, K.; Balduzzi, D.; and Sch¨olkopf, B. 2013. Domain generalization via invariant feature representation. In International
+conference on machine learning, 10–18. PMLR.
+Mueller, S.; and Pearl, J. 2022. Personalized Decision Making–A Conceptual Introduction. arXiv preprint arXiv:2208.09558.
+Padh, K.; Zeitler, J.; Watson, D.; Kusner, M.; Silva, R.; and Kilbertus, N. 2022. Stochastic Causal Programming for Bounding
+Treatment Effects. arXiv preprint arXiv:2202.10806.
+Pearl, J. 2009. Causality. Cambridge university press.
+Pearl, J. 2011. Transportability across studies: A formal approach.
+Pearl, J. 2022. Probabilities of causation: three counterfactual interpretations and their identification.
+Causal Inference: The Works of Judea Pearl, 317–372.
+Peters, J.; Janzing, D.; and Sch¨olkopf, B. 2017. Elements of causal inference: foundations and learning algorithms. The MIT
+Press.
+Robins, J. 1986. A new approach to causal inference in mortality studies with a sustained exposure period—application to
+control of the healthy worker survivor effect. Mathematical modelling, 7(9-12): 1393–1512.
+Robins, J.; and Greenland, S. 1989. The probability of causation under a stochastic model for individual risk. Biometrics,
+1125–1138.
+Sachs, M. C.; Jonzon, G.; Sj¨olander, A.; and Gabriel, E. E. 2022. A general method for deriving tight symbolic bounds on
+causal effects. Journal of Computational and Graphical Statistics, (just-accepted): 1–23.
+Sch¨olkopf, B.; Janzing, D.; Peters, J.; Sgouritsa, E.; Zhang, K.; and Mooij, J. 2012. On causal and anticausal learning. arXiv
+preprint arXiv:1206.6471.
+Spirtes, P.; Glymour, C. N.; Scheines, R.; and Heckerman, D. 2000. Causation, prediction, and search. MIT press.
+Tian, J.; and Pearl, J. 2000. Probabilities of causation: Bounds and identification. Annals of Mathematics and Artificial
+Intelligence, 28(1): 287–313.
+Zeitler, J.; and Silva, R. 2022. The Causal Marginal Polytope for Bounding Treatment Effects. arXiv preprint arXiv:2202.13851.
+Zhang, J.; Tian, J.; and Bareinboim, E. 2022. Partial counterfactual identification from observational and experimental data. In
+International Conference on Machine Learning, 26548–26558. PMLR.
+
+In Probabilistic and
+
+

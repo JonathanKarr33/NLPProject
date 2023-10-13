@@ -16,7 +16,7 @@ def save_aggregated_scores(scores, output_path):
 
 def calculate_rouge_scores(data_folder, output_folder):
     rouge = Rouge()
-    gpt_folder = os.path.join(data_folder, "gpt-results")
+    gpt_folder = os.path.join(data_folder, "gpt_results")
     reference_folder = os.path.join(data_folder, "reference")
     
     if not os.path.exists(output_folder):

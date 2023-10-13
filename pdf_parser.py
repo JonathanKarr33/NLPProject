@@ -5,11 +5,17 @@ from pdfminer.high_level import extract_text
 
 # Define the input and output folders
 pdf_folder = 'data/pdfs'
-text_folder = 'data/text'
+entire_paper_folder = 'data/entire_paper'
+abstract_folder = 'data/reference'
+main_paper_folder = 'data/main_paper'
 
 # Ensure the output folder exists, create it if not
-if not os.path.exists(text_folder):
-    os.makedirs(text_folder)
+if not os.path.exists(entire_paper_folder):
+    os.makedirs(entire_paper_folder)
+if not os.path.exists(abstract_folder):
+    os.makedirs(abstract_folder)
+if not os.path.exists(main_paper_folder):
+    os.makedirs(main_paper_folder)
 
 # Initialize a counter for the converted PDFs
 converted_count = 0
@@ -38,7 +44,7 @@ for root, _, files in os.walk(pdf_folder):
 
                 # Create a corresponding "abstract" text file in the output folder
                 abstract_file_path = os.path.join(
-                    text_folder, os.path.splitext(file)[0] + '_abstract.txt')
+                    abstract_folder, os.path.splitext(file)[0] + '.txt')
                 with open(abstract_file_path, 'w', encoding='utf-8') as abstract_file:
                     abstract_file.write(abstract_text)
 
@@ -46,13 +52,13 @@ for root, _, files in os.walk(pdf_folder):
                 rest_of_paper_text = text[introduction_match.start():]
                 # Create a corresponding "rest_of_paper" text file in the output folder
                 rest_of_paper_file_path = os.path.join(
-                    text_folder, os.path.splitext(file)[0] + '_rest_of_paper.txt')
+                    main_paper_folder, os.path.splitext(file)[0] + '.txt')
                 with open(rest_of_paper_file_path, 'w', encoding='utf-8') as rest_of_paper_file:
                     rest_of_paper_file.write(rest_of_paper_text)
 
             # Create a corresponding text file containing the entire paper
             text_file_path = os.path.join(
-                text_folder, os.path.splitext(file)[0] + '.txt')
+                entire_paper_folder, os.path.splitext(file)[0] + '.txt')
             with open(text_file_path, 'w', encoding='utf-8') as text_file:
                 text_file.write(text)
 

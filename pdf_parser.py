@@ -10,6 +10,9 @@ text_folder = 'data/text'
 if not os.path.exists(text_folder):
     os.makedirs(text_folder)
 
+# Initialize a counter for the converted PDFs
+converted_count = 0
+
 # Iterate through the PDF files in the input folder
 for root, _, files in os.walk(pdf_folder):
     for file in files:
@@ -18,8 +21,12 @@ for root, _, files in os.walk(pdf_folder):
             # Extract text from the PDF
             text = extract_text(pdf_file_path)
             # Create a corresponding text file in the output folder
-            text_file_path = os.path.join(text_folder, os.path.splitext(file)[0] + '.txt')
+            text_file_path = os.path.join(
+                text_folder, os.path.splitext(file)[0] + '.txt')
             with open(text_file_path, 'w', encoding='utf-8') as text_file:
                 text_file.write(text)
+            # Increment the counter for converted PDFs
+            converted_count += 1
 
-print("PDF to text conversion complete.")
+# Print the total number of converted PDFs
+print(f"PDF to text conversion complete. {converted_count} PDFs converted.")

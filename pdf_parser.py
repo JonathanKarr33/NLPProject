@@ -1,5 +1,6 @@
 import os
 from pdfminer.high_level import extract_text
+#pip install pdfminer-six
 
 # Define the input and output folders
 pdf_folder = 'data/pdfs'

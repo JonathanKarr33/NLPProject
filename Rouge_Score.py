@@ -16,19 +16,19 @@ def save_aggregated_scores(scores, output_path):
 
 def calculate_rouge_scores(data_folder, output_folder):
     rouge = Rouge()
-    hypothesis_folder = os.path.join(data_folder, "gpt-results")
+    gpt_folder = os.path.join(data_folder, "gpt-results")
     reference_folder = os.path.join(data_folder, "reference")
     
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
     aggregated_scores = {}
-    for filename in os.listdir(hypothesis_folder):
-        hypothesis_file_path = os.path.join(hypothesis_folder, filename)
+    for filename in os.listdir(gpt_folder):
+        gpt_file_path = os.path.join(gpt_folder, filename)
         reference_file_path = os.path.join(reference_folder, filename)
         
         if os.path.exists(reference_file_path):
-            hyp_text = load_text(hypothesis_file_path)
+            hyp_text = load_text(gpt_file_path)
             ref_text = load_text(reference_file_path)
             
             scores = rouge.get_scores(hyp_text, ref_text, avg=True)

@@ -1,0 +1,1168 @@
+Introduction
+Face recognition is one of the most challenging tasks in pat-
+tern recognition and machine vision, and there are increasing
+demands in many industry areas. Current SOTA face recog-
+nition losses are mainly margin-based softmax losses (Liu
+et al. 2017; Wang et al. 2018b,a; Deng et al. 2019; Sun et al.
+2020; Huang et al. 2020; Deng et al. 2020; Kim et al. 2020;
+Deng et al. 2021), which enforce greater intra-class com-
+pactness and inter-class discrepancy by adding an extra mar-
+gin. They help pull face features towards the learnable class
+center with the same label to guide the label predicting. Ex-
+cept for the great development in face recognition, face clus-
+tering has made remarkable progress and can learn rich and
+hierarchical semantic information from large-scale data. In-
+tuitively, face clustering task (Lloyd 1982; Ester et al. 1996;
+Wang et al. 2019; Yang et al. 2020a) may promote the clas-
+sification task in traditional face recognition. To the best of
+our knowledge, how to incorporate information from clus-
+tering into the learning process of label prediction has been
+little explored in academia.
+
+Several works try to unify face recognition and face clus-
+tering. For instance, FaceNet (Schroff, Kalenichenko, and
+Philbin 2015) solves this by adopting the triplet metric loss
+
+Copyright © 2024, Association for the Advancement of Artificial
+Intelligence (www.aaai.org). All rights reserved.
+
+to pull the sample towards the positive anchor and push it
+away from the negative anchor. However, FaceNet does not
+optimize the classification task directly, while the current
+state-of-the-art methods’ performances are achieved by clas-
+sification. CenterLoss (Wen et al. 2016) jointly optimizes the
+classification task by minimizing the Softmax loss and opti-
+mizing the clustering task by reducing the distance between
+the feature and its class center. However, CenterLoss con-
+ducts the joint learning in a naive way and only considers
+the intra-class compactness and ignores the inter-class dis-
+crepancy. MagFace (Meng et al. 2021) points out that the
+magnitude of the face feature can be regarded as the indica-
+tor of face quality and can be used for face quality cluster-
+ing. Furthermore, face quality can guide the label prediction
+by adaptively adjusting the margin in the label classification
+loss. However, face quality is not the only influence factor on
+face recognition in real life scenarios and the hard samples
+are mainly due to large variations in pose, age, and occlu-
+sion. And these faces with large variations are usually harder
+to cluster, hence we should also pay attention to these sam-
+ples with large variations instead of merely considering face
+quality.
+
+Recently, contrastive learning has been employed in the
+clustering task and performs well on various benchmarks (Li
+et al. 2020, 2021). In this work, we try to explore the prob-
+lem through the joint optimization task of face label pre-
+diction and supervised contrastive face clustering. We try
+to integrate the clustering information into the classic face
+recognition from two aspects. The level of clustering con-
+centration depicts the compactness of the cluster result (Li
+et al. 2020). From the geometric perspective, faces tend to
+be more easily pulled to the cluster center and more eas-
+ily classified if the face cluster has a larger concentration.
+Thus, in the first aspect, we extend the ArcFace loss func-
+tion with a cluster-guided angular margin to adaptively tune
+the classification decision boundary according to the hard
+level of clustering, and the loss is named as Cluster-Guided
+ArcFace(CG-ArcFace). In a nutshell, the class with a larger
+concentration should be assigned with a smaller angular
+margin, and the class with a smaller concentration should
+be assigned with a larger angular margin. In this way, we
+can utilize the clustering information to facilitate the classi-
+fication in an explicit manner compared with FaceNet and
+CenterLoss. In the other aspect, to further use face cluster-
+
+ 
+ 
+ 
+ 
+ 
+ 
+ing to promote face recognition, we propose a supervised
+contrastive face clustering approach and a cluster-aligning
+procedure to jointly optimize both clustering and recogni-
+tion tasks, which jointly considers the intra-class compact-
+ness and inter-class discrepancy. The optimization of clus-
+tering helps the feature extractor to learn the prototype of
+each class at the feature level explicitly, which helps to im-
+prove the robustness of the feature extractor to hard samples
+with large variations in pose, age, occlusion, etc. Compared
+with the MagFace, we add an explicit clustering learning
+process to pull faces with different variations towards the
+cluster center.
+
+In summary, the contributions of this work are:
+
+• We extend ArcFace with a cluster-guided angular margin
+to adjust the within-class feature distribution based on the
+cluster concentration, which injects the cluster knowl-
+edge to label classification for joint learning.
+
+• We further propose to jointly optimize both clustering
+and recognition tasks via a supervised contrastive face
+clustering approach and an additional cluster-aligning
+procedure.
+
+• Extensive qualitative and quantitative results on popu-
+lar facial benchmarks prove the effectiveness of our ap-
+proach and the superiority over the existing methods to
+face recognition.
+
+Related Work
+
+Face Recognition
+The current face recognition approaches can be divided
+into metric-learning methods and classification meth-
+ods. In the metric-learning approaches, FaceNet (Schroff,
+Kalenichenko, and Philbin 2015) minimizes the distance be-
+tween the anchor and positive samples and maximizes the
+distance between the anchor and negative samples. Cen-
+terLoss (Wen et al. 2016) minimizes the Euclidean dis-
+tance between the face feature and its class center. In the
+classification category, the typical loss functions include
+SphereFace (Liu et al. 2017), CosFace (Wang et al. 2018b),
+ArcFace (Deng et al. 2019) and so on. They enforce bet-
+ter intra-class compactness and inter-class discrepancy by
+adding an extra margin. They help pull face instances to-
+wards the learnable class center with the same identity, re-
+sulting in a discriminative face representation. Since a fixed
+margin in the margin-based loss leads the network to treat
+each sample equally without considering their importance
+degree, mining-based strategies are adopted to pay more at-
+tention to hard samples. MV-Softmax (Wang et al. 2020) and
+CurricularFace (Huang et al. 2020) define hard samples as
+misclassified samples and integrate margin and mining into
+one framework. They emphasize hard samples by adopting a
+preset constant (MV-Softmax) or an adaptive variable (Cur-
+ricularFace) as the weights of negative cosine similarities.
+Besides, AdaptiveFace (Liu et al. 2019b), AdaCos (Zhang
+et al. 2019) and FairLoss (Liu et al. 2019a) utilize adaptive
+margin strategy to automatically tune hyperparameters dur-
+ing training. MagFace (Meng et al. 2021) is a joint frame-
+work of face recognition and clustering based on face qual-
+ity. The feature magnitude is used as the quality indicator,
+
+and the adaptive margin and regularization item help enforce
+the face with higher quality to have a larger magnitude.
+
+Face Clustering
+The works in face clustering can be divided into two cate-
+gories. Although promising results have been achieved, clas-
+sic unsupervised clustering gives discouraging results on
+large-scale complex datasets due to the naive distribution
+assumptions (Lloyd 1982; Ester et al. 1996). Hence, some
+supervised methods based on the graph convolutional net-
+work (GCN) have been proposed recently. For instance, L-
+GCN (Wang et al. 2019) predicts the linkage on subgraphs
+deploying a GCN. DS-GCN (Yang et al. 2019) and VE-
+GCN (Yang et al. 2020b) utilize two-stage GCNs to cluster
+the faces. STAR-FC (Shen et al. 2021) proposes a structure-
+preserved sampling strategy to train the edge classification
+GCN.
+
+In our method, we try to cluster the faces in a supervised
+contrastive learning way, motivated by the works (Khosla
+et al. 2020; Li et al. 2020). Instead of developing cluster-
+ing methods, our approach aims at improving feature dis-
+tribution structure and providing the input feature for the
+mainstream clustering methods, which is similar to the Mag-
+Face (Meng et al. 2021).
+
+Proposed Approach
+Figure 1 demonstrates the overall framework of our ap-
+proach. The framework contains an encoder which is opti-
+mized by backpropagation and parameterized by θf , and an
+momentum encoder parameterized by θm and updated by
+momentum: θm ← meθm + (1 − me)θf (He et al. 2020).
+me is the momentum to control the updating speed of pa-
+rameters. The momentum encoder generates face features to
+dynamically maintain a Feature Queue Q. We cluster face
+features according to the labels within the Q. We denote the
+class number as K and the class set of training dataset is
+denoted as K = {1, 2, ..., K}. The feature set of class k in
+Q is denoted as Qk, and the cluster center of class k within
+Q is C q
+k is
+used for updating the cluster center of class k in the Cluster-
+Center Bank, which is denoted as Ck. The updating process
+is Ck ← mcCk + (1 − mc)C q
+k, where mc is the momentum
+controlling the updating speed.
+
+k is calculated by C q
+
+k = 1
+|Qk|
+
+k. C q
+
+f . C q
+
+f ∈Qk
+
+(cid:80)
+
+Given the current Q and the updated Cluster-Center Bank,
+we can calculate and update the concentration level for each
+class. Referring the work (Li et al. 2020), the concentration
+is measured by the Equation 1, where a smaller ϕ indicates
+larger concentration. α is a smooth parameter to ensure
+that small clusters do not have an overly-large ϕ.
+
+ϕk =
+
+(cid:80)
+
+f ∈Qk
+
+∥f − Ck∥2
+|Qk|log (|Qk| + α)
+
+, k ∈ K = {1, 2, ..., K}
+
+(1)
+
+In the above way, we can obtain each class’s cluster center
+and corresponding cluster concentration. Then we sample
+M classes among all the K classes, and the sampled cluster
+centers and cluster concentrations are denoted as Φ and C re-
+spectively. The Φ and C are involved in loss function design
+afterward.
+
+Figure 1: An overview of the proposed approach. The framework contains an encoder and a momentum encoder. The Cluster-
+Guided ArcFace loss, the supervised Cluster Contrastive loss, and the Cluster Aligning loss are utilized for training.
+
+Three loss functions are employed in our framework,
+which are the Cluster-Guided ArcFace loss LCG−ArcF ace,
+the supervised Cluster Contrastive loss LClu−Con and the
+Cluster Aligning loss LClu−Ali.
+
+proves face recognition in the wild. Hence, we reformulate
+the Equation 2 to derive the Cluster-Guided ArcFace loss.
+The LCG−ArcF ace is formulated in Equation 3 and Equa-
+tion 4.
+
+Cluster-Guided ArcFace
+Before introducing our proposed Cluster-Guided ArcFace
+loss, we briefly revisit the ArcFace (Deng et al. 2019). We
+suppose that we are given a training batch of B face samples
+i=1, where fi ∈ Rd denotes the d-dimensional em-
+{fi, yi}B
+bedding and yi is its associated class label. By defining the
+angle θj between fi and j-th learnable class center Wj ∈ Rd
+as W T
+j fi = ∥Wj∥∥fi∥cosθj, the objective of ArcFace can
+be formulated as Equation 2:
+
+LArcF ace = −
+
+(cid:32)
+
+log
+
+1
+B
+
+·
+
+B
+(cid:88)
+
+i=1
+
+es·cos(θyi +m)
+
+(cid:33)
+
+es·cos(θyi +m) + (cid:80)
+
+j̸=yj
+
+es·cosθj
+
+(2)
+where m > 0 denotes the additive angular margin and s
+
+is the scaling parameter.
+
+Despite its superior performance in enforcing intra-class
+compactness and inter-class discrepancy, ArcFace employs
+the uniform margin m for each class without consider-
+ing the feature distribution structure. Different from Mag-
+Face (Meng et al. 2021) that utilizes the face quality to ad-
+just the margin, we directly explore the clustering structure
+knowledge and adjust the uniform margin based on the clus-
+ter concentration. We suppose the class with a smaller con-
+centration, i.e., larger ϕ, should be assigned with a larger
+margin. From the perspective of clustering, the smaller con-
+centration indicates that faces are harder to cluster, and there
+are more hard samples in this class. Assigning the class of
+smaller concentration with a larger margin will help pulling
+the hard samples towards the learnable class center and im-
+
+LCG−ArcF ace = −
+
+1
+B
+
+·
+
+B
+(cid:88)
+
+i=1
+
+Li
+
+(cid:32)
+
+Li = log
+
+es·cos(θyi +λ(ϕyi )·m)
+
+es·cos(θyi +λ(ϕyi )·m) + (cid:80)
+
+j̸=yj
+
+es·cosθj
+
+(cid:33)
+
+(3)
+
+(4)
+
+where λ(ϕyi) is a scale factor to multiply the uniform
+margin m and has the property of monotonically increasing
+with the ϕyi and monotonically decreasing with the concen-
+tration. Hence, if the class yi has smaller concentration, a
+larger margin λ(ϕyi) · m should be assigned to it.
+
+We can define λ(ϕyi) in a linear manner. We denote
+the maximum concentration of all classes as ϕmax =
+max{ϕk, k ∈ K} and the minimum concentration as
+ϕmin = min{ϕk, k ∈ K}. Then λ(ϕyi) is defined as Equa-
+tion 5.
+
+λ(ϕyi ) =
+
+ϕyi − ϕmin
+ϕmax − ϕmin
+
+(5)
+
+Supervised Contrastive Clustering
+Except for adjusting the classification margin based on the
+cluster concentration, which is a manner of joint learning
+of classification and clustering, we furthermore propose to
+jointly optimize both tasks via a supervised contrastive clus-
+tering process and an additional clustering-aligning process.
+We employ the infoNCE (van den Oord, Li, and Vinyals
+2018) loss to conduct contrastive learning of the instance
+features and cluster centers, named as supervised Cluster
+Contrastive loss, LClu−Con. Given an instance feature, we
+
+can obtain the positive cluster center according to its label
+and obtain some other cluster centers as negative samples.
+We regard it as a supervised contrastive manner because we
+extend the traditional self-supervised batch contrastive ap-
+proach to the fully-supervised setting with reference to Sup-
+Con (Khosla et al. 2020).
+
+Assuming that the input mini-batch contains B sam-
+ples and the number of sampled cluster centers is M ,
+we denote the features and class labels of the mini-
+batch as F = [f1, f2, ..., fB] and [y1, y2, ..., yB] , yi ∈
+K. The sampled cluster centers are denoted as C =
+2 , ..., C s
+[C s
+M ], and their labels and concentration mea-
+surements are [ys
+M ] and Φ = [ϕs
+2, ..., ys
+2, ..., ϕs
+M ].
+Then the supervised Cluster Contrastive loss is defined as
+Equation 6, where 1 (cid:0)yi = ys
+(cid:1) = 1 if yi is the same as ys
+j ;
+otherwise 1 (cid:0)yi = ys
+
+(cid:1) = 0.
+
+1 , C s
+
+1, ϕs
+
+1, ys
+
+j
+
+j
+
+LClu−Con = −
+
+1
+B
+
+B
+(cid:88)
+
+log
+
+i=1
+
+(cid:80)M
+
+j=1 exp (cid:0)fi · C s
+
+j /ϕs
+j
+
+(cid:80)M
+
+j=1 exp (cid:0)fi · C s
+
+(cid:1)
+
+(cid:1) 1 (cid:0)yi = ys
+(cid:1)
+j /ϕs
+j
+
+j
+
+The class-adaptive temperature ϕs
+
+(6)
+j is designed with refer-
+ence to PCL (Li et al. 2020). It helps make LClu−Con be
+adaptive to samples with different hardness levels.
+
+Major Differences from the Related Work The super-
+vised Cluster Contrastive loss is designed with reference to
+SupCon (Khosla et al. 2020) and PCL (Li et al. 2020). Sup-
+Con first proposes to conduct contrastive learning in a su-
+pervised way, and the positive sample is selected from the
+images with the same class label. Our work inherits the idea
+of supervised learning from SupCon, and the main differ-
+ence is that we choose the cluster centers rather than images
+to form positive and negative samples and adopt a class-
+adaptive temperature for face clustering. PCL proposes to
+utilize class prototypes to bridge contrastive learning and
+clustering while the class prototypes in their work are gen-
+erated using the Expectation-Maximization(EM)-based al-
+gorithm, which is also an unsupervised learning way. The
+main difference between our work and PCL is that our clus-
+ter centers are generated in a supervised manner and make
+full usage of the face labels.
+
+In addition to the contrastive learning between cluster
+centers and instances, we add an extra contrastive learn-
+ing process between cluster centers and the learnable class
+centers in the label classifier, and we employ the cluster-
+aligning loss, LClu−Ali to implement it. LClu−Ali will help
+align the cluster center Cyi and the corresponding learn-
+able class center Wyi, and this may promote the classi-
+fier optimization using the clustering results. We define the
+LClu−Ali as Equation 7, where τ is the learnable tempera-
+ture widely used in contrastive learning.
+
+LClu−Ali = −
+
+1
+M
+
+M
+(cid:88)
+
+i=1
+
+log
+
+i · Wys
+
+exp (cid:0)C s
+j=1 exp (C s
+
+/τ (cid:1)
+i · Wj/τ )
+
+i
+
+(cid:80)K
+
+(7)
+
+Overall Loss
+The overall loss of our framework is written as Equation. 8,
+where λ1 and λ2 are the weights.
+
+L = LCG−ArcF ace + λ1LClu−Con + λ2LClu−Ali
+
+(8)
+
+Experiments
+
+Implementation Details
+We utilize the refined MS1M (Guo et al. 2016) as our
+training dataset to conduct a fair comparison with other
+methods. In the testing stage, we extensively evaluate our
+approach on popular benchmarks, including LFW (Huang
+et al. 2007), CFP-FP (Sengupta et al. 2016), CPLFW (Zheng
+and Deng. 2018), AgeDB (Nech and Kemelmacher-
+Shlizerman 2017), CALFW (Zheng and Deng. 2017), IJB-
+B (Whitelam et al. 2017), IJB-C (Maze et al. 2018) and
+MegaFace (Kemelmacher-Shlizerman et al. 2016). For data
+pre-processing, we first resize the aligned face images to
+112 × 112. For the selection of backbone networks, we use
+the most widely used CNN architectures ResNet (He et al.
+2016). All experiments in this paper are implemented using
+PyTorch, and we will release our code and pretrained models
+in the near future.
+
+The batch size B is set to 512, and models are trained on
+8 NVIDIA Tesla V100 GPUs. We employ the Adam opti-
+mizer in the training stage, and the learning rate starts from
+0.001. We decrease the learning rate by 0.1× at 20th, 40th,
+and 60th epochs and stop at 80th epochs. The momentum
+me for updating the momentum encoder is set to 0.999, and
+the size of the Feature Queue Q is set to 8192. The mo-
+mentum mc for updating the Cluster-Center Bank is set to
+0.9. The number of the class centers, M in Equation 6 and
+Equation 7, is 2048. The margin parameter m and the scale
+parameter s in Equation 4 are 0.5 and 64. The smooth pa-
+rameter in Equation 1 is set to 10. The loss weights λ1 and
+λ2 are 1.0 and 0.5, respectively.
+
+Comparison with the State-of-the-Art Methods
+To compare with recent state-of-the-art competitors, we train
+our model on the MS1M dataset, and the backbone we adopt
+is ResNet-100 for a fair comparison. Our model is tested on
+various benchmarks, including LFW for unconstrained face
+verification, CFP-FP and CPLFW for large pose variations,
+AgeDB and CALFW for age variations, IJB-B, and IJB-C
+for mixed-media (image and video) face verification, and
+MegaFace for identification and verification under million-
+scale distractors. As is reported in Table 1, the proposed
+method achieves the state-of-the-art result (99.85) with the
+competitors on LFW, where the performance is almost sat-
+urated. For pose-invariant and age-invariant face recogni-
+tion, our method achieves 99.12% on CFP-FP, 93.51% on
+CPLFW, 98.58% on AgeDB, and 96.16% on CALFW and
+outperforms most of the other state-of-the-art methods, in-
+cluding GroupFace, CurricularFace, Sub-center ArcFace,
+BroadFace, VPL-ArcFace, ElasticFace and etc. Besides, our
+model obtains 95.62 TAR on IJB-B and 96.80 TAR on IJB-
+C when FAR is set as 1e−4 and achieves the best perfor-
+mance on these two benchmarks. On MegaFace, our ap-
+proach also has comparable results with the state-of-the-art
+method(VPL-ArcFace). Overall speaking, the superiority of
+
+Methods
+
+CosFace(Wang et al. 2018b)(CVPR18)
+ArcFace(Deng et al. 2019)(CVPR19)
+AFRN(Kang et al. 2019) (ICCV19)
+MV-Softmax(Wang et al. 2020)(AAAI20)
+GroupFace(Kim et al. 2020) (CVPR20)
+CircleLoss(Sun et al. 2020)(CVPR20)
+DUL(Xu et al. 2020)(CVPR20)
+CurricularFace(Huang et al. 2020) (CVPR20)
+URFace(Shi et al. 2020)(CVPR20)
+DB(Cao et al. 2020)(CVPR20)
+Sub-center ArcFace(Deng et al. 2020)(ECCV20)
+BroadFace(Kim, Park, and Shin. 2020)ECCV20
+SST(Du et al. 2020)ECCV20
+VPL-ArcFace(Deng et al. 2021) (CVPR21)
+ElasticFace(Boutros et al. 2022) (CVPRW22)
+Ours(ResNet-100)
+
+Verification Accuracy
+
+IJB
+
+LFW CFP-FP CPLFW AgeDB CALFW IJB-B
+94.80
+99.81
+94.25
+99.83
+88.50
+99.85
+93.60
+99.80
+94.93
+99.85
+−
+99.73
+−
+99.83
+94.80
+99.80
+−
+99.78
+−
+99.78
+94.94
+99.80
+94.97
+99.85
+−
+99.75
+95.56
+99.83
+95.09
+99.82
+95.62
+99.85
+
+92.28
+92.08
+93.48
+92.83
+93.17
+−
+−
+93.13
+−
+92.63
+−
+93.17
+88.35
+93.45
+93.28
+93.51
+
+98.12
+98.27
+95.56
+98.28
+98.63
+96.02
+98.78
+98.37
+98.64
+−
+98.80
+98.63
+95.10
+99.11
+98.60
+99.12
+
+95.76
+95.45
+96.30
+96.10
+96.20
+−
+−
+96.20
+−
+96.08
+−
+96.20
+94.92
+96.12
+96.17
+96.16
+
+98.11
+98.28
+95.35
+97.95
+98.28
+−
+−
+98.32
+−
+97.90
+98.31
+98.38
+97.20
+98.60
+98.35
+98.58
+
+IJB-C
+96.37
+96.03
+93.00
+95.20
+93.26
+93.95
+94.61
+96.10
+96.60
+−
+96.28
+96.38
+−
+96.76
+96.40
+96.80
+
+MegaFace
+Id
+97.91
+98.35
+−
+97.76
+98.74
+98.50
+98.60
+98.71
+−
+96.35
+98.16
+98.70
+96.27
+98.80
+98.80
+98.80
+
+Ver
+97.91
+98.48
+−
+97.80
+98.79
+98.73
+−
+98.64
+−
+96.56
+98.36
+98.95
+96.96
+98.98
+98.83
+98.95
+
+Table 1: Performance comparisons with the state-of-the-art methods on various benchmarks. 1:1 verification accuracy (%)
+is reported on the LFW, CFP-FP, CPLFW, AgeDB, CALFW datasets. TAR@FAR=1e-4 is reported on the IJB-B and IJB-C
+datasets. Identification and verification evaluation on MegaFace using FaceScrub as the probe set. “Id” refers to the rank-1 face
+identification accuracy with 1M distractors, and “Ver” refers to the face verification TAR@FPR=1e-6.
+
+our algorithm has been well demonstrated by the compari-
+son with the state-of-the-art approaches.
+
+Ablation Study
+
+In order to demonstrate the effectiveness and performance
+of our proposed method, we carried out sufficient abla-
+tion experimental studies to explore the contributions of
+the Cluster-Guided ArcFace LCG−ArcF ace, the supervised
+Cluster Contrastive loss LClu−Con and the Cluster-Aligning
+loss LClu−Ali. Since our proposed classification loss, the
+Cluster-Guided ArcFace, is based on the original ArcFace
+loss, we select the model with ArcFace classification head
+and ResNet-100 backbone as the baseline model. The ab-
+lation studies are divided into two parts, where one part ex-
+plores the performance improvement of individual loss func-
+tions, and the other one explores the joint performance im-
+provement of multiple losses. The overall ablation studies
+are demonstrated in Table 2.
+
+Performance Improvement of Individual Losses Firstly,
+we study the effect of each loss function on the baseline sep-
+arately.
+
+setting1: We replace the ArcFace loss with the proposed
+Cluster-Guided ArcFace LCG−ArcF ace to utilize the clus-
+ter concentration of each class to adjust the decision margin
+adaptively. The setting1 model significantly outperforms the
+baseline model on all the benchmarks except for the LFW
+benchmark, where the performance is almost saturated. Es-
+pecially, the setting1 model has a significant improvement
+on the benchmarks with hard face samples, including CFP-
+FP and CPLFW with large pose variations, AgeDB and
+CALFW with age variations, IJB-B(C) containing images
+and frames from videos, and the MegaFace containing mas-
+sive samples and a high degree of variability in scale, pose
+and occlusion. The hard samples with large variations in
+pose, age, scale, and occlusion, are usually distributed far
+away from the cluster center and are harder to cluster. We
+
+assume that the margin for their class should be tuned larger
+to help pulling the hard samples towards the learnable class
+center. The comparisons between the setting1 and the base-
+line have proved the correctness of our assumption and the
+validity of the Cluster-Guided ArcFace.
+
+setting2: We add the supervised Cluster Contrastive loss
+LClu−Con to the baseline model to verify the effect of the
+joint optimization of both clustering and recognition task.
+From Table 2, the setting2 model notably exceeds the base-
+line on all the benchmarks especially the benchmarks with
+hard samples. We believe that the experimental results can
+be interpreted as the optimization of clustering being able to
+help the feature extractor learn the prototype of each class at
+the feature level explicitly. However, in ArcFace, the concept
+of the prototype is reflected through the classifier weights.
+The joint optimization of clustering and recognition is, in
+fact, a fusion of the two ideas of the learning prototype. Joint
+learning of class prototypes helps to improve the robustness
+of feature extraction of hard samples with large variations in
+pose, age, scale, occlusion, etc.
+
+setting3: We add the Cluster-Aligning loss LClu−Ali to
+facilitate the learning of ArcFace in the setting3. There are
+some improvements on different benchmarks, but the im-
+provements are limited compared with the setting1 and set-
+ting2. The Cluster-Aligning loss can enhance the perfor-
+mance because the alignment between learnable class cen-
+ters in the classifier and cluster centers helps the learning
+of the classifier to be robust to the variations of faces. The
+reason why the improvements are limited is that the Cluster-
+Aligning loss serves a similar role as the ArcFace, and little
+additional knowledge is learned.
+
+Performance Improvement of Joint Combination of
+Multiple Losses
+In the above section, we have evaluated
+the individual improvement of the different losses, and all
+of them can promote face recognition performance. We here
+examine the performance of the joint combination of them.
+
+Settings
+
+baseline
+setting1
+setting2
+setting3
+setting4
+setting5
+setting6
+
+Loss Functions
+LCG−ArcF ace LClu−Con LClu−Ali
+
+✓
+
+✓
+✓
+✓
+
+✓
+
+✓
+
+✓
+
+✓
+
+✓
+✓
+
+Verification Accuracy
+
+IJB
+
+LFW CFP-FP CPLFW AgeDB CALFW IJB-B IJB-C
+96.03
+98.28
+99.83
+96.38
+98.43
+99.82
+96.68
+98.50
+99.85
+96.28
+98.32
+99.85
+96.75
+98.52
+99.83
+96.52
+98.48
+99.83
+96.80
+98.58
+99.85
+
+94.25
+95.12
+95.48
+94.80
+95.56
+95.27
+95.62
+
+98.27
+98.78
+98.96
+98.36
+99.06
+98.85
+99.12
+
+92.08
+92.94
+93.26
+92.24
+93.45
+93.06
+93.51
+
+95.45
+95.80
+95.96
+95.51
+96.12
+95.92
+96.16
+
+MegaFace
+Ver
+Id
+98.48
+98.35
+98.64
+98.48
+98.72
+98.60
+98.50
+98.38
+98.88
+98.72
+98.68
+98.54
+98.95
+98.80
+
+Table 2: Ablation studies of the improvements of different loss functions. The performance indicators are explained in the
+caption of Table 1. The model of the first line without LCG−ArcF ace, LClu−Con and LClu−Ali, is the baseline model, which
+uses ResNet-100 as backbone and the ArcFace loss as the classification loss.
+
+The comparisons between the settings (setting4, setting5)
+and setting1 demonstrate that both the supervised Cluster
+Contrastive loss and the Cluster-Aligning loss can further
+promote the performance of the Cluster-Guided ArcFace.
+Furthermore, the comparisons between setting6 and the set-
+tings(setting4, setting5) prove that the supervised Cluster
+Contrastive loss and the Cluster-Aligning loss can promote
+each other.This is because the cluster aligning procedure
+helps to constrain the consistency of the cluster centers and
+the learnable centers, which should be consistent in theory.
+In summary, the comparisons between experimental settings
+have illustrated the effectiveness of joint label classification
+and supervised contrastive clustering and the contributions
+of the proposed loss functions.
+
+Comparisons with the Triplet Loss and Center Loss
+The supervised Cluster Contrastive loss has shown con-
+sistency in improving the performance of face recogni-
+tion via clustering the face features iteratively. In compar-
+ison, some metric losses, such as the Triplet loss (Schroff,
+Kalenichenko, and Philbin 2015) and the Center loss (Wen
+et al. 2016) can also play a similar role. We have conducted
+experiments to compare our supervised Cluster Contrastive
+loss, Triplet loss, and Center loss.
+
+Losses
+
+Center Loss
+Triplet Loss
+LClu−Con
+
+Verification Accuracy
+
+IJB
+
+LFW CFP-FP AgeDB IJB-B IJB-C
+96.34
+98.36
+99.78
+96.56
+98.48
+99.82
+96.80
+98.58
+99.85
+
+95.04
+95.32
+95.62
+
+98.68
+98.89
+99.12
+
+Table 3: Comparison between the supervised Cluster Con-
+trastive loss and the Triplet loss and Center Loss. The per-
+formance indicators are explained in the caption of Table 1.
+
+For a fair comparison, we only replace the supervised
+Cluster Contrastive loss with the Center Loss and the Triplet
+loss and still utilize the Cluster-Guided ArcFace loss and
+the Cluster-Aligning loss. The results in Table 3 show that
+the proposed supervised Cluster Contrastive loss performs
+better than the Center Loss and the Triplet Loss in the
+five benchmarks, especially in the ones with more diffi-
+cult samples(CFP-FP, AgeDB, IJB-B and IJB-C). Compared
+with the Center loss, the supervised Cluster Contrastive loss
+joint optimizes both the intra-class compactness and the
+inter-class discrepancy. Compared with the Triplet loss, the
+supervised Cluster Contrastive loss can meet more negative
+samples and is adaptive to the hard level of clustering.
+
+Effect of the Adaptive Temperature in LClu−Con
+We verify the effect of the cluster-adaptive temperature ϕs
+j
+in the supervised Cluster Contrastive loss is adjusted accord-
+ing to the feature distribution in the cluster. We compare it
+with the typical learnable temperature τ0, widely adopted in
+the infoNCE (van den Oord, Li, and Vinyals 2018) loss, on
+various benchmarks. As is illustrated in Table 4, the mod-
+els using the cluster-adaptive temperature consistently out-
+perform those using the typical learnable temperature on all
+benchmarks. This proves it will promote better face repre-
+sentation learning via making the temperature adaptive to
+the hard level of face clustering.
+
+Temperature
+
+Typical τ0
+Adaptive ϕs
+j
+
+Verification Accuracy
+
+IJB
+
+LFW CFP-FP AgeDB IJB-B IJB-C
+96.72
+98.50
+99.83
+96.80
+98.58
+99.85
+
+95.54
+95.62
+
+99.06
+99.12
+
+Table 4: Effect of the Adaptive Temperature in LClu−Con.
+The performance indicators are explained in the caption of
+Table 1.
+
+Comparison of Feature Similarity Distribution
+We also conduct a quantitive experiment to prove the effec-
+tiveness of our approach. We illustrate the feature similarity
+distribution on the CFP-FP and the AgeDB dataset. The red
+bars show the cosine similarity distribution of negative pairs,
+and the blue bars show the cosine similarity distribution of
+positive pairs. The vertical dashed line indicates the expec-
+tation of cosine similarity distribution. The margin between
+the two vertical dashed lines can indicate the ability of face
+verification.
+
+Figure 2(a) and Figure 2(b), the margin between positive
+pairs and negative pairs on the CFP-FP dataset is enlarged
+from 0.463 to 0.524, which shows that our paradigm can im-
+prove the face representation of the samples with large pose
+variations. Similarly, the margin between positive pairs and
+negative pairs on the AgeDB dataset is enlarged from 0.521
+to 0.547, shown in Figure 2(c) and Figure 2(d). This result
+proves that our paradigm can also improve the face represen-
+tation of the samples with large age variations. The quanti-
+tive experiment further validates the effect of our paradigm
+on learning a better face representation.
+
+Face Clustering
+Similar to MagFace (Meng et al. 2021), our approach aims
+to improve feature distribution structure and provide the in-
+put feature for the mainstream clustering methods. Hence,
+
+(a) CFP-FP - ArcFace
+
+(b) CFP-FP - Ours
+
+(c) AgeDB - ArcFace
+
+(d) AgeDB - Ours
+
+Figure 2: Feature similarity distributions of ArcFace and our approach. The dashed line indicates the distribution expectation.
+
+Method
+
+K-means
+
+L-GCN
+
+F
+
+F
+
+Net
+
+Ours
+
+IJB-B-512
+NMI
+F
+
+IJB-B-1024
+NMI
+
+IJB-B-1845
+NMI
+66.70 88.83 66.82 89.48 66.93 89.88
+ArcFace
+MagFace 66.75 88.86 67.33 89.62 67.06 89.96
+66.79 88.89 67.51 89.70 67.12 90.02
+72.72 90.42 72.50 91.15 73.89 91.96
+MagFace 73.13 90.61 72.68 91.30 74.26 92.13
+73.44 90.75 72.78 91.42 74.49 92.25
+Ours
+84.92 93.72 83.50 93.78 80.35 92.30
+ArcFace
+MagFace 85.27 93.83 83.79 94.10 81.58 92.79
+85.46 93.88 83.92 94.41 82.17 93.15
+
+Ours
+
+DBSCAN ArcFace
+
+Table 5: F-score (%) and NMI (%) on clustering bench-
+marks.
+
+we compare the performance of our approach with the ones
+of the baseline model(ArcFace) and the recent work Mag-
+Face, via integrating their features with multiple clustering
+methods. We utilize three clustering methods for evaluation:
+K-means (Lloyd 1982), DBSCAN (Ester et al. 1996) and
+L-GCN (Wang et al. 2019). Following the IJB-B clustering
+protocol, we evaluate on three largest sub-tasks where the
+numbers of identities are 512, 1024, and 1845. Normalized
+mutual information (NMI) and BCubed F-measure (Amig´o
+et al. 2009) are employed as the evaluation metrics. Follow-
+ing the IJB-B clustering protocol (Whitelam et al. 2017) we
+evaluate on three largest sub-tasks where the numbers of
+identities are 512, 1024, and 1845. Normalized mutual in-
+formation (NMI) and BCubed F-measure are employed as
+the evaluation metrics.
+
+Table 5 illustrates the clustering results. The overall per-
+formance can be consistently improved with stronger clus-
+
+ter methods(K-means<DBSCAN<L-GCN) compared with
+the baseline ArcFace model. Our approach improves both
+F-score and NMI metrics over the baseline model, which
+shows that our paradigm that jointly conducts label predic-
+tion and supervised contrastive clustering can promote the
+clustering performance. We also compare our approach with
+the MagFace and our methods outperforms MagFace consis-
+tently. Moreover, this may be contributed to that our Cluster-
+Guided ArcFace directly utilizes the cluster concentration,
+which contains more knowledge than face quality, to guide
+the tuning of margin. On the other hand, our supervised clus-
+ter contrastive loss conducts an explicit clustering procedure
+to help learning better face representation. The clustering re-
+sults further prove that our approach can improve the feature
+representation.
+

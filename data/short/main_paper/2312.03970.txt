@@ -1,0 +1,522 @@
+INTRODUCTION
+
+Medical report generation (MRG), a typical vision-language
+task, aims to describe medical images with professional and
+accurate sentences that encompass detection sites, abnormal
+situations, etc. The automation of MRG will reduce the heavy
+workload of physicians during diagnosis and treatment.
+
+For MRG, challenges arise from the diverse range of im-
+age modalities, high anisotropy, complex implicit content,
+and the abundance of professional medical terms in the ac-
+companying text. The limited availability of high-quality
+image-text pairs for training further exacerbates
+medical
+
+† This work was done during ShibinWu’s internship at Peng Cheng Lab.
+
+the situation. To alleviate these challenges, medical vision-
+language pre-training (M-VLP) models [1, 2], have been
+proposed recently. Similar to the success trend of VLP mod-
+els tailed for natural images [3, 4], M-VLP models benefit the
+learning of transferable medical image representations. For
+example, BiomedCLIP [2] is endowed with medical image-
+text contrast ability by pre-training on 15 million biomedical
+figure-caption pairs extracted from PubMed Central. How-
+ever, these M-VLP models still suffer from the inability of
+MRG due to the lack of a vision-conditioned language model,
+which is addressed by the subsequent studies [5, 6] that com-
+pose foundation models (FM), i.e.
+large language models
+(LLMs) into a unified framework following BLIP-2 [4].
+
+While the integration of VLP models and LLMs presents
+a solid basis for generating texts from vision data, there are
+still several critical steps to developing specialist models for
+MRG. One is parameter-efficient fine-tuning (PEFT) [7], e.g.
+LoRA [8] and Prefix-tuning [9], adjusting pre-trained mod-
+els for downstream tasks at low cost to continuously learn
+the specific knowledge and achieve domain adaptation. An-
+other one is enhancing the task-specific medical knowledge
+of pre-trained models [1], which is requisite to produce tar-
+geted descriptions rather than general ones. However, exist-
+ing works [6] mainly focus on the PEFT of LLMs and neglect
+the adaptation of the vision part. Besides, current LLM-based
+MRG models employ a simple cross-entropy loss for opti-
+mization, overlooking the important medical knowledge.
+
+Considering the above issues, we propose a Medical-
+Adapted and Knowledge-Enhanced Network (MAKEN) to
+solve MRG problem. Our main contributions are as fol-
+lows: 1) MAKEN combines the great potential of medical
+vision FMs and LLMs with the efficient and flexible design
+of task-specific components, making it an effective solu-
+tion for the challenging MRG task. 2) Within MAKEN, we
+introduce adapter tuning to calibrate medical image represen-
+tations and design a medical knowledge enhancement loss
+to reinforce the assimilation of medical terms. 3) Results
+
+ 
+ 
+ 
+ 
+ 
+ 
+Fig. 1. The architecture of our proposed MAKEN. It is composed of a medical image encoder with adapters, a feature extractor
+named Q-Former, and LLM. The parameters of the image encoder and the LLM were fixed during the training.
+
+on ImageCLEFmedical 2023 [10] validate the superiority of
+our proposed MAKEN against strong competitors and the
+comprehensive quality of the generated text.
+
+2. METHOD
+
+2.1. Network Architecture
+
+The overall architecture of MAKEN is shown in Fig. 1. Based
+on the advanced multimodal foundation model BLIP-2 [4],
+we introduce two core designs: the adapter tuning module for
+the vision FM and the medical knowledge enhancement loss
+that augments the weights associated with medical norms.
+
+The initial encoding of the input medical image I using
+the vision encoder of BiomedCLIP [2], which was pre-trained
+thoroughly in medical-domain vision-language processing.
+The lightweight vision encoder employs the structure of ViT-
+B/16 [11] model, and its parameters remain frozen during our
+training. We explore the decoder-based OPT 2.7B model [12]
+for the frozen large language model. A BERT-based feature
+extractor guided by 32 learnable visual queries integrates
+effective visual information through the cross-attention mod-
+ule, adopting the structure of Q-Former in BLIP-2. It plays
+a pivotal role in bridging the gap between the image and text
+feature domains. In a way, the output embeddings are mapped
+into the text domain and subsequently projected into prefix
+tokens of LLM with the same dimension as text embedding.
+The prefix tokens condition the decoder-based LLM to gener-
+ate text that is closely related to the input medical image. We
+introduce the medical knowledge enhancement loss, collab-
+orating with language model loss to train the entire network.
+Differ from BLIP-2, the training process of MAKEN was
+finished in only one stage.
+
+2.2. Adapter Tuning with Vision Encoder
+
+We incorporate parameter-efficient
+low-rank adapters be-
+tween each layer of the vision encoder to preserve the rich
+prefetched domain-specific knowledge of medical images,
+while continually learning the effective visual features for the
+specific MRG task. Furthermore, the adapter integrated into
+the lightweight vision encoder reduces the count of trainable
+parameters, markedly enhancing both the model’s training
+efficiency and inference speed.
+
+The structure of vision adapter attached is illustrated in
+Fig. 1, adopting similar architecture to LoRA [8]. The adapter
+primarily comprises a linear mapping matrix to the low-rank
+feature space and a dual mapping matrix for reverting the low-
+rank features to their original dimensional space. Each matrix
+is accompanied by a layer normalization layer and non-linear
+activation. Adaptation for the output embeddings Fi of the
+i-th vision encoder layer can be formulated as
+
+ˆFi+1 = Fi + α · Adai(Fi)
+
+(1)
+
+where ˆFi+1 denotes the input embeddings of layer i + 1. The
+scaling factor α and low rank r are hyperparameters.
+
+2.3. Medical Knowledge Enhancement
+
+In addition to the common Language Model (LM) loss, we
+introduce the Medical Knowledge Enhancement (MKE)
+loss, leading MAKEN to generate more accurate medical
+terms which correspond to the input image. We performed
+medical entity recognition and obtained statistical data for
+each text in the training data. For the i-th medical text
+Ti in dataset, we denote the nominal medical word set as
+M Wi = {wi
+}, where t1, t2, . . . , tK are the
+t1
+indices of medical terms in Ti. Each word within the M Wi
+
+, . . . , wi
+
+, wi
+t2
+
+tK
+
+Word
+Frequency
+
+chest
+8,761
+
+tomography
+7,822
+
+radiography
+5,038
+
+artery
+4,997
+
+lesion
+3,958
+
+abdomen
+3,201
+
+lung
+2,806
+
+lobe
+2,489
+
+ultrasound
+2,383
+
+bone
+2,051
+
+Table 1. Medical terms with the top 10 occurrences in the captions of the ImageCLEFmedical 2023 dataset.
+
+Publication BERTScore BLEU-1 ROUGE-1 ROUGE-L METEOR CIDEr BLEURT CLIPScore
+
+Model
+CARE† [13] TIP’2023
+AUEB† [14] CLEF’2023
+VCMI† [15] CLEF’2023
+CloseAI [5] CLEF’2023
+PCLmed [6] CLEF’2023
+ICML’2023
+BLIP-2 [4]
+Ours
+MAKEN
+
+0.6186
+0.6141
+0.6133
+0.6229
+0.6210
+0.6119
+0.6343
+
+0.1933
+-
+-
+0.1878
+0.2187
+0.1750
+0.1894
+
+0.2565
+0.2111
+0.2167
+0.2624
+0.2723
+0.2489
+0.2754
+
+0.2255
+-
+-
+0.2323
+0.2324
+0.2169
+0.2378
+
+0.0869
+-
+-
+0.0893
+0.1017
+0.0850
+0.1006
+
+0.2322
+-
+-
+0.2314
+0.2584
+0.2072
+0.2762
+
+0.3291
+-
+-
+0.3187
+0.3349
+0.3203
+0.3325
+
+0.8052
+-
+-
+0.8139
+0.8067
+0.8074
+0.8197
+
+Table 2. Performance comparison on the validation set of ImageCLEFmedical 2023 challenge. †: Specialist models without
+using large language models.
+
+should pertain to a precise nominal phrase or word in a med-
+ical entity. Based on the above definition, we can form the
+following MKE loss.
+
+Lmke( ˆTi) = −
+
+1
+N
+
+tK(cid:88)
+
+j=t1
+
+G(wi
+
+j) log Pθ( ˆwj = wi
+
+j | wi
+
+1:j−1)
+
+(2)
+
+ˆTi represent the text predicted by LLM, ˆwj denote the word
+predicted at the corresponding position, and N represent the
+length of the entire text. The attention weights G(wi
+j) of each
+medical term in M Wi are derived from the word frequency.
+
+G(wi
+
+j) =
+
+log M/(1 + f req(wi
+log M/(1 + fmin)
+
+j))
+
+(3)
+
+j) denotes the frequency of wi
+
+f req(wi
+j within the total of M
+samples, whereas fmin denotes the frequency of the medical
+term with the lowest occurrence. Medical terms with lower
+frequencies are assigned higher weights. The ultimate opti-
+mization loss is a weighted combination of the LM loss and
+MKE loss, i.e. L = Llm + β · Lmke.
+
+3. EXPERIMENTS AND RESULTS
+
+3.1. Experimental Settings
+
+We evaluate our MAKEN on the dataset provided by Image-
+CLEFmedical 2023 [10], which is an updated and extended it-
+eration of the Radiology Objects in COntext (ROCO) dataset.
+Comprising a diverse range of medical image modalities,
+including X-ray, Computed Tomography (CT), Magnetic
+Resonance Imaging (MRI), Ultrasound, Positron Emission
+Tomography (PET), as well as modality combinations (e.g.,
+PET/CT), the dataset consists of 60,918, 10,437, and 10,473
+samples for training, validation, and testing, respectively.
+Each sample comprises a 2D image with an accompany-
+ing caption and associated concepts, i.e. Unified Medical
+
+Language System® (UMLS) Concept Unique Identifiers
+(CUIs) [16]. The average length of all the captions is 16
+words, while the longest caption is 315 words. Evaluation
+was performed on the validation set due to an undisclosed
+ground truth for the test set.
+
+Data preprocessing on ImageCLEFmedical 2023 mainly
+contains removing the disruptive phrases (e.g. “62-year-old
+woman”), temporal descriptors (e.g. “grey matter of 1 cm ×
+1.3 cm”), and non-ASCII codes in text data, which cannot be
+precisely generated.
+
+As presented in Table 1, we extracted nominal words from
+UMLS terms in the training set text and presented the top
+10 medical term nouns based on their frequency of occur-
+rence. After filtering out words with frequencies less than
+5, we identified a total of 3196 medical terms in the train-
+ing set. The statistics were utilized in our proposed medical
+term-based attention (Sec 2.3), enhancing feature extraction
+and contributing to accurate results.
+
+In this study, we use a 6-layer Q-Former with cross-
+attention inserted every two layers to extract features from
+the vision encoder. The low rank r of the adapter was set to 8.
+The global scaling factor α and MKE loss weight β were set
+at 0.2 and 0.5, respectively. All experiments were conducted
+utilizing two NVIDIA V100 Tensor Core GPUs.
+
+3.2. Results and Discussion
+
+Approximately 15 teams participated in the ImageCLEFmed-
+ical 2023 challenge. The website1 showcases a ranking, eval-
+uated by an undisclosed test benchmark. We analyzed the top
+5 teams’ results on the validation set, executing exhaustive
+comparisons. Domain-specific fine-tuning was executed on
+the general image-text generation models, such as BLIP-2 [4]
+and CARE [13], which were integrated for comparison.
+
+Table 2 displays the results of the primary comparative
+
+1https://www.imageclef.org/2023/medical/caption/
+
+model
+MAKEN
+w/o adapter tuning
+w/o MKE loss
+w/o adapter & MKE
+w/o cleaned data
+
+BERTScore BLEU-1 ROUGE-1 ROUGE-L METEOR CIDEr BLEURT CLIPScore
+
+0.6356
+0.6341
+0.6355
+0.6337
+0.6343
+
+0.1932
+0.1905
+0.1926
+0.1775
+0.1894
+
+0.2773
+0.2752
+0.2753
+0.2695
+0.2754
+
+0.2391
+0.2378
+0.2374
+0.2336
+0.2378
+
+0.1026
+0.1014
+0.1016
+0.0955
+0.1006
+
+0.2896
+0.2813
+0.2815
+0.2672
+0.2762
+
+0.3338
+0.3327
+0.3326
+0.3310
+0.3325
+
+0.8194
+0.8199
+0.8203
+0.8186
+0.8197
+
+Table 3. Ablation study on validation set of ImageCLEFmedical 2023.
+
+Image
+
+Captions
+
+Ground Truth:
+late sagittal t2-weighted MRI
+
+Prediction of [5]:
+sagittal t2-weighted MRI of the cervical spine
+
+Our Prediction:
+sagittal t2-weighted MRI of the cervical spine showing
+a high signal in the spinal cord from c3 to c5
+
+Ground Truth:
+computed tomography images after treatment. thoracic
+SMARCA4-eficient undifferentiated tumor showing
+osteolytic changes in the ribs (asterisk) is noted.
+However, pleural thickening (yellow arrow) disappears
+and pleural effusion (yellow arrowhead) decreases in the
+mediastinal window setting.
+
+Prediction of [5]:
+computed tomography ct of chest showing a effusion
+lower arrowheads in the right upper lobe and pleural
+
+Our Prediction:
+contrast-enhanced computed tomography ct of the
+chest showing a right pleural effusion (yellow arrow)
+and a right pleural mass (arrowhead)
+
+Table 4. Compared results of MAKEN, closeAI [5] and
+ground truth medical text in ImageCLEFmedical 2023.
+
+experiment. For consistency in the validation data, we used
+unprocessed data for comparisons. Notably, our proposed
+MAKEN demonstrates superior performance in BERTScore,
+ROUGE-1/L, CIDEr, and CLIPScore, while also achieving
+competitive results in METEOR and BLEURT, closely ap-
+proaching the best-performing metrics. It is worth noting that
+the general cutting-edge models, even after fine-tuning, still
+struggle to perform well in the medical domain.
+
+It is also worth mentioning that CSIRO’s approach [17]
+achieved the highest BERTScore of 0.6425 but relatively
+low other metrics with 0.1615, 0.2446, 0.2025 for BLEU-1,
+ROUGE-1 and CIDEr, respectively, due to their reinforce-
+ment learning design to this specific metric. Our approach
+achieves a slightly lower BERTScore but with much higher
+all other metrics. We did not include CSIRO’s results in Ta-
+ble 2 for fair comparisons since all the evaluations are based
+on the validation set, which was not reported in [17].
+
+The illustrated results are shown in Table 4. For the
+medical image above with a concise caption, both MAKEN
+and closeAI’s approach [5] correctly generated the com-
+mon description (“sagittal T2-weighted MRI”). Remarkably,
+
+MEKEN provided precise details, identifying the specific
+regions (“spinal cord from c3 to c5”) where the abnormal
+manifestations (“high signal”) occurred based on the medical
+image. In the case below, involving a complex and lengthy
+text, predicting accurate findings in the report proved to be
+considerably challenging for the models. CloseAI’s predic-
+tion contained several discrete keywords, lacking coherence
+and comprehensiveness. Moreover, hallucinations occurred,
+as there was no evidence indicating a pathological region in
+the “upper lobe”. In contrast, MAKEN accurately predicted
+the pathological type, aligning with indicators in the image
+(“pleural effusion” and “pleural mass” to “undifferentiated
+tumor”), with precise adjuncts. These instances indicate that
+our proposed method effectively learned information from
+short and long texts.
+Ablation Study:
+
+In Table 3, we verified the impact
+of each component by ablating them from our full model.
+As observed, individually removing the adapter tuning and
+MKE loss led to performance degradation, and deleting both
+yielded the poorest results. The most noticeable decline was
+observed in CIDEr, while BERTScore and CLIPScore ex-
+hibited less effects. This results indicated that our proposed
+components enhanced MRG and exhibited complementary
+effects. Additionally, our experiments revealed that incor-
+porating adapters aided in expediting model convergence.
+Furthermore, we emphasized the significance of data clean-
+ing in training a more robust model.
+
+4. 

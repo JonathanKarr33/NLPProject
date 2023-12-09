@@ -1,0 +1,893 @@
+3
+2
+0
+2
+c
+e
+D
+7
+
+]
+L
+C
+.
+s
+c
+[
+
+1
+v
+2
+6
+3
+4
+0
+.
+2
+1
+3
+2
+:
+v
+i
+X
+r
+a
+
+PCoQA: Persian Conversational Question Answering Dataset
+
+Hamed Hematian Hemati♠ Atousa Toghyani♢ Atena Souri♣
+
+Sayed Hesam Alavian♠
+
+Hossein Sameti♠ Hamid Beigy♠
+
+♠AI Group, Computer Engineering Department, Sharif University of Technology
+♢Lorestan University
+♣Tehran University
+
+Abstract
+
+Humans seek information regarding a specific
+topic through performing a conversation con-
+taining a series of questions and answers. In
+the pursuit of conversational question answer-
+ing research, we introduce the PCoQA, the first
+Persian Conversational Question Answering
+dataset, a resource comprising information-
+seeking dialogs encompassing a total of 9,026
+contextually-driven questions. Each dialog in-
+volves a questioner, a responder, and a docu-
+ment from the Wikipedia; The questioner asks
+several inter-connected questions from the text
+and the responder provides a span of the docu-
+ment as the answer for each question. PCoQA
+is designed to present novel challenges com-
+pared to previous question answering datasets
+including having more open-ended non-factual
+answers, longer answers, and fewer lexical
+overlaps. This paper not only presents the
+comprehensive PCoQA dataset but also reports
+the performance of various benchmark models.
+Our models include baseline models and pre-
+trained models, which are leveraged to boost
+the performance of the model. The dataset and
+benchmarks are available at our Github page.1
+
+1
+
+Introduction
+
+In the realm of Question Answering (QA) sys-
+tems, traditional approaches have largely focused
+on single-question scenarios, overlooking the dy-
+namic nature of human information-seeking di-
+alogs. However, to create more human-like and
+interactive QA systems, understanding context-
+dependent and evolving conversations is essen-
+tial. To this end conversational question answer-
+ing datasets have been introduced (Reddy et al.,
+2019; Choi et al., 2018; Campos et al., 2020).
+Here, we present PCoQA, an innovative and exten-
+sive Persian Conversational Question Answering
+dataset tailored explicitly for Question Answering
+
+1https://github.com/HamedHematian/PCoQA
+
+1
+
+in Context, drawing inspiration from two influen-
+tial predecessors, CoQA (Reddy et al., 2019) and
+QuAC (Choi et al., 2018). Our dataset contains 870
+dialogs, 9,026 question-answer pairs, and corre-
+sponding documents, retrieved from the Wikipedia.
+We take initiatives from both prominent CoQA and
+QuAC datasets to build our dataset. To this end,
+like CoQA, both questioner and responder have ac-
+cess to the document in order to control the rate of
+unanswerable questions. Since questioner’s acces-
+sibility to documents increases the odds of string
+matching and paraphrasing questions (Choi et al.,
+2018), two further measures are taken to diminish
+the phenomena. First, the questioner is informed to
+ask questions that do not contain lexical matching,
+and second, in the post-processing stage, questions
+that contain a high level of lexical overlap with the
+sentence containing the answer, are paraphrased to
+ensure the quality of the dataset.
+
+Our dataset incorporates various linguistic phe-
+nomena related to conversations, including co-
+references to previous dialog turns, anaphora, and
+ellipsis.
+It introduces new challenges due to a
+higher presence of non-factual questions, result-
+ing in longer answers. This characteristic is fur-
+ther compounded by the inclusion of abstract
+topics (since we don’t value pages containing
+high number of entities over other pages) in our
+dataset, where documents often lack entities or
+noun phrases, and answers tend to be explanatory
+and lengthy. Finally, we provide various bench-
+marks for the dataset, including baseline meth-
+ods. Given that our dataset is approximately ×10
+smaller than larger datasets like CoQA and QuAC,
+and data scarcity poses a challenge, we also explore
+the potential of enhancing model performance by
+pre-training it on other question-answering datasets.
+Our experiments exhibit the effectiveness of pre-
+training on boosting the performances.
+
+The rest of the paper is structured as follows. We
+first describe the previous datasets and methods in
+
+ 
+ 
+ 
+ 
+ 
+ 
+Section 2. Subsequently, we provide the details of
+building the dataset in Section 3, comprising doc-
+ument selection, data annotation, post-processing,
+dataset validation, dataset analysis, and splitting.
+Lastly, in Section 4, our tested models, experiments,
+and results are reported.
+
+2 Related Works
+
+Multiple datasets have been introduced for the
+task of question answering (Rajpurkar et al.,
+2016; Trischler et al., 2017; Dunn et al., 2017;
+Kwiatkowski et al., 2019). The field of conversa-
+tional question answering aims to extend systems’
+capabilities in answering questions within the con-
+versational domain. Multiple datasets for this task
+have been proposed in English (Choi et al., 2018;
+Reddy et al., 2019; Campos et al., 2020). Unlike
+QA domain, where multiple datasets in various lan-
+guages are available (Carrino et al., 2019; Shao
+et al., 2018; Chandra et al., 2021), attempts to build
+datasets for CQA in non-English languages have
+been limited (Otegi et al., 2020). Otegi et al. (2020)
+constructed a CQA dataset in the Basque language.
+Multiple methods have been proposed to effectively
+model the history in CQA. Qu et al. (2019a) pro-
+poses marking history answers in the embedding
+layer, and Qu et al. (2019b) extends this work by
+considering the order of histories. Another line
+of research utilizes question rewriting (Vakulenko
+et al., 2021) to address the problem. Kim et al.
+(2021) employs consistency training to mitigate the
+error propagation problem in rewritten questions,
+while Chen et al. (2022) uses reinforcement learn-
+ing to rewrite questions based on feedback from a
+question-answering module. Despite these signif-
+icant efforts, a notable issue in most of the men-
+tioned research is the use of ground truth answers as
+part of the modeling process. Siblini et al. (2021)
+re-implements the works of Qu et al. (2019a,b)
+without utilizing the gold answers of history and re-
+ports significantly lower performance. Otegi et al.
+(2020) adopts pre-training on other resources to
+alleviate the impact of low-resource data.
+
+3 Dataset Construction
+
+This section describes the process of constructing
+PCoQA dataset. A dialog sample of the dataset
+is depicted in Figure A1 whose title is Pride &
+Prejudice.
+
+3.1 Document Collection
+
+The documents in our dataset are based on
+Wikipedia articles. In line with previous question-
+answering datasets in Persian (Darvishi et al., 2023;
+Ayoubi, 2021), we have chosen Wikipedia as the
+primary source for obtaining documents. To build
+our documents, we have taken a different approach
+compared to CoQA, which selects the initial por-
+tion of each article as the final document (Reddy
+et al., 2019). Wikipedia articles typically begin
+with an abstract that provides general informa-
+tion about the article’s topic, and subsequent sec-
+tions delve into specific details. While the abstract
+is essential for constructing final documents, the
+finer-grained information in the subsequent sec-
+tions should not be overlooked. To address this
+concern and ensure diversity among documents
+with consistent contexts, we have devised a unique
+process for building our final documents. Initially,
+we select two bounds for the minimum and maxi-
+mum document lengths, denoted as Dm and DM
+respectively. Dm is set to ensure that all documents
+contain a minimum context necessary for a mean-
+ingful dialog, while DM prevents excessively long
+documents that can challenge current network mod-
+eling capabilities, as transformers consist our main
+models and they receive a limited length as input.
+In practice we set Dm = 100 and DM = 1000. In
+our approach, we differentiate between the abstract
+and other sections, which we represent as A and
+Si, respectively, with i being the section number.
+The lengths of A and Si are denoted as LA and
+LSi, respectively. To ensure consistency in the con-
+text of the final documents, we appoint a human
+annotator as the document provider. The role of the
+document provider is crucial in curating documents
+that align with the dataset’s requirements and main-
+tain contextual coherence. First, a Wikipedia page
+is chosen on random. Unlike Reddy et al. (2019),
+we don’t consider any pre-condition, like a good
+number of entities, for the selected pages. This
+is because we want to maximize diversity. For in-
+stance, it’s obvious that pages regarding abstract
+phenomena contains a few entities whereas pages
+regarding individuals and geographical locations
+contain significant amount of entities. Next, It is
+decided to whether select the document from the A
+or a random Si-s:
+
+• If A is selected as the beginning of the doc-
+ument: If LA + (cid:80)
+i LSi ≤ Dm, meaning
+that the length of page is below the minimum
+
+2
+
+constraint, the document is discarded and if
+A ≥ DM , the A is tailored to ensure the max-
+imum length constraint. If A is chosen and
+Dm ≤ LA ≤ DM , A is selected as the docu-
+ment. To encourage diversity, the document
+provider is allowed to append Si-s to the A
+in order to elongate the document such that
+the maximum length constraint is preserved;
+these Si-s are selected in a way so that they
+are semantically consistent with each other
+and A.
+
+• If Sj is selected as the beginning of the docu-
+ment: the process follows a similar pattern
+as previously described. However, in this
+case, the document begins with Sj and is sub-
+sequently extended with potentially semanti-
+cally consistent sections, as determined by the
+document provider.
+
+To illustrate the process, an example involving
+the Wikipedia page for "Canada" is shown in Fig-
+ure A2. We begin by selecting S11, which corre-
+sponds to the "Education System" section of the
+page. Since the length of this section, LS11, is
+within the bounds defined by Dm, the document
+provider proceeds to choose the next two sections,
+namely "Economy" and "Culture" These sections
+are semantically consistent with the subject of "Ed-
+ucation System". The final document is then com-
+posed by concatenating these three selected sec-
+tions.
+
+It is important to emphasize the pivotal role of
+the document provider in this process. The docu-
+ment provider must carefully oversee the content
+of each Si to ensure consistency. For instance, if
+Sj is selected as the beginning of the document
+and it contains a co-reference to a previous sec-
+tion or some of its content is vague due to lack of
+previous context, Sj should be omitted from the
+selection, and the process should proceed with the
+next suitable section.
+
+3.2 Dataset Annotation
+
+To establish dialogs, each document is assigned to
+to a questioner and a responder, both of whom hav-
+ing access to the title and text of the document. At
+the turn of k, questioner asks a question of qk and
+the responder returns ak, a span of the document
+as the answer. The dialog is continued until the
+questioner stops the conversation. The questioners
+are informed that they should start the conversation
+
+with general information and continue it to specific
+subjects, to match the same process of human infor-
+mation seeking in real world. To be specific, they’re
+strictly told that they should not ask about specific
+concepts regrading a topic unless they’re informed
+about that concept in previous dialog turns. Addi-
+tionally, questioners are informed to change their
+questions if their questions exhibit a substantial
+overlap with the potential answer.
+
+3.3 Post-Processing
+
+While our dataset is designed to provide question-
+ers with access to documents, it is possible that
+string-matching questions may arise (Choi et al.,
+2018), despite our efforts to guide questioners to
+avoid such issues. Previous studies have indicated
+that questions exhibiting high similarity to the sen-
+tence containing the answer have a greater likeli-
+hood of being answered correctly (Sugawara et al.,
+2018). To ensure the dataset’s quality, we have
+identified these questions and had them rewritten to
+reduce lexical overlap between the rewritten ques-
+tion and the sentence that contains the correspond-
+ing answer. Each question that shares at least one
+similar word with the answer-containing sentence
+is subjected to this rewriting process. A question is
+rewritten in one of three ways:
+
+• Words were removed due to ellipsis
+
+• Words were replaced by their synonyms
+
+• Words were replaced by their co-references
+
+| overlap |
+
+We quantified the similarity using the formula
+| question words | where overlap is the
+similarity =
+set of shared words between the question and the
+sentence containing the answer. Before the rewrit-
+ing process, the similarity was measured at 14.2,
+and after rewriting, the similarity was reduced to
+11.8.
+
+3.4 Dataset Validation
+
+Following previous research Choi et al. (2018);
+Rajpurkar et al. (2016), multiple annotations are
+provided for each question in Dev/Test set. This is
+due to the fact that each question can have multiple
+answers; Therefore, it is indispensable to obtain
+accurate and unbiased scores for evaluation. These
+annotations are tagged by annotators other than re-
+sponders. In line with previous research (Choi et al.,
+2018; Rajpurkar et al., 2016), multiple annotations
+are assigned to each question in the Dev/Test set.
+
+3
+
+This practice is essential because a single ques-
+tion may have multiple valid answers. It ensures
+the acquisition of accurate and unbiased scores for
+evaluation purposes. Notably, these annotations are
+provided by annotators who are distinct from the
+responders. We report the scores of the responders’
+answers in Table 2.
+
+3.5 Dataset Analysis
+
+Key statistics for the PCoQA dataset are presented
+in Table 1, along with a comparison to similar
+datasets such as CoQA and QuAC. In the table,
+the expression X/Y represents the average quan-
+tity of X per unit of Y . Notably, PCoQA answers
+are longer, reflecting the prevalence of non-factual
+questions in our dataset. Additionally, our docu-
+ments are longer than those in CoQA and QuAC,
+necessitating the use of transformers with larger
+input sizes, as standard transformers have limited
+input capacities. Furthermore, our dataset features
+a higher number of questions per dialog compared
+to QuAC, underscoring the importance of effective
+history representation.
+
+documents
+questions
+tokens, words / document
+tokens, words / question
+tokens, words / answer
+questions / dialog
+unanswerable rate
+
+PCoQA CoQA
+
+QuAC
+
+870
+9,026
+505.4
+7.0
+18.6
+10.4
+15.7
+
+8,399
+127,000
+271.0
+5.5
+2.7
+15.2
+1.3
+
+11,568
+86,568
+401.0
+6.5
+14.6
+7.2
+20.2
+
+Table 1: Statistics of the PCoQA Dataset
+
+3.6 Splitting
+
+The dataset is randomly divided into Train, Dev,
+and Test sets with the ratio of 70/15/15.
+
+4 Experiments
+
+In this section, we describe the adopted evaluation
+metrics, methods, and the results of applying these
+methods to the PCoQA dataset.
+
+4.1 Evaluation Metrics
+
+Exact Matching (EM) is the ratio of questions for
+which the model has answered correctly. Follow-
+ing Choi et al. (2018), three additional metrics of
+F1, HEQ-Q, and HEQ-D are considered in this pa-
+per. F1 indicates the degree of overlap between the
+predicted answer and the gold answer, and HEQ-Q
+and HEQ-D are the ratio of questions and dialogs
+
+for which the model outperforms the human re-
+spectively (Choi et al., 2018). While HEQ-D is a
+stringent metric that requires the model to outper-
+form humans for every question within a dialog to
+earn a point, it may be overly strict in some cases.
+While HEQ-D is a stringent metric that requires
+the model to outperform humans for every question
+within a dialog to earn a point, it may be overly
+strict in some cases. To address this, we introduce
+another metric, called HEQ-M. HEQ-M quantifies
+the number of dialogs for which the model achieves
+a better overall performance compared to human
+performance on average. Additionally, we analyze
+the F1 score for each dialog turn to gain insights
+into the model’s performance at different turns of
+the conversation.
+
+4.2
+
+Importance of History
+
+In this section, we explore the impact of history
+on model performance. Figure 1 illustrates the per-
+formance variation of the model concerning the
+inclusion of a different number of history ques-
+tions. Notably, excluding the history questions
+results in a sharp drop in the model’s performance.
+The best performance is achieved when using 2
+history questions. However, including more than
+2 history questions gradually leads to a decline in
+performance. This suggests that histories with dis-
+tances over 2 are irrelevant and don’t introduce new
+information on average, and their inclusion induces
+some noise in the model. Thus, we perform the rest
+of our experiments with 2 history turns.
+
+Figure 1: Effect of history number on performance
+
+4.3 Methods
+
+Our experimented methods can be categorized into
+two main groups: baseline methods and methods
+based on pre-training. Our experimental frame-
+
+4
+
+Model
+
+EM
+
+F1
+
+HEQ-Q HEQ-M HEQ-D
+
+ParsBERT
+XLM-Roberta
+
+ParSQuAD + ParsBERT
+QuAC + XLM-Roberta
+ParSQuAD + XLM-Roberta
+
+21.82
+30.47
+
+21.74
+32.81
+35.93
+
+37.06
+47.78
+
+40.48
+51.66
+53.75
+
+30.70
+39.51
+
+31.95
+43.10
+46.21
+
+Human
+
+85.50
+
+86.97
+
+-
+
+0.0
+2.45
+
+0.8
+3.27
+1.63
+
+-
+
+0.0
+1.63
+
+0.0
+1.63
+0.8
+
+-
+
+Table 2: Results of different models across metrics
+
+work is built upon two base transformer model
+(Vaswani et al., 2017): ParsBERT (Farahani et al.,
+2021), a Persian equivalent of BERT (Devlin et al.,
+2019), and XLM-Roberta (Conneau et al., 2020).
+These base models serve as the foundation for our
+methodology. In our implementation, each model
+takes the concatenated question and previous his-
+tory questions as the first input and the document
+as the second input, which is then fed into the trans-
+former.
+
+Baseline Methods ParsBERT and XLM-Roberta
+are fine-tuned on PCoQA, constituting our baseline
+methods.
+
+Pre-Trained Methods ParSQuAD + Pars-
+BERT denotes
+pre-training ParsBERT on
+ParSQuAD (Abadani et al., 2021), a translated
+dataset of SQUAD (Rajpurkar et al., 2018) to
+Farsi, and then fine-tuning it on PCoQA using
+history concatenation. Similarly, ParSQuAD +
+XLM-Roberta denotes pre-training XLM-Roberta
+on ParSQuAD and then fine-tuning it on PCoQA
+using history concatenation. Lastly, QuAC + XLM-
+Roberta represents pre-training XLM-Roberta on
+QuAC and subsequently fine-tuning it on PCoQA
+using history concatenation.
+
+4.4 Results
+
+The results of our experiments are presented in Ta-
+ble 2, where we evaluate the performance across
+all metrics. It’s evident that XLM-Roberta outper-
+forms ParsBERT, highlighting the superior capabil-
+ities of XLM-Roberta. Moreover, our experiments
+demonstrate the effectiveness of pre-training tech-
+niques. The highest scores are achieved by XLM-
+Roberta when pre-trained on ParSQuAD. However,
+even with this strong performance, there remains
+a substantial gap between our models’ scores and
+those of human responders. Notably, this gap is
+especially pronounced in the EM score. We ob-
+
+serve that humans tend to provide complete an-
+swers when they know the answer, as evidenced
+by the nearly equal F1 and EM scores. In contrast,
+our models exhibit a significant disparity between
+F1 and EM scores, suggesting that they may strug-
+gle to provide complete answers, even when they
+partially address the questions.
+
+4.5 Pre-Training Effect
+
+We observe that when using XLM-Roberta,
+ParSQuAD gives better results compared to QuAC.
+This observation is notable because QuAC, in con-
+trast to ParSQuAD, is a conversational dataset. It
+suggests that XLM-Roberta may encounter chal-
+lenges when jointly modeling English and Per-
+sian. Consequently, pre-training on ParSQuAD,
+which is in Persian like PCoQA, outperforms
+pre-training on QuAC. Furthermore, we find that
+pre-training on QuAC improves performance on
+metrics like HEQ-M and HEQ-D, indicating that
+it imparts valuable conversational information,
+specifically the dependency among questions, to
+our model. This observation is reinforced by
+our findings in Figure 2, where we observe
+that, ar initial turns, ParSQuAD+XLM-Roberta
+outperforms other QuAC+XLM-Roberta. How-
+ever, as the conversation progresses, QuAC+XLM-
+Roberta achieves performance on par or better than
+ParSQuAD+XLM-Roberta, further underscoring
+the value of conversational pre-training. A simi-
+lar pattern can be observed when examining the
+performance of ParSQuAD+ParsBert compared to
+ParsBert, as depicted in Figure 2. Initially, the per-
+formance of ParSQuAD+ParsBert is superior, but
+as the conversation evolves, the performances of
+ParSQuAD+ParsBert and ParsBert become compa-
+rable, suggesting that pre-training on ParSQuAD
+does not effectively capture conversational infor-
+mation.
+
+5
+
+Figure 2: F1 scores of each dialog turn across different models
+
+5 Conclusion
+
+In this paper, we introduce PCoQA, the first Persian
+conversational question-answering dataset, con-
+structed using Wikipedia pages. Distinguishing
+itself from some previous works, our dataset em-
+phasizes diversity. We establish ParsBERT and
+XLM-Roberta as our baseline models. Due to our
+dataset’s size limitations compared to current En-
+glish datasets, we explore pre-training on existing
+datasets, ParSQuAD and QuAC, and found pre-
+training effective. While ParSQuAD pre-training
+generally yields better results, it falls short in effec-
+tively transferring conversational information to the
+target task. For future work, we suggest approach-
+ing conversational question-answering dataset con-
+struction through synthetic or semi-automatic meth-
+ods to minimize artifacts. Additionally, it would
+be valuable to evaluate previous methods, exclud-
+ing history answers, on the PCoQA dataset and
+compare the results with our findings.
+
+References
+
+Negin Abadani, Jamshid Mozafari, Afsaneh Fatemi, Mo-
+hamadali Nematbakhsh, and Arefeh Kazemi. 2021.
+Parsquad: Persian question answering dataset based
+
+on machine translation of squad 2.0. International
+Journal of Web Research, 4(1):34–46.
+
+Mohammad Yasin Ayoubi, Sajjad & Davoodeh. 2021.
+Persianqa: a dataset for persian question answering.
+https://github.com/SajjjadAyobi/PersianQA.
+
+Jon Ander Campos, Arantxa Otegi, Aitor Soroa, Jan De-
+riu, Mark Cieliebak, and Eneko Agirre. 2020. Doqa
+- accessing domain-specific faqs via conversational
+QA. In Proceedings of the 58th Annual Meeting of
+the Association for Computational Linguistics, ACL
+2020, Online, July 5-10, 2020, pages 7302–7314.
+Association for Computational Linguistics.
+
+Casimiro Pio Carrino, Marta R. Costa-jussà, and José
+A. R. Fonollosa. 2019. Automatic spanish transla-
+tion of the squad dataset for multilingual question
+answering. CoRR, abs/1912.05200.
+
+Andreas Chandra, Affandy Fahrizain, Ibrahim, and
+Simon Willyanto Laufried. 2021. A survey on
+non-english question answering dataset. CoRR,
+abs/2112.13634.
+
+Zhiyu Chen, Jie Zhao, Anjie Fang, Besnik Fetahu, Oleg
+Rokhlenko, and Shervin Malmasi. 2022. Reinforced
+question rewriting for conversational question an-
+swering. In Proceedings of the 2022 Conference on
+Empirical Methods in Natural Language Processing:
+EMNLP 2022 - Industry Track, Abu Dhabi, UAE, De-
+cember 7 - 11, 2022, pages 357–370. Association for
+Computational Linguistics.
+
+6
+
+Eunsol Choi, He He, Mohit Iyyer, Mark Yatskar, Wen-
+tau Yih, Yejin Choi, Percy Liang, and Luke Zettle-
+moyer. 2018. Quac: Question answering in context.
+In Proceedings of the 2018 Conference on Empiri-
+cal Methods in Natural Language Processing, Brus-
+sels, Belgium, October 31 - November 4, 2018, pages
+2174–2184. Association for Computational Linguis-
+tics.
+
+Arantxa Otegi, Aitor Gonzalez-Agirre, Jon Ander Cam-
+pos, Aitor Soroa, and Eneko Agirre. 2020. Conversa-
+tional question answering in low resource scenarios:
+A dataset and case study for basque. In Proceedings
+of The 12th Language Resources and Evaluation Con-
+ference, LREC 2020, Marseille, France, May 11-16,
+2020, pages 436–442. European Language Resources
+Association.
+
+Alexis Conneau, Kartikay Khandelwal, Naman Goyal,
+Vishrav Chaudhary, Guillaume Wenzek, Francisco
+Guzmán, Edouard Grave, Myle Ott, Luke Zettle-
+moyer, and Veselin Stoyanov. 2020. Unsupervised
+cross-lingual representation learning at scale. In Pro-
+ceedings of the 58th Annual Meeting of the Associa-
+tion for Computational Linguistics, ACL 2020, On-
+line, July 5-10, 2020, pages 8440–8451. Association
+for Computational Linguistics.
+
+Kasra Darvishi, Newsha Shahbodaghkhan, Zahra Ab-
+basiantaeb, and Saeedeh Momtazi. 2023. Pquad: A
+persian question answering dataset. Comput. Speech
+Lang., 80:101486.
+
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and
+Kristina Toutanova. 2019. BERT: pre-training of
+deep bidirectional transformers for language under-
+standing. In Proceedings of the 2019 Conference of
+the North American Chapter of the Association for
+Computational Linguistics: Human Language Tech-
+nologies, NAACL-HLT 2019, Minneapolis, MN, USA,
+June 2-7, 2019, Volume 1 (Long and Short Papers),
+pages 4171–4186. Association for Computational
+Linguistics.
+
+Matthew Dunn, Levent Sagun, Mike Higgins, V. Ugur
+Güney, Volkan Cirik, and Kyunghyun Cho. 2017.
+Searchqa: A new q&a dataset augmented with con-
+text from a search engine. CoRR, abs/1704.05179.
+
+Mehrdad Farahani, Mohammad Gharachorloo, Marzieh
+Farahani, and Mohammad Manthouri. 2021. Pars-
+bert: Transformer-based model for persian language
+understanding. Neural Process. Lett., 53(6):3831–
+3847.
+
+Gangwoo Kim, Hyunjae Kim, Jungsoo Park, and Jae-
+woo Kang. 2021. Learn to resolve conversational
+dependency: A consistency training framework for
+conversational question answering. In Proceedings
+of the 59th Annual Meeting of the Association for
+Computational Linguistics and the 11th International
+Joint Conference on Natural Language Processing,
+ACL/IJCNLP 2021, (Volume 1: Long Papers), Virtual
+Event, August 1-6, 2021, pages 6130–6141. Associa-
+tion for Computational Linguistics.
+
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Red-
+field, Michael Collins, Ankur P. Parikh, Chris Alberti,
+Danielle Epstein, Illia Polosukhin, Jacob Devlin, Ken-
+ton Lee, Kristina Toutanova, Llion Jones, Matthew
+Kelcey, Ming-Wei Chang, Andrew M. Dai, Jakob
+Uszkoreit, Quoc Le, and Slav Petrov. 2019. Natu-
+ral questions: a benchmark for question answering
+research. Trans. Assoc. Comput. Linguistics, 7:452–
+466.
+
+Chen Qu, Liu Yang, Minghui Qiu, W. Bruce Croft,
+Yongfeng Zhang, and Mohit Iyyer. 2019a. BERT
+with history answer embedding for conversational
+question answering. In Proceedings of the 42nd In-
+ternational ACM SIGIR Conference on Research and
+Development in Information Retrieval, SIGIR 2019,
+Paris, France, July 21-25, 2019, pages 1133–1136.
+ACM.
+
+Chen Qu, Liu Yang, Minghui Qiu, Yongfeng Zhang,
+Cen Chen, W. Bruce Croft, and Mohit Iyyer. 2019b.
+Attentive history selection for conversational ques-
+In Proceedings of the 28th ACM
+tion answering.
+International Conference on Information and Knowl-
+edge Management, CIKM 2019, Beijing, China,
+November 3-7, 2019, pages 1391–1400. ACM.
+
+Pranav Rajpurkar, Robin Jia, and Percy Liang. 2018.
+Know what you don’t know: Unanswerable questions
+for squad. In Proceedings of the 56th Annual Meet-
+ing of the Association for Computational Linguistics,
+ACL 2018, Melbourne, Australia, July 15-20, 2018,
+Volume 2: Short Papers, pages 784–789. Association
+for Computational Linguistics.
+
+Pranav Rajpurkar, Jian Zhang, Konstantin Lopyrev, and
+Percy Liang. 2016. Squad: 100, 000+ questions
+for machine comprehension of text. In Proceedings
+of the 2016 Conference on Empirical Methods in
+Natural Language Processing, EMNLP 2016, Austin,
+Texas, USA, November 1-4, 2016, pages 2383–2392.
+The Association for Computational Linguistics.
+
+Siva Reddy, Danqi Chen, and Christopher D. Manning.
+2019. Coqa: A conversational question answering
+challenge. Trans. Assoc. Comput. Linguistics, 7:249–
+266.
+
+Chih-Chieh Shao, Trois Liu, Yuting Lai, Yiying Tseng,
+and Sam Tsai. 2018. DRCD: a chinese machine read-
+ing comprehension dataset. CoRR, abs/1806.00920.
+
+Wissam Siblini, Baris Sayil, and Yacine Kessaci. 2021.
+Towards a more robust evaluation for conversational
+question answering. In Proceedings of the 59th An-
+nual Meeting of the Association for Computational
+Linguistics and the 11th International Joint Confer-
+ence on Natural Language Processing, ACL/IJCNLP,
+Virtual Event, pages 1028–1034.
+
+Saku Sugawara, Kentaro Inui, Satoshi Sekine, and
+Akiko Aizawa. 2018. What makes reading compre-
+hension questions easier? In Proceedings of the 2018
+Conference on Empirical Methods in Natural Lan-
+guage Processing, Brussels, Belgium, October 31 -
+November 4, 2018, pages 4208–4219. Association
+for Computational Linguistics.
+
+7
+
+Adam Trischler, Tong Wang, Xingdi Yuan, Justin Harris,
+Alessandro Sordoni, Philip Bachman, and Kaheer
+Suleman. 2017. Newsqa: A machine comprehension
+In Proceedings of the 2nd Workshop on
+dataset.
+Representation Learning for NLP, Rep4NLP@ACL
+2017, Vancouver, Canada, August 3, 2017, pages
+191–200. Association for Computational Linguistics.
+
+Svitlana Vakulenko, Shayne Longpre, Zhucheng Tu,
+and Raviteja Anantha. 2021. Question rewriting for
+conversational question answering. In WSDM ’21,
+The Fourteenth ACM International Conference on
+Web Search and Data Mining, Virtual Event, Israel,
+March 8-12, 2021, pages 355–363. ACM.
+
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob
+Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz
+Kaiser, and Illia Polosukhin. 2017. Attention is all
+you need. In Advances in Neural Information Pro-
+cessing Systems 30: Annual Conference on Neural
+Information Processing Systems 2017, December 4-9,
+2017, Long Beach, CA, USA, pages 5998–6008.
+
+8
+
+6 Appendix
+
+Figure A1: A document and its corresponding questions/answers dialog
+
+Figure A2: A segment of the Canada Wikipedia page
+
+9
+
+

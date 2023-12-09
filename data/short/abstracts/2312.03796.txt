@@ -1,0 +1,31 @@
+ABSTRACT
+
+Multi-modal biomedical time series (MBTS) data offers a holistic
+view of the physiological state, holding significant importance in
+various bio-medical applications. Owing to inherent noise and dis-
+tribution gaps across different modalities, MBTS can be complex
+to model. Various deep learning models have been developed to
+learn representations of MBTS but still fall short in robustness due
+to the ignorance of modal-to-modal variations. This paper presents
+a multi-scale and multi-modal biomedical time series representa-
+tion learning (MBSL) network with contrastive learning to migrate
+these variations. Firstly, MBTS is grouped based on inter-modal dis-
+tances, then each group with minimum intra-modal variations can
+be effectively modeled by individual encoders. Besides, to enhance
+the multi-scale feature extraction (encoder), various patch lengths
+and mask ratios are designed to generate tokens with semantic in-
+formation at different scales and diverse contextual perspectives re-
+spectively. Finally, cross-modal contrastive learning is proposed to
+maximize consistency among inter-modal groups, maintaining use-
+ful information and eliminating noises. Experiments against four
+bio-medical applications show that MBSL outperforms state-of-the-
+art models by 33.9% mean average errors (MAE) in respiration rate,
+by 13.8% MAE in exercise heart rate, by 1.41% accuracy in hu-
+man activity recognition, and by 1.14% F1-score in obstructive sleep
+apnea-hypopnea syndrome.
+
+Index Terms— bio-medical time series, multi-modal, represen-
+
+tation learning, contrastive learning
+
+1. 

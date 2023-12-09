@@ -1,0 +1,24 @@
+Abstract
+
+We introduce a pipeline to address anatomical
+inaccuracies in Stable Diffusion generated hand
+images. The initial step involves constructing
+a specialized dataset, focusing on hand anoma-
+lies, to train our models effectively. A finetuned
+detection model is pivotal for precise identifica-
+tion of these anomalies, ensuring targeted correc-
+tion. Body pose estimation aids in understanding
+hand orientation and positioning, crucial for ac-
+curate anomaly correction. The integration of
+ControlNet and InstructPix2Pix facilitates sophis-
+ticated inpainting and pixel-level transformation,
+respectively. This dual approach allows for high-
+fidelity image adjustments. This comprehensive
+approach ensures the generation of images with
+anatomically accurate hands, closely resembling
+real-world appearances. Our experimental results
+demonstrate the pipeline’s efficacy in enhancing
+hand image realism in Stable Diffusion outputs.
+We provide an online demo at fixhand.yiqun.io.
+
+1. 

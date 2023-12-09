@@ -1,0 +1,588 @@
+Introduction
+
+Infants’ ability to recognize and categorize objects de-
+velops gradually. The second year of life is marked by
+both the emergence of more semantic visual representa-
+tions and a better understanding of word meaning. This
+suggests that language input may play an important role
+in shaping visual representations. However, even in suit-
+able contexts for word learning like dyadic play sessions,
+caregivers utterances are sparse and ambiguous, often re-
+ferring to objects that are different from the one to which the
+child attends. Here, we systematically investigate to what
+extent caregivers’ utterances can nevertheless enhance vi-
+sual representations. For this we propose a computational
+model of visual representation learning during dyadic play.
+We introduce a synthetic dataset of ego-centric images per-
+ceived by a toddler-agent that moves and rotates toy ob-
+jects in different parts of its home environment while “hear-
+ing” caregivers’ utterances, modeled as captions. We pro-
+pose to model toddlers’ learning as simultaneously align-
+ing representations for 1) close-in-time images and 2) co-
+occurring images and utterances. We show that utterances
+with statistics matching those of real caregivers give rise
+to representations supporting improved category recogni-
+tion. Our analysis reveals that a small decrease/increase in
+object-relevant naming frequencies can drastically impact
+the learned representations. This affects the attention on
+object names within an utterance, which is required for ef-
+ficient visuo-linguistic alignment. Overall, our results sup-
+port the hypothesis that caregivers’ naming utterances can
+improve toddlers’ visual representations. Code and dataset
+are available at: https://github.com/neuroai-
+arena/ToddlerVisionLearning.git
+
+*Equal contribution
+†Shared last authorship
+
+Second-year toddlers are proficient learners of object
+representations that support the recognition of objects inde-
+pendently of viewpoint (object instance recognition) and the
+assignment of novel exemplars to learned categories (ob-
+ject categorization recognition). What learning mechanisms
+support this development? On one side, there is evidence
+that biological organisms learn similar representations for
+close-in-time visual inputs [19, 38]. This is called the slow-
+ness principle [37] and it supports the building of view-
+invariant object representations during, e.g., object manip-
+ulations [18, 29]. On the other side, the acquisition of ob-
+ject names correlates with a stronger focus on global shape
+features relative to texture [13, 17, 28], which spurs per-
+formance in name-agnostic categorization tasks [9, 21], see
+also [14]. For learning object names, the synchronization
+of toddlers’ visual attention on the object and its naming by
+the caregivers is crucial [27].
+
+Dyadic play could be particularly important for pro-
+moting the emergence of more semantic object representa-
+tions, because both learning mechanisms are likely to co-
+occur during such play:
+the toddler extensively focuses
+on/manipulates objects and the caregiver frequently talks
+to the toddler about the present objects [26, 31]. How-
+ever, naming utterances during such play are sparse [6] and
+ambiguous: they typically contain several words unrelated
+to the object. Furthermore, even though toddlers have bi-
+ased attention towards held objects [39], they often play
+in contexts that admit several other objects in the back-
+ground [3, 40], adding another potential source of confu-
+sion.
+
+In this paper, we investigate two what extent dyadic
+play sessions can support the emergence of semantic ob-
+ject representations in toddlers. We tackle this question
+by proposing a computational model of toddlers’ learning
+during dyadic play. First, we introduce the Dyadic Play
+
+1
+
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 1. A) Top view of the Virtual Home Environment, where blue and red dots, respectively, indicate possible agent and toy positions.
+The agent is always turned towards a toy position. Toy positions marked 1–3 correspond to sessions 1–3 in C. B) Zoom-in of the scene
+in A with turquoise lines indicating the agent’s field of view. C) Images extracted in a temporally ordered fashion (left to right) for three
+different “play” sessions of the Dyadic Play Dataset. Text boxes show examples of captions related to the manipulated object (white) or
+to another object in the background (red). D) Summary of the learning architecture, see Section 3.2 for details. Abbreviations: MLP:
+multi-layer perceptron, MMCL: multimodal contrastive learning, CLTT: contrastive learning through time.
+
+Dataset, a novel dataset of images simulating at-home ego-
+centric dyadic play sessions. In this dataset, we simulate
+a playing toddler that moves and turns 3D toy models ex-
+tracted from the Toy4k dataset [30]. The agent “plays” in
+front of a background composed of household furniture (cf.
+Fig. 1A) and a plausible number of toys scattered on the
+floor (cf. Fig. 1B). As shown in Fig. 1C, The agent occa-
+sionally “hears” caregiver’s utterances, modeled as captions
+extracted from the CHILDES database, a comprehensive
+data repository of children’s language acquisition includ-
+ing child-directed speech [20]. Then, we consider a bio-
+inspired model of toddlers’ learning that 1) maps close-in-
+time visual inputs to similar representations and 2) similarly
+aligns the representations of visual inputs and co-occurring
+naming utterances (Fig. 1D). We further simulate toddlers’
+visual attention by biasing the model to extract visual fea-
+tures from the currently held object. The overall model al-
+lows us to systematically study the potential impact of the
+sparsity and ambiguity of naming utterances on the learned
+visual representations.
+
+Our experiments show that utterance statistics reported
+in developmental psychology experiments support the con-
+struction of semantic visual representations. Our analysis
+shows that realistic object-relevant naming frequencies fall
+within a range of values for which a multiplicative factor of
+two drastically impact the learned representation. This im-
+
+pacts whether the model attends to the object name within
+an utterance, which is necessary to efficiently guide visual
+representations. Thus, our paper provides computational
+support to the hypothesis that caregivers’ sparse and am-
+biguous utterances help to build visual representations dur-
+ing dyadic play sessions.
+
+2. Related work
+
+Models of toddlers’ object learning Recently, the avail-
+ability of datasets of images extracted from toddlers’ head-
+mounted cameras [3, 32] has enabled the study of represen-
+tations learnt through the senses of toddlers. This way, two
+recent models managed to learn word-vision mappings, but
+they either used a pretrained vision model [33,36] or trained
+on curated data in a supervised fashion [33]. Another model
+extracted semantic visual representations by making similar
+close-in-time representations [22], but it did not leverage
+any sort of utterances. Working with such real-world ego-
+centric data has the limitation that a precise control of the
+statistics of the training data, like the sparsity or ambigu-
+ity of naming utterances, is difficult. This makes it hard to
+study how such statistics might affect toddlers’ object learn-
+ing. A recent model also trained visual representations in
+cross-situational contexts, i.e. when naming utterances can
+refer to several visible objects [35]. However, they only
+consider synthetic images based on 9 digits rather than sim-
+
+2
+
+ulated ego-centric play sessions.
+
+Slowness principle for learning visual representations
+Several computational models showed that making similar
+close-in-time representations can lead to visual representa-
+tion suitable for object instance recognition, scene recog-
+nition and object categorization [1, 10, 11, 25]. Integrating
+constraints from toddlers’ perceputal experience into these
+models, like short arms or foveation, can lead to improved
+ability to recognize objects in front of novel backgrounds
+[2]. None of these works modelled interactions with a care-
+giver whose utterances provide weak language supervision.
+
+representation
+
+Visuo-language
+learning Previous
+works explored multi-modal contrastive learning of
+audio-visual or text-visual representations and showed
+that language can supervise visual representation learn-
+ing [7, 15, 24]. However, none of these works studied
+whether naming statistics in dyadic play sessions elicit
+semantic visual representations. A recent work showed
+that adding sparse labeling on top of contrastive learning
+through time enhances visual categorization [2]. Unlike
+them, we here consider textured objects in a cluttered home
+environment and developmentally-relevant statistics of
+caregivers’ utterances.
+
+3. Methods
+
+In this section, we expose our computational model of
+visual representation learning during dyadic play. We first
+describe the Dyadic Play Dataset, which simulates dyadic
+play with objects (Section 3.1). Then, we explain in Section
+3.2 how we model a toddler’s learning process.
+
+3.1. Dyadic Play Dataset (DPD)
+
+The DPD contains 857,760 images of 224 × 224 pixels
+split into 42,888 “play sessions,” each containing 20 im-
+ages. There are 12 sessions dedicated to each of 3574 ob-
+jects [1], which are extracted from the Toys4k dataset [30].
+To create them, we simulate a toddler that interacts with
+objects using the simulation platform ThreeDWorld (TDW)
+[12].
+
+Image recording At the beginning of each play session,
+we place the agent in a random location, with a random
+orientation within the Virtual Home Environment [1] (cf.
+Fig. 1A). We approximate an ego-centric view of a seated
+toddler by positioning a camera at 0.4 m above the ground.
+At the beginning, the camera always watches the object be-
+ing held, which we call “main object,” making the camera
+orientation dependent on the initial position of the main
+object. Because toddlers’ short arms constrain the way
+
+they hold objects, we randomly sample the relative start-
+ing position of the main object within a distance range of
+[0.25; 0.35] m from the agent, [−30; 30]◦ on the sides and
+[−30; −10]◦ in elevation. Furthermore, toddlers tend to
+keep objects in an upright position [23], hence, we ran-
+domly orient the object around the yaw axis (unbounded)
+but bound the object orientation in [−5; 5]◦ around the pitch
+and roll axes.
+
+In addition to the main object, we add 5 to 20 randomly
+sampled (without replacement) background objects to the
+scene, following the number of toys commonly present in
+the field of view of toddlers during play [3]. To place them,
+we follow the same procedure as for the main object, but
+change the range of distances from the agent to [0.42; 0.875]
+m. In contrast to the object being held, we let them fall to
+the floor one at a time using the physics engine of TDW.
+Fig. 1B shows a top-view of a subsequent play area.
+
+To simulate natural interactions, in each of the 20 frames
+of the play sessions the agent slowly moves and turns the
+object along/around the three axes. We display a high vari-
+ability of manipulation sequences by generating all move-
+ments with an Ornstein-Uhlenbeck stochastic process for
+which we randomly generate a new recall coefficient in
+[0.1, 1] at the beginning of each session, for each kind
+of manipulation and axis. Thus, the agent dynamically
+changes the manipulation speed within a session, as well
+as the amplitude of changes from one session to the next,
+independently for each axis of rotation/motion. We bound
+the motion speed by 3◦ per frame for side/elevation motion
+and 0.05 m for in-depth motion. However, the agent can not
+exceed the starting absolute bounds described above. Sim-
+ilarly, we bound the rotation speed by 20◦ around the yaw
+axis and 4◦ around the pitch and roll axis, also to simulate
+the upright bias of toddlers [23].
+
+Finally, while the agent observes the moving object,
+it also executes additional relative small eye movements
+around the object in focus (yaw and pitch axis), whose end-
+points are sampled from a Normal distribution N ([0, 0], 2×
+I). We also allow the agent to focus its gaze on an object
+different from the main one with probability 0.7; however,
+we discard these images during training as previous meth-
+ods already analyzed the impact of changes of attention on
+contrastive through time losses [1, 25]. Fig. 1D shows ex-
+amples of the resulting sequences of toddler-centric views.
+For evaluation purposes, we build a test dataset of 5 im-
+ages per main object (a total of 17,870 images), each in dif-
+ferent scenes generated as above. To avoid correlated im-
+ages, we do not apply temporal manipulations used during
+training. Since rotations around pitch/roll axis may go be-
+yond their initial boundaries after some manipulation time
+during training, it may create a subsequent data distribu-
+tion shift between train and test images. Assuming that the
+pitch/roll rotations rarely go beyond [−20; 20]◦ from their
+
+3
+
+starting orientation during training, we increase the initial
+range of test object orientations to [−20; 20]◦ around the
+pitch and roll axis
+
+to
+
+aim
+
+utterances We
+
+statistics of utterances
+
+Naming
+simulate
+developmentally-relevant
+from
+a caregiver to a toddler during a play session. To achieve
+this, we source relevant transcripts from the CHILDES
+database [20]. Our study focuses specifically on transcripts
+from native English-speaking children residing in North
+America and the UK, between the ages of six months
+and two years. We only keep utterances of caregivers.
+As we are interested in object-related statements, we
+curate captions derived from statements identifying objects
+from the Toys4k dataset [30]. To form general templates,
+we only keep captions that occur across multiple object
+categories. After filtering out incomplete utterances and
+those containing less than three words, as well as a manual
+review, we retained 820 templates. Each of these templates
+can be used with any category name without relying on the
+context of the object.
+
+3.2. Self-supervised learning of visual representa-
+
+tions
+
+In this work, we postulate that toddlers learn visual rep-
+resentations that 1) slowly change over time and 2) align
+with co-occurring linguistic representations. To model their
+learning process, we consider two previously introduced
+self-supervised loss functions. The first loss aligns embed-
+dings of close-in-time images; this entails that seeing an
+object from different viewpoints elicits viewpoint invariant
+object representations [25]. The second loss function aligns
+embeddings of co-occurring images and naming utterances.
+Since the naming utterance may inform about the category
+of the object in focus, this provides weak supervision re-
+garding the object category. To implement our learning
+mechanisms, we use SimCLR [5], a state-of-the-art con-
+trastive learning algorithm. We sum up the learning archi-
+tecture in Fig. 1E.
+
+Contrastive learning through time (CLTT) At each
+learning iteration, we sample a mini-batch X that contains
+N randomly sampled images xi. For each image xi, we
+also randomly sample a single successor/predecessor xj be-
+longing to the same “play session” as xi. Thus, xi and xj
+always display the same object, but observed through differ-
+ent orientations and positions. In addition, we expect that
+the active and multi-modal manipulation of the object bi-
+ases toddlers’ attention onto the main object [27, 39]; thus,
+we apply on images, with probability 0.5, a center crop of
+size ranging in [8; 100]% of the image size. Thereafter, we
+compute embeddings of images z1 = g1(f (x)) using a fea-
+ture extractor f and a projection head g1, both implemented
+
+as neural networks [5]. Finally, for a pair (zi, zj), we mini-
+mize
+
+lT(z1
+
+i , z1
+
+j ) = − log
+
+ecos(z1
+
+i ,z1
+
+j )/τ
+
+(cid:80)
+
+z∈Z 1,z̸=z1
+i
+
+ecos(z1
+
+i ,z)/τ
+
+,
+
+(1)
+
+where cos stands for the cosine similarity, Z 1 contains all
+embeddings z1 and τ is the temperature hyper-parameter
+[5]. The top part of (1) aims to move together image embed-
+dings that belong to the same manipulation session while
+the bottom part of (1) ensures that all image embeddings
+remain dissimilar.
+
+Multimodal contrastive learning For each sampled im-
+age xi, we also sample, if provided by the caregiver, its co-
+occurring naming utterance li. We extract the pre-trained
+features of the naming utterances with a state-of-art text
+embedding model h [8]. Then name=’adamw’,, we com-
+pute different embeddings of images z2
+i = g2(f (xi)) and
+captions z3
+i = g3(h(li)) using projection heads g2, g3 and
+a text feature extractor h in order to minimize, for each pair
+(z2
+
+i , z3
+
+i ):
+
+lM(z2
+
+i , z3
+
+i ) − log
+
+ecos(z2
+
+i ,z3
+i )/τ
+ecos(z2
+
+i ,z2
+
+k)/τ
+
+(cid:80)
+
+z∈Z 2
+z̸=z2
+i
+
+(2)
+
+where Z 2 contains the provided embeddings z2 and z3. The
+top part of (2) ensures that co-occurring naming utterances
+and images have similar embeddings while the bottom part
+prevents all embeddings to collapse into a single vector.
+
+The total loss function for a batch of size N is the sym-
+
+metric and batch-wise sum of (1) and (2):
+
+1
+2N
+
+N
+(cid:88)
+
+i=1
+
+lM(z3
+
+i , z2
+
+i ) + lM(z2
+
+i , z3
+
+i ) + lT(z1
+
+i , z1
+
+j ) + lT(z1
+
+j , z1
+
+i ).
+
+3.3. Developmentally-relevant utterance statistics
+
+To model developmentally-relevant utterance statistics,
+we extract statistics reported in at-home studies of toddlers’
+dyadic play sessions [26, 31]. First, [26] reports that 56%
+of naming events match the visual input of toddlers. Thus,
+we define the (conditional) probability of naming the ma-
+nipulated object (versus another object in the background)
+as pcorrect = 0.5. Second, a caregiver approximately pro-
+vides, on average, one naming utterance related to the ob-
+ject being manipulated per time-extended object manipula-
+tion [31] (exactly 2.54
+2 = 1.27 in their study). Since our
+play sessions last for 20 frames, we approximate the prob-
+ability of naming the manipulated object during a frame as
+pname = 1
+20 = 0.05. We assume that consecutive frames
+are spaced by one second, making the duration of our play
+sessions correspond to the average of 20 seconds reported
+in [31]. Finally, it allows us to define the probability of
+naming any object in a frame psparse = pname
+pcorrect
+
+= 0.1.
+
+4
+
+3.4. Training and evaluation
+
+Training We use a ResNet18 [16] as vision encoder f
+and, for all projection heads, a fully connected neural net-
+work with one hidden layer of size 256 followed by batch
+normalization and ReLU activation. For encoding the text,
+we use a pre-trained BERT [8] with 4 layers, 8 self-attention
+heads and a hidden size of 512, introduced as BERT-small
+by [34]. We train our models for 50 epochs with the
+AdamW optimizer, a learning rate of 0.001 and weight
+decay of 0.01. We tested a temperature hyper-parameter
+τ ∈ {0.07, 0.1, 0.5} and found 0.07 to be the best. The ra-
+tionale behind using a pre-trained text model lies in our re-
+search focus on visual representation learning. Preliminary
+experiments (reported in experiments Section 4.1), demon-
+strate comparable recognition performance, although with a
+longer convergence time when training a randomly initial-
+ized text model concurrently with visual encoding.
+
+Evaluation To evaluate if the learned representation sup-
+ports category recognition, we apply a repeated random
+sub-sampling cross-validation to split the non-overlapping
+object instances into 2382 train (2/3 of the total) and 1191
+test objects (1/3 of the total). Then, we extract images of
+train and test objects to form the train and test datasets,
+respectively (see Section 3.1). To evaluate our representa-
+tion with respect to object instance recognition, we extract
+novel images of the train objects to build a test dataset. For
+both object instance and category recognition, we freeze the
+weights of the vision encoder and train a linear classifier in
+an online and supervised fashion on top of the latent visual
+representation [4].
+
+4. Experiments & Results
+
+We first study whether developmentally-relevant utter-
+ance statistics support learning semantic visual representa-
+tions. Then, we analyze the impact of the sparsity, ambigu-
+ity and the attention paid to the object’s name on the learn-
+ing process.
+
+4.1. Developmentally relevant utterance statistics
+
+improve object representations
+
+To assess the impact of plausible utterance statistics on
+the visual representation, Fig. 2 compares such statistics
+with two upper-bound baselines: Oracle refers to super-
+vised learning and Ideal refers to a caregiver who always
+utters sentences containing the correct object. Our base-
+line (None) does not use any utterances relying solely on
+the time-contrastive loss for visual representations. We ob-
+serve that our model improves category recognition over
+not using naming utterances, even though it does not reach
+the performance of oracles. Additionally, we examine how
+plausible utterance statistics perform when used to train the
+
+Figure 2. A) Category recognition accuracy and B) object instance
+recognition accuracy for different settings. Oracle represents su-
+pervised learning, while an Ideal caregiver consistently names
+the correct object. Plausible stands for developmentally-
+relevant utterance statistics, Plausible* is identical but trains
+the text encoder from scratch.
+
+Figure 3.
+t-SNE visualization of the feature representations ex-
+tracted by the vision-encoder in different training settings. For
+better visualization, we show a random subgroup of all classes.
+
+text representations jointly with the visual representations
+from scratch over 100 epochs. The model yields similar out-
+comes, albeit necessitating significantly more training time,
+as it has not yet reached convergence. We employ t-SNE
+visualization to validate our learned output feature repre-
+sentations. Fig. 3 shows that the models trained with ut-
+terances exhibit better separation than without textual guid-
+ance (baseline). We conclude that developmentally-relevant
+imperfect naming utterances can help to build semantic vi-
+sual representation.
+
+4.2. Small changes in utterance frequency and am-
+biguity drastically impact object representa-
+tions
+
+To understand how frequency and ambiguity of utter-
+ances affect object representations, we systematically vary
+both factors in Fig. 4 and Fig. 5, respectively. We observe
+that developmentally-relevant values (red points) are close
+to the steepest point of the function, where small shifts have
+a high impact on the quality of the learned representation.
+This suggests that toddler’s object learning may be quite
+sensitive to caregivers’ presence and the quality of their ut-
+terances. We also notice worse instance recognition with
+very few utterances in comparison to none. We suspect that
+these rare and ambiguous utterances mostly inject noise into
+the representation.
+
+5
+
+OracleIdealPlausiblePlausible*NoneUtterance statistics0.00.10.20.30.40.5AccuracyCategoryOracleIdealPlausiblePlausible*NoneUtterance statistics0.00.20.40.60.8AccuracyABInstanceFigure 4. Analysis of the impact of the sparsity parameters on A)
+category recognition and B) object instance recognition. The red
+points indicate the developmentally-relevant value.
+
+Figure 5. Analysis of the impact of naming ambiguity on A) cate-
+gory recognition and B) instance recognition. A high pcorrect im-
+plies low ambiguity. The red points indicate the developmentally-
+relevant value.
+
+Figure 6. Analysis of the effect of the sparsity parameter and the
+correct naming probability pcorrect on the textual representations.
+The heatmaps show the cosine similarity between the text embed-
+dings of utterances from two random classes. The first element of
+each class is the raw category name.
+
+the visual representation. When considered alongside the
+accuracy values of classification experiments, this observa-
+tion strongly suggests that increased textual attention to the
+object name is crucial for learning object representations.
+
+5. 

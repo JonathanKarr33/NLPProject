@@ -1,0 +1,20 @@
+Abstract
+
+Recently, transformers have become incredibly popular in
+computer vision and vision-language tasks. This notable rise
+in their usage can be primarily attributed to the capabilities
+offered by attention mechanisms and the outstanding ability
+of transformers to adapt and apply themselves to a variety of
+tasks and domains. Their versatility and state-of-the-art per-
+formance have established them as indispensable tools for a
+wide array of applications. However, in the constantly chang-
+ing landscape of machine learning, the assurance of the trust-
+worthiness of transformers holds utmost importance. This
+paper conducts a thorough examination of vision-language
+transformers, employing three fundamental principles of re-
+sponsible AI: Bias, Robustness, and Interpretability. The pri-
+mary objective of this paper is to delve into the intricacies
+and complexities associated with the practical use of trans-
+formers, with the overarching goal of advancing our compre-
+hension of how to enhance their reliability and accountability.
+

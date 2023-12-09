@@ -1,0 +1,20 @@
+Abstract
+
+Face clustering tasks can learn hierarchical semantic infor-
+mation from large-scale data, which has the potential to help
+facilitate face recognition. However, there are few works on
+this problem. This paper explores it by proposing a joint op-
+timization task of label classification and supervised con-
+trastive clustering to introduce the cluster knowledge to the
+traditional face recognition task in two ways. We first extend
+ArcFace with a cluster-guided angular margin to adjust the
+within-class feature distribution according to the hard level
+of face clustering. Secondly, we propose a supervised con-
+trastive clustering approach to pull the features to the cluster
+center and propose the cluster-aligning procedure to align the
+cluster center and the learnable class center in the classifier
+for joint training. Finally, extensive qualitative and quantita-
+tive experiments on popular facial benchmarks demonstrate
+the effectiveness of our paradigm and its superiority over the
+existing approaches to face recognition.
+

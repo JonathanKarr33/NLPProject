@@ -1,0 +1,330 @@
+Introduction
+In recent years, Arctic modeling has become a focus of in-
+creased interest for researchers in various scientific fields.
+The sea ice melting process, in conjunction with global
+warming, determines the ecological state of the region, in-
+cluding biodiversity conservation. Ice concentration distri-
+bution plays a key role in laying tracks by icebreakers and
+advancing cargo and research ships.
+
+Predictive modeling of ice conditions in the Arctic is con-
+sidered in different time scales. Short-term forecasts involve
+the assimilation of operational information and reproducing
+accurate data for decision-making. This type of forecasting
+is limited to intervals from several hours to several months.
+Long-term forecasting is carried out one or several seasons
+in advance to enable advance planning, which is essential in
+the industrial sector (Harsem et al. 2015). In predicting the
+timing of opening and freezing of the water area, statistical
+modeling is carried out based on retrospective observational
+data (Wu et al. 2023).
+
+Physical modeling became the classical approach to the
+simulation of natural environments because of advantages
+on the spatial and temporal scales and the ability to predict
+and analyze different scenarios (Chen et al. 2023). It utilizes
+complex numerical methods to solve the equations of mo-
+tion, thermodynamics, and radiation (Stroeve et al. 2007).
+
+Copyright © 2024, Association for the Advancement of Artificial
+Intelligence (www.aaai.org). All rights reserved.
+
+Despite the robustness and explainability of physical mod-
+eling, its application is often complicated by high computa-
+tional cost, the need for boundary and initial conditions for
+many variables, and complex parameterization for a specific
+territory. Years of active development of earth remote sens-
+ing have contributed to the accumulation of spatiotemporal
+datasets for environmental systems, which can be used to
+train various data-driven models, including deep neural net-
+works. While deep learning models can provide high-quality
+environmental forecasts (Lam et al. 2023), the computa-
+tional cost for models’ training to satisfy the task-specific
+requirements (water area, time and spatial resolution, fore-
+cast length, objective function) can be excessive. For this
+reason, we aimed to provide a more lightweight surrogate
+alternative to existing solutions for sea ice forecasting.
+
+This paper presents a deep learning approach LANE-SI
+that uses an ensemble of convolutional neural networks
+(CNN) for long-term predictive modeling of sea ice concen-
+tration. Satellite data with post-correction - OSI SAF Global
+Sea Ice Concentration (SSMIS) product (Tonboe et al. 2016)
+was taken as training data. Results are presented for the Kara
+Sea and part of the Barents Sea region of the Arctic. The de-
+veloped model is lightweight due to its simple architecture
+and is also undemanding in input data - only the pre-history
+of the target parameter is required. A comparison was made
+with the ECMWF’s fifth-generation physics-based seasonal
+forecast system - SEAS5 (Johnson et al. 2019). The compar-
+ison results demonstrate that the surrogate model reproduces
+the absolute values of ice concentration and their spatial dis-
+tribution with a quality comparable to the SEAS5 forecast.
+The surrogate model reproduces the position of the ice edge
+better than the SEAS5 forecast, both on average contour
+points position and the position of each point separately.
+
+The paper is structured as follows: Section 2 reviews the
+key related work, Section 3 describes the proposed method
+for the design of surrogate sea ice forecasting models named
+LANE-SI, Section 4 contains the experimental results, and
+Section 5 presents concluding remarks for the proposed
+methods.
+
+Related Work
+The classic method for modeling sea ice parameters is nu-
+merical modeling based on systems of differential equa-
+tions. Over the years of technological development, a large
+
+ 
+ 
+ 
+ 
+ 
+ 
+number of both specific solutions that reproduce local ice
+dynamics (Girard et al. 2011) and general methods of nu-
+merical hydrometeorological forecasting (Wang, Chen, and
+Kumar 2013; Zhang and Rothrock 2003) have been devel-
+oped. State-of-the-art physical models like NEMO-SEAICE
+(Madec et al. 2017) make it possible to reproduce ice con-
+ditions both at the global (Hvatov et al. 2019) and regional
+(Pemberton et al. 2017) levels. Considering the universality
+of numerical models, it should be noted that their adapta-
+tion to a specific territory requires significant effort from a
+subject specialist and considerable computing resources, as
+well as setting boundary and initial conditions, which raises
+the need for high-quality initial data, which is not always
+available for the water area interest.
+
+There has been a rapid development of data-driven ap-
+proaches in recent years. Model complexity varies from lin-
+ear relationship searches (Kapsch et al. 2014) and regression
+models (Ahn et al. 2014) to deep learning networks (Chi and
+Kim 2017). Regression models are limited in their applica-
+bility due to the enormously increasing complexity when
+moving to grid calculations. Using neural networks based
+on simple convolutional (Kim et al. 2020) and more com-
+plex U-Net (Ali and Wang 2022) architectures provide high-
+resolution output images and allow a more detailed fore-
+cast. However, most high-quality existing solutions require a
+large amount of additional input data and computing power
+(Andersson et al. 2021; Ali and Wang 2022) for training and
+network prediction, significantly limiting their applicability
+for specific water areas.
+
+It is known that combining a set of simple models into
+ensembles makes it possible to achieve higher quality fore-
+casting, including in the subject area of hydrometeorology
+(Ali et al. 2021; Kim et al. 2018). We assume that ensem-
+bling of simple neural networks can lead us to better quality
+at lower computational costs (Zhou, Wu, and Tang 2002).
+Thus, the question arises of finding a balance between the
+complexity of the model and the quality of the forecast.
+
+LANE-SI
+
+To achieve a better quality of high-resolution long-term sea
+ice forecasting in a computationally cheap way, we devel-
+oped the LANE-SI approach that allows designing the pre-
+dictive model for sea ice in specific water areas. We used
+the convolutional neural network for a non-standard task -
+time-spatial forecasting. In contrast to LSTM architectures,
+which allow the extraction of features only from time series
+(Choi, De Silva, and Yamaguchi 2019), convolution empha-
+sizes the spatial distribution of the parameter and reduces
+the risk of stagnation over time. The surrogate model was
+implemented to carry out long-term forecasting with a fore-
+cast horizon of one year. We aimed to make the model as
+flexible as possible to adapt to specific water areas to reduce
+the computational cost against neural surrogate models that
+cover the entire Arctic region (Andersson et al. 2021).
+
+In LANE-SI, the dataset for training a surrogate data-
+driven predictive model for ice concentration is prepared
+similarly to the lagged transformation applied to time series.
+Previous k steps are used to predict n steps ahead using the
+
+pre-history of sea ice. Each time step is characterized by an
+image describing the concentration in each cell.
+
+The surrogate model is represented by an ensemble that
+aggregates two CNNs trained with different loss functions
+and an inertial forecast - concentration values averaged for
+each day of the year over the previous five years.
+
+CNN for sea ice forecasting
+The basic structure of the deep neural networks used in
+LANE-SI include five convolution layers with ReLU acti-
+vation functions (Agarap 2018). Postprocessing with cutting
+to the range was used due to the inconsistency of using the
+sigmoid activation function to ensure that the output image
+values range from 0 to 1 (Wang, Scott, and Clausi 2017).
+The structural scheme of CNN is presented in Figure 1. The
+specific size of layers is configured in an automated way.
+
+Figure 1: Architecture of deep model for sea ice concentra-
+tion forecasting. The specific values of layer shape are de-
+scribed for the experimental domain (125x125) used in Sec-
+tion .
+
+In the modeling of spatiotemporal data, it is important not
+only to reproduce the absolute values but also to measure the
+proximity of the spatial distribution of values to the distribu-
+tion in the target image. Therefore, CNNs were trained on
+two loss functions:
+
+• Mean Absolute Error (MAE, L1Loss) - represents the
+closeness of the absolute values of each pixel of each pre-
+diction element with the target image;
+
+• Structural Similarity Index (SSIM) - represents the
+similarity local patterns of pixel intensities (Wang et al.
+2004) and shows similarity in the spatial distribution of
+the parameter at predicted and target images.
+
+The CNN accepts multi-channel
+
+images with several
+years of ice concentration pre-history.At the output, the
+
+54х5427х2754х54Input: multi-channel image, prehistory of parameter –n time stepsOutput: multi-channel image,forecast of parameter –k time steps aheadCNN provides images of the same spatial resolution as the
+input ones, but the number of channels is 52. It corresponds
+to a one-year forecast with a time sampling of seven days.
+
+Neural ensembling of forecasts
+
+The multi-model ensemble was used to improve the quality
+of the surrogate model in LANE-SI. The first CNN reflects
+the spatial distribution of the parameter (SSIM), and the
+second reproduces the parameter’s absolute values (MAE).
+Also, a naive forecast in the form of repeating the average
+values for five years for each day of the year was added to re-
+produce long-term dynamics not represented in pre-history.
+Three types of ensembling methods were tested by quality
+
+comparison with the same metrics (MAE, SSIM):
+
+• Simple weighted ensemble, based on linear regression:
+each pixel in a predicted multi-channel image is consid-
+ered an independent variable. Predicted values for each
+pixel of three separated models are summed with coeffi-
+cients that provide less error on the delayed part of train
+data;
+
+• CNN trained with MAE loss function uniting the ele-
+ments of the ensemble in the form of multi-channel im-
+ages into one prediction;
+
+• CNN trained with SSIM loss function unites the ensem-
+ble’s elements in the form of multi-channel images into
+one prediction.
+
+The general scheme for an approach that combines sin-
+gle models into using neural ensembling is presented in Fig-
+ure 2.
+
+Experiments and Results
+
+Dataset
+
+We use OSI SAF Global Sea Ice Concentration (SSMIS)
+product as training data for sea ice concentration forecasting
+in specific water areas. The time resolution of the product
+is one day; however, for the problem of long-term forecast-
+ing, such discretization is redundant, and therefore the time
+resolution was sparsed to weekly. Data were normalized to
+a regular grid with a spatial resolution of 14 km using bi-
+linear interpolation. An area with the Kara Sea and part of
+the Barents Sea was chosen as a test domain (as presented in
+Figure 3).
+
+We conduct the experimental evaluation of LANE-SI for
+the Kara Sea using SSMIS for 1996 to 2022 years. Primary
+forecasting models were trained on the data time range from
+1996 to 2009. The ensembling model was trained on predic-
+tions of single models from 2010 to 2015. They were ad-
+ditionally re-trained on the entire training set from 1996 to
+2015 to obtain better forecasts using single models. Valida-
+tion was made as an out-of-sample one-year-ahead forecast
+for 2006-2022 compared with naive forecast and actual data.
+The training time for LANI-SI in the described setting on
+a local machine with an NVIDIA GeForce RTX 4080 video
+card and an AMD Ryzen 9 5950X processor (16 x 3.4 GHz)
+was approximately 450 minutes.
+
+LANE-SI against separate data-driven models
+
+The quality of the surrogate model (design with LANE-SI)
+for the Kara Sea was analyzed compared to the naive fore-
+cast for both the final ensemble model and individual en-
+semble components. Table 1 presents numerical estimates
+of metrics averaged over the years.
+
+As the table shows,
+
+the surrogate ensemble model
+achieves a higher forecast quality than single models accord-
+ing to the SSIM metric for all years and almost all years ac-
+cording to the MAE metric.
+
+Figure 4 presents an example of a spatial comparison of
+different data-driven forecasts (LANE-SI-designed ensemble
+and separate neural models) with actual data for a single
+forecast step.
+
+This example shows the shortcomings of single models.
+The CNN with the L1 loss function reproduces the ice field
+with large granularity despite its good fit into the absolute
+values on average over the image. CNN with SSIM loss
+function and naive forecast tends to over-smooth the im-
+age and underestimate the absolute values of the parame-
+ter. Thus, the ensemble model combines single models while
+avoiding their inherent disadvantages.
+
+LANE-SI against physics-based forecast
+
+To objectively assess the quality of the surrogate model, it
+was compared with the state-of-the-art (SOTA) model based
+on differentiation equations - the predictive model SEAS5.
+The maximum forecast horizon of the SEAS5 model is
+nine months (against 12 months for the design surrogate
+model). Therefore, we configured both forecasts to start on
+January 1 of each year. The error was calculated on average
+for each season (three months) out of three fully predicted.
+Table 2 presents the comparison results for the entire
+
+SEAS5’s available archives (2020-2022).
+
+As the table shows, forecasting using a surrogate model
+designed by LANE-SI is comparable in quality to the
+physics-based forecast and, in some cases, can even surpass
+it due to the better adaptation to specific water areas.
+
+In addition to the metrics used for training (SSIM, MAE),
+a metric for comparing the similarity of the ice edge was
+used to assess the quality. The ice edge is the contour of the
+spatial position of ice with a concentration of more than 0.8.
+An expert can choose the threshold for switching to binary
+data (it depends on the scenario of the forecast usage). In this
+case, the ice edge’s position is represented by a set of points
+with coordinates of a fixed length. The distance metric is
+calculated as a mean of the signed distance between each
+point of one contour and the nearest contour edge of the sec-
+ond contour (Brahmbhatt 2013). This metric was introduced
+because it is more indicative for assessing the spatial distri-
+bution of ice concentration values critical for navigation.
+
+Figure 5 shows an example of the result of edge identifi-
+
+cation as 100 points with the distance metric calculation.
+
+The distance values were displayed as boxplots for each
+prediction step to assess the range of agreement between the
+ice edge contour points. Figure 6 provides a visualization for
+the 2021 ice melt period.
+
+Figure 2: The structure of the proposed ensemble model (first layer - predictive model, second layer - neural ensembling model).
+
+each point is lower for the proposed surrogate model.
+

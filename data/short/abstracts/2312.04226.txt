@@ -1,0 +1,19 @@
+Abstract. In recent years, we have seen an increase in the adoption of
+blockchain-based systems in non-financial applications, looking to ben-
+efit from what the technology has to offer. Although many fields have
+managed to include blockchain in their core functionalities, the adoption
+of blockchain, in general, is constrained by the so-called trilemma trade-
+off between decentralization, scalability, and security. In our previous
+work, we have shown that using a digital twin for dynamically manag-
+ing blockchain systems during runtime can be effective in managing the
+trilemma trade-off. Our Digital Twin leverages DDDAS feedback loop,
+which is responsible for getting the data from the system to the digital
+twin, conducting optimisation, and updating the physical system. This
+paper examines how leveraging DDDAS feedback loop can support the
+optimisation component of the trilemma benefiting from Reinforcement
+Learning agent and a simulation component to augment the quality of
+the learned model while reducing the computational overhead required
+for decision making.
+
+1
+

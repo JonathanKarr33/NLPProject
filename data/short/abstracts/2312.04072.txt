@@ -1,0 +1,22 @@
+Abstract—Voice recognition technology enables the execution
+of real-world operations through a single voice command. This
+paper introduces a voice recognition system that involves con-
+verting input voice signals into corresponding text using an
+Android application. The text messages are then transmitted
+through Bluetooth connectivity, serving as a communication
+platform. Simultaneously, a controller circuit, equipped with a
+Bluetooth module, receives the text signal and, following a coding
+mechanism, executes real-world operations. The paper extends
+the application of voice recognition to real-time surveillance
+and automation, incorporating obstacle detection and avoidance
+mechanisms, as well as control over lighting and horn functions
+through predefined voice commands. The proposed technique not
+only serves as an assistive tool for individuals with disabilities
+but also finds utility in industrial automation, enabling robots to
+perform specific tasks with precision.
+
+Index Terms—Voice Recognition, Android Applications, Blue-
+tooth Connectivity, Real-time Surveillance, Automation, Obstacle
+Detection, Assistive Technology, Industrial Automation
+
+I. 

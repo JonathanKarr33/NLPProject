@@ -1,0 +1,38 @@
+ABSTRACT
+
+Given a set of candidate entities (e.g. movie titles), the ability to
+identify similar entities is a core capability of many recommender
+systems. Most often this is achieved by collaborative filtering ap-
+proaches, i.e. if users co-engage with a pair of entities frequently
+enough, their embeddings should be similar. However, relying on
+co-engagement data alone can result in lower-quality embeddings
+for new and unpopular entities. We study this problem in the con-
+text recommender systems at Netflix. We observe that there is
+abundant semantic information such as genre, content maturity
+level, themes, etc. that complements co-engagement signals and
+provides interpretability in similarity models. To learn entity sim-
+ilarities from both data sources holistically, we propose a novel
+graph-based approach called SemanticGNN. SemanticGNN models
+entities, semantic concepts, collaborative edges, and semantic edges
+within a large-scale knowledge graph and conducts representation
+learning over it. Our key technical contributions are twofold: (1)
+we develop a novel relation-aware attention graph neural network
+(GNN) to handle the imbalanced distribution of relation types in
+our graph; (2) to handle web-scale graph data that has millions of
+nodes and billions of edges, we develop a novel distributed graph
+training paradigm. The proposed model is successfully deployed
+within Netflix and empirical experiments indicate it yields up to
+35% improvement in performance on similarity judgment tasks.
+
+KEYWORDS
+
+Figure 1: Similar entity generation in Netflix.
+
+Figure 2: (a) Title degree distribution with/without entity-
+entity engagement links (EEL). The majority of titles are
+without EEL. (b) Constructed semantic knowledge graph for
+learning title representations.
+
+Representation Learning, Graph Neural Networks, Knowledge Graphs
+
+1 

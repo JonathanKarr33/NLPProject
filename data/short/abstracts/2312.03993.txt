@@ -1,0 +1,18 @@
+ABSTRACT
+
+This project report summarizes our journey to perform sta-
+ble diffusion fine-tuning on a dataset containing Calvin and
+Hobbes comics. The purpose is to convert any given input
+image into the comic style of Calvin and Hobbes, essentially
+performing style transfer. We train stable-diffusion-v1.5 us-
+ing Low Rank Adaptation (LoRA) to efficiently speed up the
+fine-tuning process. The diffusion itself is handled by a Vari-
+ational Autoencoder (VAE), which is a U-net. Our results
+were visually appealing for the amount of training time and
+the quality of input data that went into training.
+
+Index Terms— Diffusion, Style Transfer, Low Rank
+
+Adaptation
+
+1. 

@@ -1,0 +1,2711 @@
+Introduction
+
+The domain gap manifests when a model, trained on a
+source domain with annotated samples, is deployed in a
+
+target domain that has a distribution shift compared to the
+source domain. Unsupervised domain adaptation (UDA)
+considers a target domain with unlabeled data and aims to
+mitigate the domain gap by aligning the source and target
+domain distributions using the knowledge learned from the
+source domain. Most of the current UDA methods conduct
+domain adaptation by either minimizing the source-target
+distribution discrepancy [39, 47], or by adversarially align-
+ing the feature spaces of the source and target data [7, 9].
+However, such models need access to the source data dur-
+ing adaptation, and therefore cannot be applied to cases
+where the source domain is not available or when the source
+data is sensitive or confidential. To address these concerns,
+source-free domain adaptation (SFDA) [20, 45] was pro-
+posed, where domain adaptation to the target distribution
+takes place with a source-pretrained model using only the
+unlabelled target data.
+
+While the vast majority of existing UDA literature deals
+with closed-set domain adaptation, where the target do-
+main and source domain share the same classes, a more
+realistic scenario is open-set domain adaptation (OSDA)
+[22, 30] where the target domain contains samples belong-
+ing to novel classes that are absent in the source domain.
+In the OSDA setting, closed-set UDA solutions would en-
+force alignment of the source and target feature spaces un-
+der the unknown category mismatch, leading to negative
+transfer [6] and deteriorating performance. The majority of
+the existing OSDA methods [22, 30] utilize domain adver-
+sarial learning techniques to align the source domain with
+only the known classes in the target domain, leaving out
+the target-unknown classes. Such methods fail to properly
+learn the features for the unknown classes, and hence no
+clear decision boundary between the known classes and the
+unknown class in the target domain is realized. Some uni-
+versal domain adaptation methods, i.e. UDA methods de-
+
+ 
+ 
+ 
+ 
+ 
+ 
+signed to work in both closed and open-set settings [15, 31],
+have attempted to conduct self-supervised learning (SSL)
+to discover latent target domain features without explicit
+distribution matching. However, such methods fail under
+large domain gaps. More recently, [12] proposed a three-
+way domain adversarial feature space alignment between
+the source domain and the known and the unknown tar-
+get subdomains, thus segregating the known and unknown
+classes in the target domain.
+
+In this work, we introduce Unknown Sample Discovery
+(USD) as a source-free OSDA (SF-OSDA) method that uti-
+lizes an ensemble-based pseudolabeling strategy for the tar-
+get data, and generates known and unknown target sub-
+sets based on Jensen-Shannon distance (JSD) between the
+pseudolabels and the predictions from a teacher model.
+USD uses 2-component Gaussian Mixture Model (GMM)
+to model the target domain JSD, where the distribution with
+the lower mean JSD is considered to be of the known class
+samples and that with the greater mean JSD is taken as that
+consisting of unknown class samples. The known-unknown
+target subsets are used to adapt the student model. The
+student model is updated with gradient descent, while the
+teacher model is updated by exponential moving averages
+(EMA) of the teacher and student models. The teacher-
+student framework in USD helps to mitigate error accu-
+mulation induced from any possibly faulty known-unknown
+sample separation.
+
+USD introduces an unknown class output node in the tar-
+get model. The adapted target model infers new target sam-
+ples in one one of the known classes or the unknown class,
+without operating on the entire target dataset first to iden-
+tify known and unknown samples. The main contributions
+of this work are as follows.
+
+• We introduce USD as an SF-OSDA model that co-trains a
+dual-branch teacher-student framework to split the target
+domain into known and unknown class subsets.
+
+• USD proposes the Jensen-Shannon distance between the
+target pseudolabels and teacher model predictions as an
+effective criterion for separating target samples in known
+and unknown classes.
+
+• Co-training in USD, aided by weak-strong consistency
+between the teacher and student outputs, significantly
+mitigates error accumulation resulting from imperfect
+known-unknown separation, and sustains the adaptation
+performance.
+
+• USD generates reliable pseudolabels from the student
+model outputs on an ensemble of weak and strong target
+data augmentations.
+
+• USD utilizes curriculum adaptation to progressively learn
+the known class feature space first, and the unknown class
+feature space later, thus enabling robust alignment of the
+entire target space with the source domain.
+
+• Extensive experiments on 3 popular UDA benchmarks
+
+demonstrate the superiority of USD over existing SF-
+OSDA methods.
+
+2. Related Works
+
+2.1. Unsupervised domain adaptation
+
+Domain gap originates from the distribution shift between
+the source domain where a deep network model is trained,
+and the target domain where the model is deployed [39].
+This domain gap may be reduced by minimizing the max-
+imum mean discrepancy (MMD) [23, 40], or the central
+moment discrepancy (CMD) [47] between the distributions
+in the source and target domains. Deep CORAL [35]
+mitigated domain shift by matching second-order distribu-
+tion statistics. [7] introduced the Gradient Reversal Layer
+(GRL) and made use of a domain discriminator to adversar-
+ially align the source and target distributions in a common
+feature space using a common feature encoder. The Ad-
+versarial Discriminative Domain Adaptation (ADDA) [41]
+method decoupled the feature extraction process by learn-
+ing two separate feature encoders for the two domains and
+aligned them adversarially to perform classification with a
+common classifier.
+
+Generative adversarial networks (GANs) have been uti-
+lized to produce images in an intermediate domain be-
+tween the source and target to facilitate easier and smoother
+adaptation [9]. Domain-wise global adversarial alignment
+in the absence of target annotations may lead to loss of
+class discrimination in the target embeddings. To align the
+domain-wise and class-wise distributions across the source
+and target data while maintaining target class feature dis-
+crimination, [17] simultaneously solved two complemen-
+tary domain-specific and class-specific minimax objectives.
+The non-adversarial alignment approach in [27] imposed
+a consistency constraint between the labeled source proto-
+types and the pseudo-labeled target prototypes in the feature
+space.
+
+2.2. Source free domain adaptation
+
+UDA methods that adversarially align the embedding space
+[7, 9, 41] or minimize the source-target domain divergence
+[23, 40, 47] require access to both the source and target
+data during adaptation, rendering them unusable in situa-
+tions where the source data is private or restricted. A semi-
+supervised UDA method involving a few source representa-
+tives or prototypes instead of the full source data was pro-
+posed in [4]. Distant supervision for SFDA [19] iteratively
+assigned pseudo-labels to the target data and used them to
+learn a domain invariant feature space and obtain the tar-
+get class centroids. Liang et al.
+[20] introduced SHOT
+which adapts the source-pretrained feature encoder to the
+target domain via self-training with information maximiza-
+tion [13, 34] and self-supervised clustering for pseudola-
+
+beling, while transferring the source hypothesis (classifier
+model) to the target. To further refine the pseudolabels, [45]
+proposed to enforce neighborhood consistency regulariza-
+tion among the target samples. To generate compact target
+clusters, [46] considered minimizing the distance among K-
+nearest neighbors for each target sample and dispersing the
+rest by retrieving target features stored in a memory bank.
+
+2.3. Open set domain adaptation
+
+In addition to aligning the source and target subspaces, a
+critical step in OSDA is detecting target samples from novel
+or unknown categories that are absent in the source do-
+main. [11] applied a simple class-wise confidence thresh-
+old to reject those samples with lower confidence as un-
+known. [30] adversarially aligned the source domain and
+known target subdomain, where the unknown target sam-
+ples were identified based on a preset threshold. Align-
+ment for only the known classes however results in subpar
+performance in identifying the unknown samples. The ad-
+versarial alignment objective was modified in [22] with an
+instance weighting procedure, where higher weights were
+given to known target samples and lower weight to un-
+known samples. This somewhat smoothened the known-
+unknown distinction, but lower weights produced less con-
+tributions in the objective loss from the unknown samples,
+leading to suboptimal performance. A 3-way domain ad-
+versarial alignment between source, known target, and un-
+known target in the feature space was proposed in [12]
+such that the source and known target are aligned while
+the target-unknown gets segregated. [20] and [46] are SF-
+UDA methods that also conduct SF-OSDA by separating
+the known and unknown samples based on clustering the
+sample entropies into two clusters, and taking the cluster
+with lower mean entropy as the known subset.
+
+3. Method
+
+s, yi
+
+t}nt
+
+s}ns
+
+For unsupervised OSDA, we have ns labeled samples
+{xi
+i=1 ∈ Xs, Ys belonging to the source domain Ds,
+and nt unlabeled samples {xi
+i=1 ∈ Xt belonging to the
+target domain Dt. The task of SF-OSDA is to take the
+source model fs(θs) : Xs → Ys with model parameters
+θs trained on the Cs-multiclass source data {xi
+i=1 ∈
+Xs, Ys, and adapt it to ft(θt) : Xt → Yt with model param-
+t}nt
+eters θt that can map the {xi
+i=1 ∈ Xt to the Ct classes,
+where Ct = Cs + 1. The additional class in the target do-
+main is a catch-all class for all samples in the target domain
+that do not belong to any of the classes in the source domain.
+
+s}ns
+
+s, yi
+
+We follow [20] for Source model training follows [20]
+to ensure fair comparison with other source-free UDA mod-
+els. The source model is trained by minimizing the standard
+
+Figure 1. Pseudolabel generation for the target samples and
+known-unknown sample separation based on JSD
+
+Figure 2. Adaptation process for USD using co-training. The stu-
+dent model receives pseudolabels for the target samples (see Fig-
+ure 1) and is optimized using a combination of triplet, weak-strong
+consistency, information maximization (IM) and cross-entropy
+losses. The teacher model is updated via exponential moving av-
+erages (EMA) at the end of each epoch.
+
+cross entropy loss with label smoothing [26] as follows.
+
+Ls(fs; Xs, Ys) = −Exs∈Xs,ys∈Ys
+
+Cs(cid:88)
+
+qls
+k log(σk(fs(xs)))
+
+k=1
+
+(cid:80)
+
+(1)
+where σk(a) = exp(ak)
+i exp(ai) is the k-th element in its softmax
+output of a Cs-dimensional vector a, and qls is the one-hot
+encoded and smoothed Cs-dimensional vector for sample
+label yi
+k = (1 − α)qk + α/Cs, where qk is 1
+for the correct class and 0 for all other classes, and α is the
+smoothing factor set at 0.1.
+
+s, such that qls
+
+t (θS
+
+t (θT
+
+t and gT
+
+The source model fs consists of a feature extractor gs :
+Xs → Rd and a Cs-class classifier hs : Rd → RCs, such
+that fs(x) = hs(gs(x)). USD consists of a student target
+t ) and a teacher target model f T
+model f S
+t ). The fea-
+ture extractors gS
+t , in the student and teacher net-
+works respectively, are initialized with the source model
+feature extractor, i.e., gS
+t = gs. To account for the
+novel class samples in the target domain, the source classi-
+fier hs is expanded in the student and teacher models to in-
+clude an additional trainable output node for the unknown
+class. The known class nodes in the target classifiers hS
+t
+and hT
+t , for the student and teacher respectively, are ini-
+tialized with hs, and remain frozen during adaptation. The
+unknown class nodes in hS
+t , hT
+t and the feature extractors
+gS
+t , gT
+t are adapted using only the unlabeled target samples.
+
+t = gT
+
+3.1. Known-unknown sample separation
+
+The first step for target adaptation is to reliably separate the
+known class samples and the novel class samples in the tar-
+get data. This step is visually depicted in Figure 1. In or-
+der to generate pseudolabels ˆyt, the target data undergoes
+M = 6 number of weak and strong augmentations (1 weak
+and 5 strong) based on AutoAugment [5] policy for Ima-
+geNet. The softmax output over Cs classes for each aug-
+mented view xiM
+t , and
+then averaged over the augmentations, as follows.
+
+is taken from the student model f S
+
+t
+
+ˆyi
+t = arg max
+
+1
+M
+
+M
+(cid:88)
+
+1
+
+t (xiM
+f S
+t
+
+)
+
+(2)
+
+The index corresponding to the maximum averaged soft-
+max output is taken as the hard pseudolabel ˆyi
+t for each tar-
+get sample xi
+t. These pseudolabels are however only over
+the Cs known classes, and therefore the samples need to be
+split into known class subset X K
+and unknown class sub-
+t
+set X U
+t . Existing SF-OSDA methods [20, 46] identify un-
+known class samples by utilizing the output entropy of the
+target data. Entropies for all samples are calculated at the
+beginning of each epoch and then normalized in the range
+of [0, 1] by dividing the each sample entropy by log Cs. The
+normalized entropies are then clustered by 2-class k-means
+clustering. The cluster with the higher mean entropy or un-
+certainty is considered to be the one containing unknown
+samples, while the other cluster with lower mean entropy is
+taken as containing known class samples.
+
+Sample separation is a critical component for noisy la-
+bel learning (NLL) algorithms where clean and noisy sam-
+ples are separated for robust supervised training of a model.
+Traditionally, NLL calculates the cross-entropy loss on the
+whole dataset and then uses low cross-entropy loss as the
+criterion to identify clean samples [1, 16, 18]. In USD, we
+conduct known-unknown sample separation for SF-OSDA
+based on JSD between the network outputs and their corre-
+sponding pseudolabels, which is calculated as follows.
+
+JSD(ˆyi
+
+t, pi
+
+t) =
+
+1
+2
+
+KL
+
+(cid:18)
+
+ˆyi
+t,
+
+t + pi
+ˆyi
+t
+2
+
+(cid:19)
+
++
+
+1
+2
+
+(cid:18)
+
+pi
+t,
+
+KL
+
+t + ˆyi
+pi
+t
+2
+
+(cid:19)
+
+(3)
+where, KL(a, b) is the Kullback-Leibler divergence be-
+tween a and b, and pi
+t (xi
+t = σ(f T
+t)) is the output soft-
+max probability for target sample xi
+t from the target teacher
+model f T
+t .
+
+We consider the unknown class samples in the target do-
+main as noisy samples when predictions are made over only
+the known Cs classes. In comparison to entropy or cross-
+entropy loss, JSD is symmetric by design and ranges be-
+tween 0 and 1.As shown in Figure 1, when plotted against
+the number of samples, JSD produces a bimodal histogram.
+We model the JSD distribution with 2-component Multi-
+variate Gaussian Mixture Model (GMM) with equal priors,
+
+resulting in probabilities for each target sample to belong to
+either of the two modes. We consider the samples belonging
+to the distribution with the lower-mean Gaussian as samples
+from one of the known classes, and consider those samples
+on the higher-mean Gaussian as coming from the unknown
+target class.
+
+t . The pseudolabels ˆyi
+
+Practically, we take the probability wi
+
+t of belonging to
+the lower-mean GMM distribution for each target sample
+xi
+t, and set a lower-bound/threshold δt to select the known
+sample subset X K
+. The remaining target samples are in-
+t
+cluded in the unknown subset X U
+t are
+updated accordingly, where the known subset retain their
+earlier assigned pseudolabel from among the Cs classes,
+and the unknown subset of target samples get the new un-
+known class pseudolabel |Ct|. It has to be noted that dur-
+ing adaptation, the teacher network conducts the known-
+unknown sample separation at the beginning of each epoch,
+and the student network is adapted over the Ct classes with
+the target data.
+
+3.2. Teacher-student co-training and regularization
+
+USD simultaneously adapts the student and teacher tar-
+get models, such that the student model parameters θS
+t are
+updated based on the minibatch gradient descent, and the
+teacher network parameters θT
+t are updated as temporally
+ensembled version of the student network [36] at the end of
+each epoch as follows.
+
+θT
+tN
+
+= mθT
+
+tN −1
+
++ (1 − m)θS
+tN
+
+(4)
+
+where, m is the momentum parameter for weight ensem-
+bling, and N = 2, 3, .., E is the epoch number. Such co-
+training and cross-network sample splitting by the teacher
+for the student work to lessen error accumulation from im-
+perfect known-unknown sample separation and stabilizes
+the adaptation process. USD further maintains weak-strong
+temporal consistency between the teacher network outputs
+and the student network outputs by minimizing the follow-
+ing consistency loss.
+
+Lcon
+t
+
+(f S
+
+t , f T
+
+t ; Xt) = KL (cid:0)piS
+
+t , piT
+t
+
+Ct(cid:88)
+
+(cid:1) =
+
+piT
+t
+
+log
+
+(cid:19)
+
+(cid:18) piT
+t
+piS
+t
+
+k=1
+
+t (xiS
+
+t = σ(f S
+
+(5)
+where, piS
+t )) is the softmax output from the
+student on an strongly augmented target sample xiS
+t , and
+piT
+t = σ(f T
+)) is the softmax output from the teacher
+on the weakly augmented version xiW
+of the same target
+instance. The strong and weak augmentations are done fol-
+lowing the AutoAugment [5] ImageNet policy.
+
+t (xiW
+t
+
+t
+
+USD also utilizes a triplet
+
+loss [33] to effectively
+learn the decision boundary between known and unknown
+classes. The output zia
+)]a of the teacher model
+on an weakly augmented known class sample is taken as the
+
+T = [f T
+
+t (xiW
+t
+
+S = [f S
+
+anchor, and the corresponding output zi+
+t )]+ on
+the strongly augmented version of the same sample from the
+student model is taken as the positive instance. The negative
+instance is the student model output zi−
+t )]− on
+a randomly chosen unknown class sample. Cosine distance
+is taken as the distance metric, and is calculated as follows.
+
+S = [f S
+
+t (xiS
+
+t (xiS
+
+D(z1, z2) = 1 −
+
+z1.z2
+||z1||2||z2||2
+
+(6)
+
+where z1 and z2 are any two network outputs. Triplet loss
+is in turn calculated as follows.
+
+Ltrip
+t
+
+(f S
+
+t , f T
+
+T , zi+
+
+t ; Xt) = max(D(zia
+
+S ), 0)
+(7)
+the student network is trained with the
+instance-weighted standard cross-entropy loss with label
+smoothing [26], as follows.
+
+S ) − D(zia
+
+In addition,
+
+T , zi−
+
+Lce
+
+t (f S
+
+t ; Xt) = −E
+
+t∈Xtωi
+xi
+
+Ct(cid:88)
+
+k=1
+
+ˆyi
+tk
+
+log(σk(f S
+
+t (xiS
+
+t ))) (8)
+
+i ∈ X K
+
+The instance weights ωi are the probability wi
+
+t for known
+target samples xt
+t of belonging to the lower-mean
+JSD distribution, and (1 − wi
+t) for unknown target samples
+xt
+i ∈ X U
+t of belonging to the higher-mean JSD distribution,
+during the known-unknown sample separation. In order to
+promote adaptation to the known samples first and to pro-
+gressively learn the unknown class feature space, USD uti-
+lizes cross-entropy loss under curriculum guidance, dictated
+by the curriculum factor γr as follows.
+
+Lce
+
+t (f S
+
+t ) =
+
+t ; X K
+t
+γnLce
+
+, X U
+tK(f S
+
+tKr
+
+(9)
+
+tKr−1
+
+/Lce
+
+t ; X K
+
+t ; X U
+t )
+
+tU (f S
+/Lce
+
+t ) + (1 − γr)Lce
+where γr = max(0.5, γr−1(1 − βϵ−Lce
+tKr−1 )) such
+that, β is a hyperparameter and r is the current itera-
+tion number. The ratio Lce
+dictates the degree
+tKr
+by which the curriculum factor decreases from the earlier
+(r − 1)-th iteration to the current r-th iteration. When loss
+Lce
+tK on the known sample subset increases, γ marginally
+decreases to accommodate further adaptation on the known
+samples in the subsequent iterations. But if Lce
+tK decreases
+by a large margin, γ decreases accordingly to progressively
+adapt to the unknown samples in the following iterations.
+Curriculum guidance balances the adaptation of the target
+model to the known and unknown subsets.
+
+To encourage individually precise and globally diverse
+predictions, USD further minimizes the information maxi-
+mization (IM) [20] loss as formulated in [37, 38].
+
+Lent
+t
+
+(f S
+
+t ; X K
+t )
+
+= −E
+
+t∈X K
+xi
+t
+
+Ct(cid:88)
+
+k=1
+
+σk(f S
+
+t (xiS
+
+t ))log(σk(f S
+
+t (xiS
+
+t )))
+
+(10)
+
+Leqdiv
+t
+
+(f S
+
+t ; X K
+
+t ) =
+
+(cid:32)
+
+Ct(cid:88)
+
+piS
+t log
+
+(cid:33)
+
+(11)
+
+piS
+t
+piS
+t
+
+(f S
+
+LIM
+t
+
+t ) = Lent
+
+k=1
+t ; X K
+t (xiS
+where piS
+t ))] is the mean softmax
+output vector over known target samples in a minibatch.
+The overall objective function is therefore,
+
+t ; X K
+t = E
+
+t ) + Leqdiv
+
+t ) (12)
+
+t ; X K
+
+[σ(f S
+
+t∈X K
+xi
+t
+
+(f S
+
+(f S
+
+t
+
+t
+
+Ltot
+
+t = Lce
+
+t + LIM
+
+t + ζ1Ltrip
+
+t + ζ2Lcon
+
+t
+
+(13)
+
+where ζ1 and ζ2 are two hyperparameters.
+
+A brief demonstration of the USD domain adaptation
+
+pipeline is presented in Algorithm 1.
+
+Algorithm 1: Pseudocode for USD
+
+Input: Source trained model fs and nt unlabled
+
+target data samples xi
+
+t ∈ Xt
+
+Output: Target adapted student model f S
+t
+Initialization: Teacher target model f T
+
+t and student
+t , are both initialized
+
+target model f S
+with parameters θs from fs
+
+1 for epoch = 1 to E do
+2
+
+Conduct M = 6 weak-strong augmentations
+and assign ensemble averaged pseudolabels ˆyi
+t
+using eq. (2)
+Conduct known (X K
+sample separation using JSD between ˆyi
+teacher softmax output pi
+t))
+for i = 1 to nt do
+
+t ) - unknown (X U
+
+t ) target
+t and
+
+t = σ(f T
+
+t (xi
+
+Optimize, for each minibatch, student model
+f S
+t with loss Ltot using eq. (13) and get
+new student model parameters θS
+t
+
+end
+Update teacher model f T
+model weights θS
+weights θT
+
+t using eq. (4)
+
+t using new student
+
+t and current teacher model
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8 end
+
+4. Experimental Setup
+
+4.1. Datasets
+
+We evaluate USD on three popular domain adaptation
+benchmarks: Office-31 [29], Office-Home [42], and
+VisDA-C [28]. Office-31 is a small-scale DA dataset with 3
+distinct domains, Amazon (A), Webcam (W), and DSLR
+(D), consisting of images belonging to 31 classes of ob-
+jects found generally in an office environment. Divided
+into 4 distinct domains Art (A), Clipart (C), Product (P),
+and Real-World (R), Office-Home is a medium-sized DA
+dataset which has images of 65 classes of objects found
+in contemporary office and home settings. The large-scale
+
+VisDA-C dataset contains images of 12 classes of itemss
+over 2 domains: Synthetic (S) and Real (R). Its source do-
+main is composed of 152K synthetically rendered 3D im-
+ages. The target domain consists of 55K real images taken
+from MS COCO dataset [21]. For OSDA, we follow the
+shared and target-private dataset splits done in [30].
+
+4.2. Implementation details
+
+For source training, we follow the protocol from [20, 46] for
+fair comparison against existing SF-OSDA methods. The
+basic structure of the teacher and student models also follow
+that of [20, 46], that is, the feature extractor is a ResNet-50
+[8], followed by a fully-connected (FC) bottleneck layer, a
+batch normalization layer [10], an FC classifier layer, and a
+weight normalization layer [32], respectively. The student
+target model is trained with an SGD optimizer with momen-
+tum of 0.9 and weight decay of 10−3. Due to the difference
+in the number of samples in each dataset, USD is adapted
+for 40 epochs on Office and for 20 epochs on Office-Home
+at β = 0.01, and for 5 epochs on VisDA-C at β = 0.001,
+at minibatch size of 64 samples in all cases. The threshold
+δt for known-unknown sample separation is set at 0.8, and
+the momentum parameter m for temporal ensembling is set
+according to schedule in [44] with a maximum at 0.9995.
+Further, ζ1 = 0.01 and ζ2 is gradually increased to 0.5
+following [14]. All experiments were done on a NVIDIA
+A100 GPU.
+
+4.3. Evaluation metrics
+
+The mean-per-class accuracy OS over all known classes
+and the unified unknown class for all the target data may
+be considered as a metric for evaluating OSDA. However,
+such a metric is dominated by the accuracy on the known
+classes, as all the unknown samples are lumped into 1 un-
+known class [2]. A better metric is therefore to calculate the
+mean-per-class accuracy OS* over only the known classes,
+and the accuracy UNK for the unknown class, and then take
+the harmonic mean HOS of the two for fair evaluation over
+the known and the unknown classes. Mathematically, the
+metrics are formulated as follows.
+
+OS∗ =
+
+1
+|Cs|
+
+|Cs|
+(cid:88)
+
+i=1
+
+|xt : xt ∈ Di
+
+t ∩ ˜yi
+t = i|
+|xt : xt ∈ Di
+t|
+
+U N K =
+
+t = |Ct||
+
+|xt : xt ∈ D|Ct|
+
+∩ ˜yi
+t
+|xt : xt ∈ D|Ct|
+|
+2 × OS∗ × U N K
+OS∗ + U N K
+
+t
+
+HOS =
+
+(14)
+
+(15)
+
+(16)
+
+t = arg max(σ(f S
+t and Di
+
+Here, ˜yi
+t (xi
+t))) is the prediction from the
+student model f S
+t is the target domain data belong-
+ing to class i. In this work, we report OS*, UNK, and HOS
+for the evaluated adaptation tasks.
+
+5. Results
+
+5.1. Overall results
+
+We compare USD to a number of existing UDA methods:
+closed-set UDA methods (1) DANN [7], (2) CDAN [24],
+open-set UDA methods (3) STA [22], (4) OSBP [30], (5)
+PGL [25], (6) OSLPP [43], and (7) UADAL [12]. These
+methods however are not source-free. We compare USD to
+open-set versions of SF-UDA methods SHOT [20] and AaD
+[46]. The open-set results for SHOT and AaD on Office-
+Home are provided in their respective publications. We gen-
+erate results for Office-31 and VisDA-C using their publicly
+released code.
+
+The results on Office-31 over all 6 domain pairs are pre-
+sented in Table 1. USD outperforms SHOT and AaD by
+∼ 16% and ∼ 3%, respectively in terms of mean HOS. Dis-
+tinguishing between known and unknown class samples is
+crucial in OSDA, and USD strikes the best balance among
+the other SF-OSDA methods. SHOT clearly adapts pri-
+marily to the known classes without good adaptation on
+the unknown samples. AaD overcompensates in identify-
+ing unknown samples at the expense of correctly adapting
+to the known classes. USD performs equally well over both
+known and unknown classes, leading to higher HOS. USD
+also outperforms non-source-free methods STA and PGL,
+while being comparable to OSBP.
+
+A comparative evaluation for USD against existing UDA
+methods on Office-Home is given in Table 2. USD outper-
+forms SHOT and AaD by ∼ 20% and ∼ 2%, respectively in
+terms of the average HOS over the 12 domain pairs. Similar
+to Office-31, SHOT adapts better to the known classes, but
+fails to competently identify unknown samples, while AaD
+performs worse on the known classes and better on the un-
+known samples. USD is more balanced across the known
+and unknown classes and also outperforms non-SF OSDA
+methods STA, OSBP and PGL.
+
+Results on VisDA-C are given in the bottom right section
+in Table 2. SHOT severely suffers from negative transfer
+in the unknown class, while AaD fails to learn the target-
+known feature space. USD greatly outperforms SHOT and
+AaD, as well as the non-SF method OSBP, while being
+comparable to STA in terms of mean HOS.
+
+5.2. Ablation study
+
+A detailed ablation study was performed on the known-
+unknown sample selection criterion and on the modeling
+of the criterion distribution. The results of the ablation
+study on both Office-31 and VisDA-C are given in Table
+3. USD uses JSD as the known-unknown sample splitting
+criterion, while entropy has been extensively used in exist-
+for this
+ing OSDA methods (SHOT, AaD, UADAL etc.)
+purpose. In addition, cross-entropy (CE) loss is a popular
+criterion for separating clean-noisy samples for noisy label
+
+Method
+
+SF
+
+DANN[7]
+CDAN[24]
+STA[22]
+OSBP[30]
+PGL[25]
+OSLPP[43]
+UADAL[12]
+
+SHOT*[20]
+AaD*[46]
+USD (Ours)
+
+A → D
+
+A → W
+OS* UNK HOS OS* UNK HOS OS* UNK HOS
+
+D → A
+
+D → W
+
+W → A
+
+W → D
+
+Avg.
+
+OS* UNK HOS OS* UNK HOS
+
+OS* UNK HOS OS* UNK HOS
+
+90.8
+92.2
+91.0
+90.5
+82.1
+92.6
+85.1
+
+94.0
+73.0
+90.7
+
+59.2
+52.4
+63.9
+75.5
+65.4
+90.4
+87.0
+
+46.3
+84.6
+73.4
+
+71.5
+66.8
+75.0
+82.4
+72.8
+91.5
+86.0
+
+62.0
+78.3
+81.2
+
+87.4
+90.3
+86.7
+86.8
+82.7
+89.5
+84.3
+
+95.6
+63.5
+82.8
+
+55.7
+50.7
+67.6
+79.2
+67.9
+88.4
+94.5
+
+42.3
+89.5
+72.7
+
+68.1
+64.9
+75.9
+82.7
+74.6
+89.0
+89.1
+
+58.7
+74.3
+77.9
+
+72.9
+74.9
+83.1
+76.1
+80.6
+82.1
+73.3
+
+83.3
+63.6
+65.7
+
+74.5
+70.6
+65.9
+72.3
+61.2
+76.6
+87.3
+
+39.1
+88.9
+84.4
+
+73.7
+72.7
+73.2
+75.1
+69.5
+79.3
+79.7
+
+53.3
+74.2
+73.9
+
+99.3
+99.6
+94.1
+97.7
+87.5
+96.9
+99.3
+
+100.0
+78.0
+97.9
+
+77.0
+73.2
+55.5
+96.7
+68.1
+88.0
+96.3
+
+75.7
+98.5
+96.6
+
+86.7
+84.3
+69.8
+97.2
+76.5
+92.3
+97.8
+
+86.1
+87.0
+97.3
+
+72.1
+72.8
+66.2
+73.0
+80.8
+78.9
+67.4
+
+82.7
+61.9
+64.6
+
+73.1
+69.3
+68.0
+74.4
+61.8
+78.5
+88.4
+
+46.6
+88.9
+86.7
+
+72.6
+71.0
+66.1
+73.7
+70.1
+78.7
+76.5
+
+59.6
+73.0
+74.0
+
+100.0
+100.0
+84.9
+99.1
+82.8
+95.8
+99.5
+
+100.0
+94.6
+98.0
+
+70.2
+67.3
+67.8
+84.2
+64.0
+91.5
+99.4
+
+69.7
+96.8
+92.6
+
+82.5
+80.5
+75.2
+91.1
+72.2
+93.6
+99.5
+
+82.1
+95.7
+95.2
+
+87.1
+88.3
+84.3
+87.2
+82.7
+89.3
+84.8
+
+92.6
+72.4
+83.3
+
+68.3
+63.9
+64.8
+80.4
+64.7
+85.6
+92.1
+
+53.3
+91.2
+84.4
+
+75.9
+73.4
+72.5
+83.7
+72.6
+87.4
+88.1
+
+67.0
+80.4
+83.3
+
+Table 1. Evaluation of USD on Office-31 dataset. * are results computed for the methods using publicly released code.
+
+Method
+
+SF
+
+A → C
+
+A → P
+
+A → R
+
+Office-Home
+C → A
+
+C → P
+
+C → R
+
+OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS
+
+OS*
+
+DANN[7]
+CDAN[24]
+STA[22]
+OSBP[30]
+PGL[25]
+OSLPP[43]
+UADAL[12]
+
+SHOT[20]
+AaD[46]
+USD (Ours)
+
+37.1
+39.7
+46.0
+50.2
+63.3
+55.9
+54.9
+
+67.0
+50.7
+53.3
+
+82.7
+78.9
+72.3
+61.1
+19.1
+67.1
+74.7
+
+28.0
+66.4
+71.5
+
+51.2
+52.9
+55.8
+55.1
+29.3
+61.0
+63.2
+
+39.5
+57.6
+61.1
+
+60.0
+61.7
+68.0
+71.8
+78.9
+72.5
+69.1
+
+81.8
+64.6
+65.7
+
+71.3
+68.8
+48.4
+59.8
+32.1
+73.1
+72.5
+
+26.3
+69.4
+74.9
+
+65.2
+65.1
+54.0
+65.2
+45.6
+72.8
+70.8
+
+39.8
+66.9
+70
+
+75.1
+75.2
+78.6
+79.3
+87.7
+80.1
+81.3
+
+87.5
+73.1
+73.3
+
+67.3
+66.7
+60.4
+67.5
+40.9
+69.4
+73.7
+
+32.1
+66.9
+79.5
+
+71.0
+70.7
+68.3
+72.9
+55.8
+74.3
+77.4
+
+47.0
+69.9
+76.3
+
+43.8
+44.9
+51.4
+59.4
+85.9
+49.6
+53.5
+
+66.8
+48.2
+52.2
+
+Office-Home
+
+84.3
+82.8
+65.0
+70.3
+5.3
+79.0
+80.5
+
+46.2
+81.1
+70.8
+
+57.6
+58.2
+57.4
+64.3
+10.0
+60.9
+64.2
+
+54.6
+60.5
+60.1
+
+50.1
+51.6
+61.8
+67.0
+73.9
+61.6
+62.1
+
+77.5
+59.5
+62.4
+
+77.6
+76.8
+59.1
+62.7
+24.5
+73.3
+78.8
+
+27.2
+63.5
+68.4
+
+60.9
+61.7
+60.4
+64.7
+36.8
+66.9
+69.5
+
+40.2
+61.4
+65.2
+
+61.1
+61.5
+67.0
+72.0
+70.2
+67.2
+69.1
+
+80.0
+67.4
+69.3
+
+Method
+
+SF
+
+P → C
+
+P → R
+
+R → A
+
+R → C
+
+R → P
+
+66.7
+67.1
+66.8
+70.6
+45.6
+70.4
+73.4
+
+39.1
+67.8
+68.9
+
+42.4
+45.8
+54.2
+59.1
+73.7
+54.6
+50.5
+
+66.3
+47.3
+54.3
+
+73.5
+73.7
+66.7
+69.2
+33.8
+73.9
+78.3
+
+25.9
+68.3
+68.6
+
+Avg.
+
+P → A
+UNK HOS
+
+83.9
+81.2
+72.4
+68.1
+34.7
+76.2
+83.7
+
+51.1
+82.4
+73.8
+
+56.3
+58.6
+61.9
+63.2
+47.2
+63.6
+63.0
+
+57.7
+60.1
+62.6
+
+VisDA-C
+
+OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS
+
+OS*
+
+UNK HOS
+
+DANN[7]
+CDAN[24]
+STA[22]
+OSBP[30]
+PGL[25]
+OSLPP[43]
+UADAL[12]
+
+SHOT[20]
+AaD[46]
+USD (Ours)
+
+30.1
+33.1
+44.2
+44.5
+59.2
+53.1
+43.4
+
+59.3
+45.4
+47.3
+
+86.3
+82.4
+67.1
+66.3
+38.4
+67.1
+81.5
+
+31.0
+72.8
+69.6
+
+44.6
+47.2
+53.2
+53.2
+46.6
+59.3
+56.6
+
+40.8
+55.9
+56.3
+
+67.7
+69.8
+76.2
+76.2
+84.8
+77.0
+71.6
+
+85.8
+68.4
+70
+
+72.0
+69.7
+64.3
+71,7
+27.6
+71.2
+83.1
+
+31.6
+72.8
+74.5
+
+69.8
+69.7
+69.5
+73.9
+41.6
+74.0
+76.9
+
+46.2
+70.6
+72.2
+
+56.8
+59.8
+67.5
+66.1
+81.5
+60.8
+66.7
+
+73.5
+54.5
+64.6
+
+77.1
+73.6
+66.7
+67.3
+6.1
+75.0
+78.6
+
+50.6
+79.0
+71.3
+
+65.4
+66.0
+67.1
+66.7
+11.4
+67.2
+72.1
+
+59.9
+64.6
+67.8
+
+37.1
+40.3
+49.9
+48.0
+68.8
+54.4
+51.1
+
+65.3
+49.0
+53.8
+
+80.9
+75.8
+61.1
+63.0
+0.0
+64.3
+74.5
+
+28.9
+69.6
+65.5
+
+50.9
+52.7
+54.5
+54.5
+0.0
+59.0
+60.6
+
+40.1
+57.5
+59.1
+
+69.6
+70.9
+77.1
+76.3
+84.8
+78.4
+77.4
+
+84.4
+69.7
+73.3
+
+67.2
+64.6
+55.4
+68.6
+38.0
+70.8
+76.2
+
+28.2
+70.6
+69.1
+
+68.4
+67.6
+64.5
+72.3
+52.5
+74.4
+76.8
+
+42.3
+70.1
+71.1
+
+52.6
+54.5
+61.8
+64.1
+76.1
+63.8
+62.6
+
+74.6
+58.2
+61.6
+
+77.1
+74.6
+63.3
+66.3
+25.0
+71.7
+78.0
+
+33.9
+71.9
+71.5
+
+60.7
+61.4
+61.1
+64.7
+35.2
+67.0
+68.7
+
+45.6
+63.6
+65.9
+
+52.1
+-
+62.4
+50.9
+-
+-
+-
+
+-
+-
+82.4
+81.7
+-
+-
+-
+
+-
+-
+71.0
+62.7
+-
+-
+-
+
+57.5*
+32.0*
+57.8
+
+12.1*
+62.9*
+86.7
+
+20.1*
+42.4*
+69.4
+
+Table 2. Evaluation of USD on Office-Home and VisDA-C datasets. * are results computed for the methods using publicly released code.
+
+learning (NLL) algorithms [1, 16, 18]. We evaluate all three
+criteria to find the best performing one. The criterion distri-
+bution can be modelled by either Gaussian Mixture Model
+(GMM) or a Beta Mixture Model (BMM). UADAL mod-
+els sample entropy distribution using BMM to distinguish
+between known and unknown samples. Our results in Ta-
+ble 3 show that modeling the distribution of the JSD with
+a GMM outperforms all of the other combinations for un-
+known sample discovery.
+
+The effect of the JSD threshold δt for known-unknown
+separation on the final HOS is shown in Figure 3. The per-
+formance is relatively uniform, which suggests robustness
+of adaptation to the hyperparameter δt. Nonetheless, if the
+threshold is set too high (such as 0.9), too few samples may
+be denoted as known samples, and this could lead to inferior
+performance.
+
+Table 4 shows the impact of different components of
+our objective function and the effects of our teacher-student
+co-training scheme on the final adaptation performance
+
+It is evident that each of our losses
+for Office-Home.
+(Ltrip
+, LIM
+, Lcon
+) contributes to the adaptation, and leav-
+t
+t
+t
+ing out any one of them hurts performance. We observe that
+curriculum guidance considerably benefits adaptation and
+the final average HOS increases by > 1.5% (from 64.2%
+to 65.9%) when such guidance is included. Notably, with-
+out curriculum, adaptation to the known classes is impacted
+drastically (OS* falls by ∼ 6%), signalling that progres-
+sively learning the known class subspace first and then the
+unknown class subspace later is the superior strategy.
+
+The final row in Table 4 presents results in the absence
+of the teacher network, where the student network conducts
+the known-unknown sample separation for itself. Both the
+weakly and strongly augmented samples are fed through the
+student network, and losses Ltrip
+are calculated over
+t
+the student model outputs between the weak and strong aug-
+mentations. Empirical results clearly show that co-training
+in a teacher-student framework is pivotal for mitigating the
+effect of any imperfect known-unknown separation and av-
+
+, Lcon
+t
+
+Separation
+criterion
+
+Distribution
+modeling
+
+JSD
+Entropy
+CE
+JSD
+Entropy
+CE
+
+GMM
+GMM
+GMM
+BMM
+BMM
+BMM
+
+A → D
+
+D → A
+
+A → W
+OS* UNK HOS OS* UNK HOS OS* UNK HOS
+74.6
+73.0
+89.4
+75.9
+74.5
+88.9
+74.9
+61.8
+90.7
+74.9
+53.2
+91.4
+75.8
+78.3
+90.2
+69.7
+37.8
+96.0
+
+78.6
+78.4
+78.1
+67.7
+72.1
+39.7
+
+77.6
+78.6
+73.3
+67.8
+82.5
+53.9
+
+70.2
+70.2
+68.6
+53.7
+60.1
+25.0
+
+85.2
+90.5
+81.0
+72.3
+88.5
+61.2
+
+66.4
+65.3
+69.6
+77.7
+66.3
+81.0
+
+82.7
+83.3
+90.0
+93.6
+87.2
+93.6
+
+Office
+D → W
+
+W → A
+
+W → D
+
+Avg.
+
+OS* UNK HOS OS* UNK HOS
+75.9
+97.5
+71.7
+97.9
+76.2
+98.2
+74.8
+100.0
+71.6
+89.5
+72.8
+100.0
+
+97.2
+95.5
+95.6
+90.3
+90.8
+77.5
+
+97.0
+93.3
+93.3
+82.4
+92.1
+63.3
+
+85.4
+88.5
+86.0
+72.5
+87.1
+68.0
+
+68.3
+60.2
+68.5
+77.1
+60.8
+78.4
+
+OS* UNK HOS OS* UNK HOS
+83.3
+98.0
+82.6
+98.0
+82.0
+98.0
+76.5
+100.0
+81.2
+100.0
+66.1
+100.0
+
+95.8
+95.5
+94.1
+83.2
+94.1
+83.2
+
+93.6
+93.1
+90.4
+71.3
+88.8
+71.3
+
+84.1
+85.0
+80.2
+67.6
+82.5
+54.4
+
+83.7
+82.3
+85.8
+90.0
+82.3
+91.5
+
+VisDA-C
+
+OS* UNK HOS
+69.4
+86.7
+57.8
+68.4
+85.4
+57.1
+54.3
+45.5
+67.3
+62.6
+58.3
+67.6
+56.1
+83.4
+42.3
+35.5
+24.0
+68.6
+
+Table 3. Evaluation of separation criterion and distribution modeling for known-unknown sample separation in USD on Office dataset.
+
+Method
+
+A → C
+
+A → P
+
+A → R
+
+C → A
+
+C → P
+
+C → R
+
+t
+
+t
+
+65.7
+66.4
+63.3
+64.6
+60.8
+58.5
+
+61.1
+60.2
+60.6
+59.9
+58.8
+56.8
+
+71.5
+69.9
+75.6
+74.7
+77.1
+80.4
+P → A
+
+USD (full)
+USD w/o Ltrip
+USD w/o Lcon
+USD w/o LIM
+
+OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS
+68.9
+53.3
+67.9
+52.9
+68.3
+50.5
+67.9
+50.1
+t
+67.5
+USD w/o curriculum 47.5
+61.4
+44.0
+USD w/o co-training
+
+70.8
+70.0
+74.4
+67.9
+79.1
+72.3
+R → A
+OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS
+65.9
+71.3
+54.3
+65.4
+69.9
+51.2
+65.3
+75.3
+49.4
+64.6
+72.8
+50.6
+t
+USD w/o curriculum 46.1
+64.2
+77.7
+61.0
+76.5
+48.3
+USD w/o co-training
+
+USD (full)
+USD w/o Ltrip
+USD w/o Lcon
+USD w/o LIM
+
+68.4
+68.5
+73.8
+68.3
+74.6
+71.0
+R → C
+
+68.6
+67.8
+72.9
+69.0
+73.8
+76.1
+R → P
+
+79.5
+78.9
+83.1
+77.7
+82.5
+78.2
+P → R
+
+74.9
+75.1
+77.7
+73.5
+79.4
+78.4
+P → C
+
+76.3
+76.2
+75.8
+75.5
+75.3
+70.5
+
+70.0
+70.4
+69.8
+68.7
+68.9
+67.0
+
+60.1
+59.3
+59.3
+58.4
+57.1
+54.3
+
+65.2
+65.2
+64.9
+64.0
+65.2
+59.0
+
+71.5
+71.3
+75.4
+71.3
+77.0
+76.7
+
+73.8
+75.9
+78.0
+75.4
+80.7
+78.9
+
+71.1
+70.4
+72.2
+70.1
+71.1
+69.2
+
+72.2
+71.8
+71.7
+71.3
+70.9
+62.5
+
+56.3
+56.8
+55.3
+54.5
+52.4
+50.1
+
+62.6
+61.1
+60.5
+60.6
+58.6
+59.9
+
+67.8
+66.8
+67.0
+67.7
+66.4
+63.2
+
+59.1
+58.2
+58.4
+56.9
+58.0
+58.2
+
+65.5
+66.9
+70.1
+66.5
+73.3
+77.6
+
+69.1
+67.6
+73.9
+67.3
+73.4
+80.5
+
+69.6
+70.4
+71.8
+68.1
+74.5
+71.8
+
+74.5
+74.2
+78.4
+74.1
+78.3
+79.2
+
+73.3
+73.6
+69.6
+73.5
+69.3
+64.1
+
+62.4
+62.3
+57.9
+60.2
+57.8
+50.5
+
+69.3
+68.0
+64.3
+66.7
+62.2
+51.4
+
+52.2
+52.0
+49.4
+51.2
+44.7
+43.4
+
+70
+69.5
+66.0
+68.7
+64.7
+51.6
+
+61.6
+61.0
+58.0
+59.8
+55.7
+51.0
+
+73.3
+73.5
+70.6
+73.1
+69.0
+60.7
+
+64.6
+63.9
+60.3
+63.2
+57.9
+53.9
+
+47.3
+47.6
+44.9
+45.5
+40.4
+38.5
+
+53.8
+51.4
+50.1
+49.7
+48.0
+46.6
+
+Method
+
+Avg.
+
+t
+
+t
+
+Table 4. Ablation study on the objective function, and co-training for USD on Office-Home dataset.
+
+A → C
+
+A → P
+
+A → R
+
+C → A
+
+C → P
+
+C → R
+
+65.7
+67.0
+65.9
+
+61.1
+60.1
+60.2
+
+71.5
+73.5
+74.1
+P → A
+
+OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS
+68.9
+53.3
+66.7
+50.8
+68.3
+50.7
+
+70.8
+67.0
+68.2
+R → A
+OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS OS* UNK HOS
+65.9
+71.3
+54.3
+65.2
+72.2
+53.4
+65.3
+73.0
+53.0
+
+68.4
+66.9
+67.3
+R → C
+
+74.9
+73.2
+73.6
+P → C
+
+79.5
+75.8
+78.5
+P → R
+
+68.6
+66.1
+69.5
+R → P
+
+74.5
+71.8
+73.8
+
+69.1
+68.3
+70.6
+
+70.0
+69.9
+69.5
+
+65.2
+64.1
+64.4
+
+56.3
+57.1
+56.4
+
+59.1
+59.1
+58.9
+
+72.2
+71.4
+71.3
+
+76.3
+75.3
+76.5
+
+62.6
+61.9
+61.5
+
+60.1
+60.0
+58.6
+
+67.8
+67.5
+66.9
+
+71.1
+69.2
+71.6
+
+65.5
+68.1
+65.8
+
+69.6
+69.0
+71.3
+
+73.8
+73.6
+73.2
+
+71.5
+70.5
+71.6
+
+70.0
+71.0
+68.9
+
+73.3
+74.8
+74.7
+
+47.3
+48.6
+46.6
+
+73.3
+70.0
+72.7
+
+52.2
+54.3
+51.3
+
+62.4
+61.5
+61.7
+
+69.3
+67.2
+67.2
+
+64.6
+63.4
+61.8
+
+61.6
+61.2
+60.6
+
+53.8
+52.2
+53.3
+
+Avg.
+
+Pseudolabel
+
+Ensemble
+Clustering
+Student Predictions
+
+Pseudolabel
+
+Ensemble
+Clustering
+Student Predictions
+
+Table 5. Ablation study on the pseudolabeling scheme for USD on Office-Home dataset.
+
+erage HOS over the 12 domain pairs in Office-Home de-
+creases by ∼ 5% when the teacher network is removed. As
+seen in Figure 4, in the absence of co-training, the student
+model adapts faster, but its performance drops from its peak
+during the course of adaptation due to error accumulation.
+In contrast, adaptation with co-training is slightly slower but
+maintains its peak performance.
+
+The effect of the pseudolabeling scheme on the adap-
+tation performance for Office-Home is shown in Table 5.
+SHOT and AaD use a self-supervised clustering process
+built on DeepCluster [3] to get pseudolabels for the known
+samples. We see that such clustering is not better than tak-
+ing the hard predictions from the student model as pseudola-
+bels. In open set settings, the unknown samples can drift the
+known class centroids, leading to faulty clusters. Our multi-
+view augmentation ensembled pseudolabeling strategy out-
+performs both pseudolabeling from clustering or direct stu-
+dent predictions.
+
+6. 

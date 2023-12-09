@@ -1,0 +1,18 @@
+Abstract
+
+Pesticides serve as a common tool in agricultural pest control but significantly
+contribute to the climate crisis. To combat this, Integrated Pest Management
+(IPM) stands as a climate-smart alternative. Despite its potential, IPM faces low
+adoption rates due to farmers’ skepticism about its effectiveness. To address this
+challenge, we introduce an advanced data analysis framework tailored to enhance
+IPM adoption. Our framework provides i) robust pest population predictions
+across diverse environments with invariant and causal learning, ii) interpretable
+pest presence predictions using transparent models, iii) actionable advice through
+counterfactual explanations for in-season IPM interventions, iv) field-specific
+treatment effect estimations, and v) assessments of the effectiveness of our advice
+using causal inference. By incorporating these features, our framework aims
+to alleviate skepticism and encourage wider adoption of IPM practices among
+farmers.
+
+1
+

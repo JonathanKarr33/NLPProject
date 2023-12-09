@@ -1,0 +1,22 @@
+Abstract—Autonomous racing is a critical research area for
+autonomous driving, presenting significant challenges in vehicle
+dynamics modeling, such as balancing model precision and
+computational efficiency at high speeds (> 280km h−1), where
+minor errors in modeling have severe consequences. Existing
+physics-based models for vehicle dynamics require elaborate
+testing setups and tuning, which are hard to implement, time-
+intensive, and cost-prohibitive. Conversely, purely data-driven
+approaches do not generalize well and cannot adequately en-
+sure physical constraints on predictions. This paper introduces
+Deep Dynamics, a physics-informed neural network (PINN)
+for vehicle dynamics modeling of an autonomous racecar. It
+combines physics coefficient estimation and dynamical equations
+to accurately predict vehicle states at high speeds and includes
+a unique Physics Guard layer to ensure internal coefficient
+estimates remain within their nominal physical ranges. Open-
+loop and closed-loop performance assessments, using a physics-
+based simulator and full-scale autonomous Indy racecar data,
+highlight Deep Dynamics as a promising approach for modeling
+racecar vehicle dynamics.
+
+I. 

@@ -4,8 +4,12 @@ folder_path1 = "../data/short/main_paper"
 folder_path2 = "../data/short/abstracts"
 files1 = sorted(os.listdir(folder_path1))
 files2 = sorted(os.listdir(folder_path2))
-with open('test.jsonl', 'w') as jsonl_file:
+total_files = 15
+train_files = 10
+val_file = open('val.jsonl', 'w')
+with open('train.jsonl', 'w') as jsonl_file:
     # Loop over each pair of files
+    i = 0
     for filename1, filename2 in zip(files1, files2):
         file_path1 = os.path.join(folder_path1, filename1)
         file_path2 = os.path.join(folder_path2, filename2)
@@ -22,5 +26,12 @@ with open('test.jsonl', 'w') as jsonl_file:
             format["messages"][2]["content"] = abstract
 
             json_line = json.dumps(format)
-            jsonl_file.write(json_line + '\n')
+            if i < train_files:
+                jsonl_file.write(json_line + '\n')
+            elif i > total_files:
+                break #do not want to go over
+            else:
+                val_file.write(json_line + '\n') #! saving to validation file?
+
+            i += 1
 

@@ -1,0 +1,30 @@
+Abstract
+
+Humans seek information regarding a specific
+topic through performing a conversation con-
+taining a series of questions and answers. In
+the pursuit of conversational question answer-
+ing research, we introduce the PCoQA, the first
+Persian Conversational Question Answering
+dataset, a resource comprising information-
+seeking dialogs encompassing a total of 9,026
+contextually-driven questions. Each dialog in-
+volves a questioner, a responder, and a docu-
+ment from the Wikipedia; The questioner asks
+several inter-connected questions from the text
+and the responder provides a span of the docu-
+ment as the answer for each question. PCoQA
+is designed to present novel challenges com-
+pared to previous question answering datasets
+including having more open-ended non-factual
+answers, longer answers, and fewer lexical
+overlaps. This paper not only presents the
+comprehensive PCoQA dataset but also reports
+the performance of various benchmark models.
+Our models include baseline models and pre-
+trained models, which are leveraged to boost
+the performance of the model. The dataset and
+benchmarks are available at our Github page.1
+
+1
+

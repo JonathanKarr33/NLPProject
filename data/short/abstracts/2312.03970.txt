@@ -1,0 +1,28 @@
+ABSTRACT
+
+Medical report generation demands automatic creation of
+coherent and precise descriptions for medical images. How-
+ever, the scarcity of labelled medical image-report pairs poses
+formidable challenges in developing large-scale neural net-
+works capable of harnessing the potential of artificial intel-
+ligence, exemplified by large language models. This study
+builds upon the state-of-the-art vision-language pre-training
+to customize general
+and fine-tuning approach, BLIP-2,
+large-scale foundation models.
+Integrating adapter tuning
+and a medical knowledge enhancement loss, our model sig-
+nificantly improves accuracy and coherence. Validation on
+the dataset of ImageCLEFmedical 2023 demonstrates our
+model’s prowess, achieving the best-averaged results against
+several state-of-the-art methods. Significant improvements in
+ROUGE and CIDEr underscore our method’s efficacy, high-
+lighting promising outcomes for the rapid medical-domain
+adaptation of the vision-language foundation models in ad-
+dressing challenges posed by data scarcity.
+
+Index Terms— Medical Report Generation, Adapter
+Tuning, Knowledge Enhancement, Vision-Language Foun-
+dation Models
+
+1. 

@@ -1,0 +1,29 @@
+Abstract—The escalating size of Deep Neural Networks (DNNs)
+has spurred a growing research interest in hosting and serving
+DNN models across multiple devices. A number of studies
+have been reported to partition a DNN model across devices,
+providing device placement solutions. The methods appeared
+in the literature, however, either suffer from poor placement
+performance due to the exponential search space or miss an
+optimal placement as a consequence of the reduced search
+space with limited heuristics. Moreover, these methods have
+ignored the runtime inter-operator optimization of a computation
+graph when coarsening the graph, which degrades the end-to-
+end inference performance. This paper presents MOIRAI that
+better exploits runtime inter-operator fusion in a model to
+render a coarsened computation graph, reducing the search
+space while maintaining the inter-operator optimization provided
+by inference backends. MOIRAI also generalizes the device
+placement algorithm from multiple perspectives by considering
+inference constraints and device heterogeneity. Extensive experi-
+mental evaluation with 11 large DNNs demonstrates that MOIRAI
+outperforms the state-of-the-art counterparts, i.e., Placeto, m-
+SCT, and GETF, up to 4.28× in reduction of the end-to-end
+inference latency. MOIRAI code is anonymously released at
+https://github.com/moirai-placement/moirai.
+
+Index Terms—Model parallelism, device placement, operator
+
+fusion, mixed integer linear programming.
+
+I. 

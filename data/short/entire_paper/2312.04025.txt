@@ -1,0 +1,1713 @@
+MOIRAI: Towards Optimal Placement for
+Distributed Inference on Heterogeneous Devices
+
+Beibei Zhang†, Hongwei Zhu†, Feng Gao†, Zhihui Yang†, Sean Xiaoyang Wang‡
+†Zhejiang Lab, Hangzhou, China
+‡Fudan University, Shanghai, China
+
+3
+2
+0
+2
+c
+e
+D
+7
+
+]
+
+C
+D
+.
+s
+c
+[
+
+1
+v
+5
+2
+0
+4
+0
+.
+2
+1
+3
+2
+:
+v
+i
+X
+r
+a
+
+Abstract—The escalating size of Deep Neural Networks (DNNs)
+has spurred a growing research interest in hosting and serving
+DNN models across multiple devices. A number of studies
+have been reported to partition a DNN model across devices,
+providing device placement solutions. The methods appeared
+in the literature, however, either suffer from poor placement
+performance due to the exponential search space or miss an
+optimal placement as a consequence of the reduced search
+space with limited heuristics. Moreover, these methods have
+ignored the runtime inter-operator optimization of a computation
+graph when coarsening the graph, which degrades the end-to-
+end inference performance. This paper presents MOIRAI that
+better exploits runtime inter-operator fusion in a model to
+render a coarsened computation graph, reducing the search
+space while maintaining the inter-operator optimization provided
+by inference backends. MOIRAI also generalizes the device
+placement algorithm from multiple perspectives by considering
+inference constraints and device heterogeneity. Extensive experi-
+mental evaluation with 11 large DNNs demonstrates that MOIRAI
+outperforms the state-of-the-art counterparts, i.e., Placeto, m-
+SCT, and GETF, up to 4.28× in reduction of the end-to-end
+inference latency. MOIRAI code is anonymously released at
+https://github.com/moirai-placement/moirai.
+
+Index Terms—Model parallelism, device placement, operator
+
+fusion, mixed integer linear programming.
+
+I. INTRODUCTION
+
+Recent years have witnessed the prevalence of Deep Neural
+Networks (DNNs) in diverse spectrum of scenarios ranging
+from object detection [1] to text generation [2]. In these
+applications, researchers increase the DNN model capacity,
+measured by the number of trainable parameters, to achieve
+better model inference accuracy and generalization perfor-
+mance. As an example, the state-of-the-art language model
+Megatron-Turing NLG with 530 billion parameters achieves
+an accuracy score of 87.15% in the task of LAMBADA next
+word prediction [3]. However, DNN inference expects consid-
+erable memory space to store the parameters and intermediate
+activations, which arouses natural concerns about exceeding
+the memory capacity of a computing device [4]. For instance,
+GPT-3 [2] with 175 billion parameters requires 350 GB of
+GPU memory. This is far beyond the memory sizes of any
+commercial off-the-shelf GPUs.
+
+The growing size of DNNs necessitates the adoption of
+heterogeneous resource-constrained computing devices to host
+a large-scale DNN model. To accommodate this need, we
+split a DNN into several sub-models, each of which usually
+consists of continuous operators of a DNN, and distribute
+them across multiple devices. The devices execute the disjoint
+
+parts of the DNN collectively, which is referred to as model
+parallelism [5]. Fundamentally, model parallelism seeks to
+map DNN operators to computing devices, commonly termed
+as device placement [6]. The objective of the device placement
+is to minimize the makespan, which identifies the time interval
+between a single input and its response. In this paper, we focus
+on providing a device placement solution for model parallelism
+over heterogeneous devices.
+
+Device placement is challenging for two reasons. Firstly,
+allocating operators with precedence constraints on separate
+devices incurs communication overhead between the devices
+due to the data flow between devices. The overhead varies
+under distinct device placement schemes. Secondly, devices
+possess heterogeneous computing resources. Executing an
+operator on different devices results in different processing
+time. Owing to the discrepancies of model and device config-
+urations, device placement poses a huge solution search space
+when the number of operators or devices increases. As an
+example, placing an Inception-v4 [7] with 490 operators on 2
+devices has 2490 different possible placement solutions.
+
+A direct and intuitive approach to tackle the device place-
+ment problem is to manually find the DNN partition plan
+by machine learning experts. Such an approach might not be
+favorable for yielding an optimal and scalable results. Con-
+sequently, solutions have been proposed to leverage learning-
+based methods. Particularly, recent studies exploit reinforce-
+ment learning techniques, which leverage the execution track
+of similar operators to learn where DNN operators should be
+placed in a computer cluster [8]–[10]. Unfortunately, learning-
+based approaches requires a training process that takes several
+hours or even several days to deliver a placement solution
+for a single DNN [9]. Additionally, learning-based methods
+are unable to generalize to a different collection of devices.
+The placement solution has to be searched all over again, if
+the DNN is deployed to a different cluster [11]. The high
+training overhead and the low generalizability severely hinder
+the widespread application of the learning-based methods.
+To avoid these shortcomings, another line of work resorts
+to algorithmic approaches [4], [11]–[13]. The state-of-the-art
+algorithmic methods establish cost models that reflect end-
+to-end inference latency and propose near-optimal placement
+solutions through combinatorial optimization. According to the
+combinatorial optimization techniques applied to solving the
+device placement problem, we further categorize the status-
+quo algorithmic approaches into heuristic-based solutions [11],
+
+ 
+ 
+ 
+ 
+ 
+ 
+[13], [14] and exact algorithm-based methods [4], [12].
+
+Upon analyzing and experimenting the released imple-
+mentations of existing algorithmic approaches, we observed
+that the above methods inherently suffer from the following
+drawbacks: (1) Solution optimality: Given model and device
+configurations, heuristic-based algorithms quickly yield the
+placement plan. However, the placement result is sub-optimal,
+leaving ample room for reducing the makespan. (2) Graph
+optimization: Machine learning compilers, such as Tensor-
+Flow XLA [15], TVM [16], and PyTorch Glow [17], represent
+a DNN as a computation graph with backend optimization
+to rewrite the graph for reducing the inference makespan.
+Nevertheless, current algorithmic solutions fail to leverage
+runtime optimization of a computation graph when coarsening
+the graph to reduce the solution search space. (3) Device
+heterogeneity & Constraints: Studies revolving around ex-
+act algorithms either attempt to produce near-optimal device
+placement decisions on a small number of homogeneous
+devices [4], [12] or do not sufficiently consider the device
+computation and communication constraints.
+
+To address the aforementioned limitations, we propose
+MOIRAI, an algorithmic solution that considers DNN graph
+optimization and caters an optimal solution over heterogeneous
+devices. We embrace two key design considerations to tackle
+the challenges. Technically, (1) We leverage a runtime graph
+optimization, operator fusion, to merge multiple operators into
+one fused operator to reduce the search space for device
+placement. (2) We formalize the problem as a Mixed-Integer
+Linear Programming (MILP) model. Unlike the aforesaid
+approaches, in which the device heterogeneity is ignored, we
+craft the MILP to outline computational differences, memory
+constraints, and communication capability of the devices. An
+optimal placement result will then be produced by using the
+optimization solver Gurobi [18].
+
+We conduct MOIRAI in PyTorch and empirically evaluate
+its efficacy with a total of 11 large models over two-device
+settings. We serve the trained Swin-Transformer [19], GPT-
+3 [2], and AlphaFold2 [20] with the placement plan of
+MOIRAI to two cluster of devices, each of which consists of
+4 GPUs. MOIRAI outperforms the heuristic-based solution up
+to 1.87× in placement optimality in terms of the reduction
+of the makespan. Compared to the learning-based solution
+counterparts, MOIRAI reduces the solution generation time
+from hours to minutes while reducing the makespan up to
+4.28×. Our method is applicable to a range of DNNs and
+may be extended to other situations.
+
+The remainder of the paper is organized as follows. First,
+we introduce background knowledge and provide motivation in
+section II. Then, we describe the technical details of MOIRAI
+in section III. Extensive comparisons and evaluations between
+MOIRAI and its counterparts follow in section IV. Finally, we
+conclude in section V.
+
+II. BACKGROUND & MOTIVATION
+
+Before delving into the details of MOIRAI, we provide
+related works of device placement research. We first give a
+
+Fig. 1. We demonstrate the taxonomy of state-of-the-art distributed deep
+learning solutions. Under each method, we briefly visualize the layout of the
+solution silhouettes, where the computation graph includes three operators and
+each color indicates a distinct device.
+
+brief overview of distributed deep learning. We then present
+hitherto device placement approaches, which are categorized
+into learning-based solutions and algorithmic methods.
+
+A. Distributed Deep Learning
+
+In this subsection, we briefly outline popular distributed
+deep learning solutions. A DNN life cycle consists of DNN
+training and DNN inference. In the training phase, we split
+the dataset into multiple mini-batches. A mini-batch passes
+through the operators of a DNN in a forward propagation
+phase. The output of the forward phase is compared against
+ground truth to generate a loss, which is leveraged to update
+the weights of operators in a backward propagation phase.
+This process is repeated several times to tune the weights
+until the desired result accuracy is achieved. DNN inference
+performs forward calculations using the trained weights. Dis-
+tributed deep learning methods execute the above procedure
+cooperatively on multiple devices aiming to fit the large-scale
+model or obtain computation speedup.
+
+Fig. 1 depicts the taxonomy of distributed deep learning
+concepts. According to the DNN life cycle, we categorize
+distributed deep learning methods into distributed training
+and distributed inference. We introduce four major types of
+distributed machine learning mechanisms, namely data par-
+allelism, tensor parallelism, model parallelism, and pipeline
+parallelism. Data parallelism splits a mini-batch into multiple
+shards and executes multiple instances of the same model on
+decentralized devices with the shards [21], [22]. Tensor paral-
+lelism, also known as intra-operator model parallelism, parti-
+tions an operator along one of its dimension, enabling parallel
+processing for an operator [23], [24]. Model parallelism, com-
+monly referred to as inter-operator model parallelism, divides
+a DNN into several consecutive sub-models that are placed
+and computed across multiple devices. Pipeline parallelism
+meliorates the model parallelism in the distributed training
+cycle, incorporating the forward phases and the backward
+stages of several mini-batches to better utilize the idled compu-
+tation resources [25]–[27]. Pipeline parallelism can be deemed
+as a well-scheduled pipelined model parallelism, which can
+overlap the computation of different batches. A new trend
+focuses on developing a system that contemplates the mixture
+of the strategies to achieve the DNN training speedup [5], [28].
+Under each distributed training method, a series of techniques,
+such as gradient accumulation, checkpointing [29], Param-
+
+X1Distributed TrainingDistributed Deep LearningDistributed InferenceTensor ParallelismModel ParallelismData ParallelismPipeline Parallelismop1op2op3Xop1op2op3Xop1op2op3op1op2op3op1op2op3Xop1op2op3op3op2op2op1op3op3op2op1op1X2Fig. 2. We solve the device placement problem with four steps.
+
+eter Server [30], Ring-AllReduce [31], are raised to fulfill
+or optimize its implementation. Unlikely, we concentrate on
+inter-operator model parallelism in the distributed inference,
+in pursuit of its optimality, hoping to inspire others. Other
+parallelism strategies and technics are orthogonal to our study.
+
+B. Device Placement
+
+Learning-based solutions. Earlier device placement works
+generally fall within a reinforcement
+learning paradigm.
+Mirhoseini et al. [6] propose to search the placement policy
+for a DNN with reinforcement learning method. Precisely, the
+method carries out a repeated series of Monte-Carlo trails with
+the feedback from real-world servers. It adjusts the scheduling
+strategy towards the objective of reducing the per-step training
+time of a DNN until convergence, which requires 17-27 hours
+of 80 to 160 4-GPU servers to produce the near-optimal place-
+ment. To expedite the exorbitant learning process, Post [32]
+represents device placement as a high-dimensional softmax
+probability distribution. Post leverages both proximal policy
+optimization and cross-entropy minimization to achieve a fast
+convergence. In the face of the cues that all previous methods
+can only generate a near-optimal placement for a DNN over
+a set of computing devices, Placeto [9] encodes computation
+graphs with graph embeddings and offers a policy network to
+disentangle the placement of a family of computation graphs
+with reinforcement learning.
+
+Algorithmic methods. A variety of heuristics play an
+indispensable role for device placement problem. Inspired by
+the traditional parallel job scheduling, Baechi [11] utilizes
+three heuristics to portray the task precedence, communication
+overhead, and memory constraints of the placement policy,
+which generally requires less than 3 minutes to find a place-
+ment strategy. To better serve real-world scenarios dominated
+by heterogeneous devices, Hare [14] schedules computation
+graphs with a simple greedy heuristic that always provides
+higher GPU memory for the next task and keeps the latest
+completed task. Directly applying the heuristic methods to the
+device placement produces unsatisfactory end-to-end latency,
+primarily due to the failure to optimize over the practi-
+cal computation and communication constraints. Accordingly,
+Pesto [12] establish an objective function that captures mem-
+ory and non-overlapping constraints. However, Pesto merely
+considers device placement on two types of devices. The
+proposed method fail to generalize to multiple heterogeneous
+devices. GETF [33] represents the DNN as a DAG and
+extends the conventional Earliest Time First (ETF) algorithm
+to incorporate related machines. GETF establishes a Mixed
+Integer Linear Programming (MILP) model to address the
+
+device placement problem. Nevertheless, the model neglects
+to integrate machine-dependent data flow communication time
+as a constraint in the MILP formulation.
+
+Graph Coarsening. Given the substantial number of DNN
+operators, device placement algorithms encounter a consider-
+able search space forfeiting its ability to generate placement
+solutions efficiently and effectively. Previous approaches have
+endeavored to reduce the search space by coarsening the
+computation graph, merging operators within the graph with
+tailored heuristics. A pervasive solution is to merge adjacent
+operators that, when combined, do not create cycles [11], [12].
+Recent work considers communication-to-computing ratio of
+the computation graph as a metric to guide the grouping of
+operators [34]. However, existing approaches fail to leverage
+the runtime optimization of a computation graph.
+
+III. PROPOSED METHOD
+
+Broadly, we layout the overall procedures of MOIRAI in
+Fig. 2, namely, input profiling, graph coarsening, problem
+modeling, and problem solving. We would like to emphasize
+that our approach excels in handling heterogeneous devices
+while maintaining optimal inference latency. In what follows,
+we elaborate the comprehensive technical details of MOIRAI.
+
+A. Assumptions & Settings
+
+We enumerate a few practical settings and assumptions
+upon which our algorithm is designed. In contrast
+to the
+existing approaches, we attach substantial importance to the
+heterogeneity of devices, mainly in terms of computation,
+memory, and communication differences.
+
+DNNs. The primitive computation unit in a DNN is a math-
+ematical operator such as matrix multiplication (matmul)
+or convolution (conv). The data flow between operators
+establishes the dependency constraints among the operators.
+A group of operators with precedence constraints constitutes
+a computation graph that describes the DNN inference process.
+The topology of the computation graph is a Directed Acyclic
+Graph (DAG) where vertices represent operators and edges
+depict precedence constraints.
+
+Devices. We focus on discussing the device placement
+problem on heterogeneous devices. Device heterogeneity is
+manifested in three folds. Firstly, the computation capability
+of a device is different resulting in different processing time
+of a DNN operator. Secondly, the memory capacity of each
+device is non-uniform, suggesting that the number of DNN
+operators that can be hosted by each device varies. Thirdly,
+there are differences in connectivity and bandwidth between
+devices due to their reliance on various network interfaces and
+protocols.
+
+Communication. We view heterogeneous computers as a
+collection of connected devices with one or more addressable
+network attachments. Network attachments may reside at or
+above the data link layer and can have various types of
+interfaces, such as WiFi, Bluetooth, or even application defined
+interfaces. The communication channel between two devices
+may be provided by a point-to-point link, a shared broadcast
+
+CoarseningProfilingCompute TimeCommunication TimeOperator FusionCost FunctionConstraintsModelingOptimization SolverSolvingFusion SearchingFig. 3. Device A can communicate with device F via the channel A →
+B → D → F , which can be viewed as indirect connection A F . A device
+cluster (left) can be viewed as a full-mesh (right).
+
+(a) GoogLeNet
+(306 ops)
+
+(b) Inception v4
+(492 ops)
+
+(c) YOLOv5x
+(420 ops)
+
+(d) Transformer
+(1375 ops)
+
+Fig. 4.
+devices.‘-’ indicates median and ‘△’ presents mean.
+
+Inference time distribution of operators in four models on four
+
+link, or a switched network. As illustrated in Fig. 3, if two
+devices in the connected cluster cannot directly communicate
+with each other, they may establish a multi-hop tunnel via
+internetworking protocols [35]. We intensify the connectiv-
+ity in a connected device cluster with direct and indirect
+communication channels, enabling all-to-all communications.
+Therefore, we model the network topology of a connected
+heterogeneous device cluster as a full-mesh. We consider a
+bidirectional communication network where the availability
+and the bandwidth of the uplink and downlink are stable.
+
+B. Graph Coarsening
+
+We profile operator processing time of four widely em-
+ployed DNNs on four devices and show their processing time
+distribution in Fig. 4. We note that modern DNNs typically
+consist of a number of operators with short computation
+time, increasing the difficulty to address the device placement
+problem. To reduce the solution search space, we coarsen the
+computation graph by grouping the closely coupled operators
+to promote the device placement algorithm.
+
+Operator fusion. An inference backend, such as Eigen [36]
+and NNPack [37], combines operators that satisfy certain
+operator types and connections into a single fused operator,
+referred to as operator fusion. Operator fusion avoids storing
+intermediate results in memory, reducing frequent memory
+accesses. The memory access latency is often orders of mag-
+nitude greater than the computation time, and thus operator
+fusion extensively speeds up the DNN inference. We show
+an example in Fig. 5, where operator op1, op2, and op3 are
+fused into one operator to produce the final result res. Fusing
+op1, op2, and op3 avoids the necessity to store and access
+the temporary results of calculations against op1 and op2.
+
+Fig. 5. Operator op1, op2, and op3 are fused by the backend compiler to
+avoid temporary results.
+
+TABLE I
+WE TAKE SEVERAL OPERATOR FUSION RULES PROVIDED BY EIGEN ON A
+GPU KERNEL AS EXAMPLES.
+
+ID
+1
+2
+3
+
+Operators
+conv, bn
+conv, bn, relu
+conv, bn, add, relu
+
+Fused Operator
+conv ◦ bn
+conv ◦ bn ◦ relu
+conv ◦ bn ◦ add ◦ relu
+
+Upon the above observations, we intrinsically believe that the
+fused operators should be placed together when we effectuate
+graph coarsening.
+
+An inference backend uses, for example, the fusion rules
+shown in TABLE I, to define which operators in a DNN
+should be fused [38]. A fusion rule contains a sequence of
+ordered operator types, each of which is a string. Fusion rules
+can be obtained from the design specifications of inference
+backends. Typically, the connections of DNN operators can be
+categorized into three types in a computation graph, which are
+illustrated in Fig. 6, namely direct connection, multi-outputs,
+and multi-inputs. As pointed out by [39], given a fusion rule,
+only fusing the operators with direct connection or multi-
+inputs connection can optimize the inference speed.
+
+Fusion searching. Given a DNN, MOIRAI coarsens its com-
+putation graph by grouping operators based on fusion rules.
+We depict the operators as a set of vertices {v1, v2, . . . , vn} in
+a graph, where n is the number of operators in the DNN and
+vi is the i-th DNN operator. For any two vertices vi and vj
+in the graph, we introduce a directed edge (i, j) in the graph
+if and only if there is a data transfer from operator i to j.
+With the above settings, we untangle the given DNN by the
+following DAG
+
+G = (V, E),
+
+(1)
+
+where V = {v1, v2, . . . , vn} and E ⊆ V × V. We theoretically
+define fusion rules as a set R = {r1, r2, . . . , rm}, where m
+is the ID of a rule and the i-th rule ri ∈ R is an ordered
+list with operator types as elements. The element order in
+ri suggests the precedence constraints of the fused operators.
+Mathematically, MOIRAI engages in validating and grouping
+vertices in G pursuant to a set of ordered list R, which is
+described in Algorithm 1.
+
+We elaborate the algorithm with an example in Fig. 7 where
+we follow the fusion rules provided by TABLE I. GCOF()
+
+Direct connectionIndirect connectionABCDEFABCDEFRTX 2080 TiTesla T4AGX XavierTesla V1000.000.050.100.15Inference Time (ms)RTX 2080 TiTesla T4AGX XavierTesla V1000123Inference Time (ms)RTX 2080 TiTesla T4AGX XavierTesla V10001234Inference Time (ms)RTX 2080 TiTesla T4AGX XavierTesla V1000.00.20.40.60.81.0Inference Time (ms)Computation Graphinput*+*1 for(i in 1:n)2     tmp1[i,1] = input * op1[i,1];3 for(i in 1:n)4     tmp2[i,1] = op2[i,1] + tmp1[i,1];5 for(i in 1:n)6     res[i,1] = tmp2[i,1] * op3[i,1];(op2 + input * op1) * op31 for(i in 1:n)2     res[i,1] = (op2[i,1] + input *3                 op1[i,1]) * op3[i,1];op1op2op3resresCode SnippetOperator FusionCode Snippet after Fusion(a) Direct connec-
+tion.
+
+(b) Multi-outputs.
+
+(c) Multi-inputs.
+
+Fig. 6. Three types of operator connections.
+
+(a) DNN computation graph.
+
+(b) Operator grouping.
+
+Fig. 7. GCOF() groups the DNN operators according to the TABLE I.
+
+traverses the graph in depth-first order from the root vertex of
+operator type add. The function first navigates to the upper
+branch of the graph. Although the first add, relu vertex
+pair is certified to conforming partial r3 rule via the function
+is sub rule(), the operator connection denoted by the edge
+between add and relu vertex is essentially part of the multi-
+output connection of the operator add, which is examined by
+function is valid conn(). Therefore, the first pair of add,
+relu should not be fused. The function then moves forward
+and binds the other two add, relu vertex pair on the upper
+branch, generating two new vertices with the bound tag and
+the add ◦ relu type. In the lower branch of the DNN, GCOF()
+fuses conv1 and bn, which comply with rule r1 and the
+direct connection. Likewise, conv2 and bn are fused. Next,
+GCOF() merges the operator conv2 ◦ bn and operator add ◦
+relu at the end of the upper branch in accordance with rule
+r3 and multi-inputs connection. Function unbind() releases
+the operators with the bound tag, which is the second add,
+relu pair on the upper branch in our case. The output of
+Algorithm 1 is a coarsened graph G of DAG topology. The
+time complexity of Algorithm 1 is O(V + E).
+
+C. Input Profiling
+
+Our method takes compute time of each operator, transmis-
+sion time of data flow, precedence relation among operators,
+and configurations of devices as its inputs. The operator
+dependency is manifested by the computation graph and
+the configurations of devices can be acquired by querying
+operating system interfaces, whereas the operator processing
+and the data transmission time requires proper analysis.
+
+Compute time.
+
+Scrutinizing the existing research on
+measuring DNN operator processing time, we notice that
+there are fundamentally three commonly employed methods
+to profile the operator processing time, that is manual testing,
+operational intensity, and prediction model. Though manual
+testing reveals the actual operator execution time, it is labor
+intensive to approach the data. Operational
+intensity [40]
+theoretically evaluates the task computation latency. However,
+several factors other than memory-bound and compute-bound
+affect the actual operator processing time. To balance the
+operator processing time accuracy and its availability, MOIRAI
+
+Algorithm 1: Graph Coarsening with Operator Fusion:
+GCOF()
+
+Data: DAG: G = (V, L)
+
+Fusion rules: R.
+
+Result: Coarsened graph G by operator fusion.
+
+1 function fuse(vpred, vsucc):
+2
+
+vnew ← initiate a new operator
+vnew.in ← vpred.in ∪ vsucc.in − vpred
+vnew.out ← vpred.out ∪ vsucc.out − vsucc
+vnew.type ← vpred.type ◦ vsucc.type
+vnew.tag ← fused
+return vnew
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8 function bind(vpred, vsucc):
+9
+
+vnew ← fuse(vpred, vsucc)
+vnew.tag ← bound
+return vnew
+
+10
+
+11
+
+12 function dfs(vpred):
+13
+
+foreach vsucc in vpred.out do
+
+14
+
+15
+
+16
+
+17
+
+18
+
+19
+
+20
+
+21
+
+22
+
+23
+
+24
+
+if is rule(vpred, vsucc, R) and
+is valid conn(vpred, vsucc) then
+
+vnext ← fuse(vpred, vsucc)
+add vnext in G
+remove vpred, vsucc in G
+
+else if is sub rule(vpred, vsucc, R) and
+is valid conn(vpred, vsucc) then
+
+vnext ← bind(vpred, vsucc)
+
+else
+
+vnext ← vsucc
+
+end
+
+end
+dfs(vnext)
+
+25 function unbind(G):
+26
+
+release all the operators with the bound tag in G
+
+27 vpred ← initiate traversal with the root vertex of G
+28 dfs(vpred)
+29 G ← unbind(G)
+
+chooses to estimate the compute time following the ideas
+in [41].
+
+Communication time. Communication time between two
+devices amounts to the ratio of the data flow size and the com-
+munication bandwidth. In an indirect communication channel,
+the bandwidth of a multi-hop path depends on the minimum
+bandwidth on the path. Take the device cluster in Fig. 3 as
+an instance, suppose that the bandwidth of link A − B and
+link B − D is 10MB/s and 5MB/s, transmitting a 100MB data
+requires 20s.
+
+D. Problem Modeling
+
+Up to this point, we have presented how to obtain a coars-
+ened graph to reduce the solution search space and prepared
+the necessary inputs for our algorithm. Next, we introduce
+
+op1op2op3op4op5op6op7op8addbnbnaddconv1conv2relureluaddreluaddbnbnaddconv1conv2relureluaddreluFig. 8. We convert the links into new nodes that hold the same weight,
+resulting in a augmented DAG G. Additional direct links without weights are
+inserted among the original nodes and the newly added nodes to maintain the
+node precedence and the graph topology.
+
+TABLE II
+NOMENCLATURE.
+
+Notations
+
+Descriptions
+
+Parameters
+
+G = (N, L)
+
+G = (N , L)
+
+Succ(i)
+
+Succ(i)
+
+M s, M l, M r
+
+The DAG of the coarsened computation graph.
+The augmented DAG of G, where links are
+converted to nodes.
+A set of direct and indirect successors of node ηi in
+G, where ηi ∈ N .
+A set of direct and indirect successors of node ηi in
+G, where ηi ∈ N .
+Three large numbers where M s ≫ 0, M l ≫ 0,
+M r ≫ 0.
+
+k
+
+pik
+
+pcomm
+qk′k′′
+
+mi
+M emk
+
+Si
+
+Ci
+
+xik
+
+zq
+
+uqk′k′′
+
+Variables
+
+k ∈ K is the index of a device, which specifies the
+device.
+The processing time of i-th operator on the k-th
+device, where ηi ∈ N .
+The transmission time of data flow q from device k′
+to device k′′, where ηq ∈ N − N and k′, k′′ ∈ K.
+The memory footprint of i-th operator.
+The memory size of k-th device.
+Si ∈ R+, expresses the start time of task i where
+ηi ∈ N .
+Ci ∈ R+, expresses the complete time of task i
+where ηi ∈ N .
+
+Indicators
+
+xik ∈ {0, 1}, xik = 1 indicates placing the task
+denoted by ηi ∈ N to device k, otherwise xik = 0.
+zq ∈ {0, 1}, zq = 1 indicates a non-zero
+transmission time of the data flow q, where
+ηq ∈ N − N . Otherwise zq = 0.
+uqk′k′′ ∈ {0, 1}, uqk′k′′ = 1 indicates the selection
+of communication channel from device k′ to k′′ to
+transmit the data flow q, where ηq ∈ N − N ,
+k′, k′′ ∈ K and k′ ̸= k′′.
+
+our MILP model seeking to portray the inter-operator model
+parallelism.
+
+DAG representation. Given a coarsened computation
+graph, we refer to the set of α operators in the coarsened
+graph as a set of nodes N = {ηi}α
+i=1. Further, we depict the
+data flow among the operators as a set of links L = {li}β
+i=1.
+Thus, we model the coarsened computation graph as a DAG
+
+G = (N, L),
+
+(2)
+
+where |N | = α, |L| = β, and L ⊆ N × N . The node weight
+represents operator processing time on devices and link weight
+exhibits data transmission time over a communication network.
+To facilitate our design, we augment the DAG G by altering
+
+the links into a set of new nodes. Subsequently, the weight of
+the link is directly applied to the new node corresponding to
+it. We denote the augmented DAG of G by
+
+G = (N , L),
+
+(3)
+
+i=1 and L = {li}2β
+
+where N = {ηi}α+β
+i=1. li ∈ L can be indicated
+by the index of its two end points (e.g., l1 = (1, 5) in Fig. 8).
+Given the DAG G of a DNN, we conveniently leverage ηi ∈ N
+to outline both the data flow and the operator. To identify data
+flow and operators respectively, we refer to a data flow as
+ηi ∈ N − N and an operator as ηi ∈ N . An example of the
+relationship between G and G is shown in Fig. 8.
+
+MILP model. We summarize key notations of the model in
+TABLE II. Presented with the DNN computation graph termed
+as G = (N, L), the device placement for operators in the DNN
+is achieved by solving the following MILP.
+
+minimize max
+i∈N
+
+Ci,
+
+(4)
+
+subject to Ci ≤ Sj,
+
+∀ηi ∈ N , ∀ηj ∈ Succ(i),
+
+(4a)
+
+Ci = Si +
+
+(cid:88)
+
+k∈K
+
+(cid:88)
+
+xik = 1,
+
+pikxik,
+
+∀ηi ∈ N,
+
+∀ηi ∈ N,
+
+k∈K
+Memory constraints,
+Non-overlapping constraints,
+Communication constraints,
+Congestion control.
+
+(4b)
+
+(4c)
+
+(4d)
+
+(4e)
+
+(4f)
+
+(4g)
+
+Equation (4) represents the completion time of the last
+operator that ends the computation, which amounts to the end-
+to-end inference latency of the entire DNN when the inference
+starts at time 0. The objective function (4) is optimized subject
+to the constraints from equation (4a) to (4g). The data flow
+of a DNN, defined by the input and output of its operators,
+naturally establishes the execution precedence relationships
+of the operators. That is, the successor of an operator can
+only be processed after the completion of the current operator.
+Moreover, the output of the operator can only be transmitted
+after it is produced. We cast such operator processing and data
+transmission dependencies with equation (4a). Equation (4b)
+bridges the relation between the start
+time and end time
+of processing an operator. We ensure that each operator is
+assigned to only one device by equation (4c).
+
+Constraints (4d) to (4g) account for the heterogeneity of
+
+devices.
+
+(1) Memory constraints. Conventionally,
+
+the cumulative
+memory footprint of the operators allocated to a device should
+not surpasses the memory size of the device, known as
+memory constraints. We describe the memory constraints (4d)
+with
+
+(cid:88)
+
+mixik
+
+≤ M emk, ∀k ∈ K,
+
+(5)
+
+ηi∈N
+(cid:125)
+(cid:123)(cid:122)
+(cid:124)
+Total memory of
+operators on device k
+
+<latexit sha1_base64="P3fg4aYLLeo7xQrQ7uvxm/GKzXU=">AAAB73icbVDLSgNBEOyNrxhfUY9eBhPBU9gN4uMW8OIxgnlAsoTZyWwyZHZ2nekVQshPePGgiFd/x5t/4yTZgyYWNBRV3XR3BYkUBl3328mtrW9sbuW3Czu7e/sHxcOjpolTzXiDxTLW7YAaLoXiDRQoeTvRnEaB5K1gdDvzW09cGxGrBxwn3I/oQIlQMIpWape7HGnPK/eKJbfizkFWiZeREmSo94pf3X7M0ogrZJIa0/HcBP0J1SiY5NNCNzU8oWxEB7xjqaIRN/5kfu+UnFmlT8JY21JI5urviQmNjBlHge2MKA7NsjcT//M6KYbX/kSoJEWu2GJRmEqCMZk9T/pCc4ZybAllWthbCRtSTRnaiAo2BG/55VXSrFa8y8rFfbVUu8niyMMJnMI5eHAFNbiDOjSAgYRneIU359F5cd6dj0VrzslmjuEPnM8f6kuPNg==</latexit>⌘1<latexit sha1_base64="isnAWzm1LtNf3OYQICWUDCSJ0xY=">AAAB73icbVDLSgNBEOyNrxhfUY9eBhPBU9gN4uMW8OIxgnlAsoTZSScZMju7zswKYclPePGgiFd/x5t/4yTZgyYWNBRV3XR3BbHg2rjut5NbW9/Y3MpvF3Z29/YPiodHTR0limGDRSJS7YBqFFxiw3AjsB0rpGEgsBWMb2d+6wmV5pF8MJMY/ZAOJR9wRo2V2uUuGtqrlnvFkltx5yCrxMtICTLUe8Wvbj9iSYjSMEG17nhubPyUKsOZwGmhm2iMKRvTIXYslTRE7afze6fkzCp9MoiULWnIXP09kdJQ60kY2M6QmpFe9mbif14nMYNrP+UyTgxKtlg0SAQxEZk9T/pcITNiYgllittbCRtRRZmxERVsCN7yy6ukWa14l5WL+2qpdpPFkYcTOIVz8OAKanAHdWgAAwHP8ApvzqPz4rw7H4vWnJPNHMMfOJ8/69CPNw==</latexit>⌘2<latexit sha1_base64="pzmdPvGKwssdiCWNY2x6Bdd+mVQ=">AAAB73icbVDLTgJBEJzFF+IL9ehlIph4IrtofNxIvHjERJAENmR26IUJs7PrTK8JIfyEFw8a49Xf8ebfOMAeFKykk0pVd7q7gkQKg6777eRWVtfWN/Kbha3tnd294v5B08Sp5tDgsYx1K2AGpFDQQIESWokGFgUSHoLhzdR/eAJtRKzucZSAH7G+EqHgDK3UKncAWfes3C2W3Io7A10mXkZKJEO9W/zq9GKeRqCQS2ZM23MT9MdMo+ASJoVOaiBhfMj60LZUsQiMP57dO6EnVunRMNa2FNKZ+ntizCJjRlFgOyOGA7PoTcX/vHaK4ZU/FipJERSfLwpTSTGm0+dpT2jgKEeWMK6FvZXyAdOMo42oYEPwFl9eJs1qxbuonN9VS7XrLI48OSLH5JR45JLUyC2pkwbhRJJn8krenEfnxXl3PuatOSebOSR/4Hz+AO1Vjzg=</latexit>⌘3<latexit sha1_base64="sQhMqyeUnID2qy69XnDtEv4SVYA=">AAAB73icbVDLTgJBEJzFF+IL9ehlIph4IruE+LiRePGIiSAJbMjs0MCE2dl1pteEbPgJLx40xqu/482/cYA9KFhJJ5Wq7nR3BbEUBl3328mtrW9sbuW3Czu7e/sHxcOjlokSzaHJIxnpdsAMSKGgiQIltGMNLAwkPATjm5n/8ATaiEjd4yQGP2RDJQaCM7RSu9wFZL1auVcsuRV3DrpKvIyUSIZGr/jV7Uc8CUEhl8yYjufG6KdMo+ASpoVuYiBmfMyG0LFUsRCMn87vndIzq/TpINK2FNK5+nsiZaExkzCwnSHDkVn2ZuJ/XifBwZWfChUnCIovFg0SSTGis+dpX2jgKCeWMK6FvZXyEdOMo42oYEPwll9eJa1qxbuo1O6qpfp1FkeenJBTck48cknq5JY0SJNwIskzeSVvzqPz4rw7H4vWnJPNHJM/cD5/AO7ajzk=</latexit>⌘4<latexit sha1_base64="6C6c852T/iVWiDef5hfq7AEpDw0=">AAAB7HicbVBNS8NAEJ3Ur1q/qh69LLaCp5IU8eNW8OKxgqmFNpTNdtIu3WzC7kYopb/BiwdFvPqDvPlv3LY5aOuDgcd7M8zMC1PBtXHdb6ewtr6xuVXcLu3s7u0flA+PWjrJFEOfJSJR7ZBqFFyib7gR2E4V0jgU+BiObmf+4xMqzRP5YMYpBjEdSB5xRo2V/KroedVeueLW3DnIKvFyUoEczV75q9tPWBajNExQrTuem5pgQpXhTOC01M00ppSN6AA7lkoaow4m82On5MwqfRIlypY0ZK7+npjQWOtxHNrOmJqhXvZm4n9eJzPRdTDhMs0MSrZYFGWCmITMPid9rpAZMbaEMsXtrYQNqaLM2HxKNgRv+eVV0qrXvMvaxX290rjJ4yjCCZzCOXhwBQ24gyb4wIDDM7zCmyOdF+fd+Vi0Fpx85hj+wPn8AbF/je4=</latexit>l1<latexit sha1_base64="NyQx0Ud78Gv1SxRnZKURGylbBto=">AAAB7HicbVBNS8NAEJ3Ur1q/qh69LLaCp5IU8eNW8OKxgqmFtpTNdtIu3WzC7kYoob/BiwdFvPqDvPlv3LY5aOuDgcd7M8zMCxLBtXHdb6ewtr6xuVXcLu3s7u0flA+PWjpOFUOfxSJW7YBqFFyib7gR2E4U0igQ+BiMb2f+4xMqzWP5YCYJ9iI6lDzkjBor+VXRr1f75Ypbc+cgq8TLSQVyNPvlr+4gZmmE0jBBte54bmJ6GVWGM4HTUjfVmFA2pkPsWCpphLqXzY+dkjOrDEgYK1vSkLn6eyKjkdaTKLCdETUjvezNxP+8TmrC617GZZIalGyxKEwFMTGZfU4GXCEzYmIJZYrbWwkbUUWZsfmUbAje8surpFWveZe1i/t6pXGTx1GEEziFc/DgChpwB03wgQGHZ3iFN0c6L86787FoLTj5zDH8gfP5A7MEje8=</latexit>l2<latexit sha1_base64="5P3MwlTZSv7xyh75mn2+WITtvac=">AAAB7HicbVBNSwMxEJ2tX7V+VT16CbaCp7JbxY9bwYvHCm5baJeSTbNtaDZZkqxQlv4GLx4U8eoP8ua/MW33oK0PBh7vzTAzL0w408Z1v53C2vrG5lZxu7Szu7d/UD48ammZKkJ9IrlUnRBrypmgvmGG006iKI5DTtvh+G7mt5+o0kyKRzNJaBDjoWARI9hYya/y/kW1X664NXcOtEq8nFQgR7Nf/uoNJEljKgzhWOuu5yYmyLAyjHA6LfVSTRNMxnhIu5YKHFMdZPNjp+jMKgMUSWVLGDRXf09kONZ6Eoe2M8ZmpJe9mfif101NdBNkTCSpoYIsFkUpR0ai2edowBQlhk8swUQxeysiI6wwMTafkg3BW355lbTqNe+qdvlQrzRu8ziKcAKncA4eXEMD7qEJPhBg8Ayv8OYI58V5dz4WrQUnnzmGP3A+fwC0iY3w</latexit>l3<latexit sha1_base64="6H7AuciQXuJZz4CjkiXOaP8IZ6U=">AAAB7HicbVBNSwMxEJ2tX7V+VT16CbaCp7Jbih+3ghePFdy20C4lm2bb0CS7JFmhLP0NXjwo4tUf5M1/Y9ruQVsfDDzem2FmXphwpo3rfjuFjc2t7Z3ibmlv/+DwqHx80tZxqgj1Scxj1Q2xppxJ6htmOO0mimIRctoJJ3dzv/NElWaxfDTThAYCjySLGMHGSn6VDxrVQbni1twF0DrxclKBHK1B+as/jEkqqDSEY617npuYIMPKMMLprNRPNU0wmeAR7VkqsaA6yBbHztCFVYYoipUtadBC/T2RYaH1VIS2U2Az1qveXPzP66UmugkyJpPUUEmWi6KUIxOj+edoyBQlhk8twUQxeysiY6wwMTafkg3BW315nbTrNe+q1nioV5q3eRxFOINzuAQPrqEJ99ACHwgweIZXeHOk8+K8Ox/L1oKTz5zCHzifP7YOjfE=</latexit>l4<latexit sha1_base64="CBx9CmqFnRCDh5uqxJvS0/4ZJ9s=">AAAB+XicbVDLSsNAFL2pr1pfUZdugq3gqiRFfOwKblxWsA9oQ5hMJ+3QyUyYmRRK6J+4caGIW//EnX/jpM1CWw8MHM65h3vnhAmjSrvut1Xa2Nza3invVvb2Dw6P7OOTjhKpxKSNBROyFyJFGOWkralmpJdIguKQkW44uc/97pRIRQV/0rOE+DEacRpRjLSRAtuuDYTx83jG5oFXC+yqW3cXcNaJV5AqFGgF9tdgKHAaE64xQ0r1PTfRfoakppiReWWQKpIgPEEj0jeUo5goP1tcPncujDJ0IiHN49pZqL8TGYqVmsWhmYyRHqtVLxf/8/qpjm79jPIk1YTj5aIoZY4WTl6DM6SSYM1mhiAsqbnVwWMkEdamrIopwVv98jrpNOredf3qsVFt3hV1lOEMzuESPLiBJjxAC9qAYQrP8ApvVma9WO/Wx3K0ZBWZU/gD6/MHEqOTRQ==</latexit>l1<latexit sha1_base64="+73vtToaHi4sdmtr0Ddo/6o+Ni0=">AAAB+XicbVDLSsNAFL2pr1pfUZdugq3gqiRFfOwKblxWsA9oQ5hMJ+3QyUyYmRRK6J+4caGIW//EnX/jpM1CWw8MHM65h3vnhAmjSrvut1Xa2Nza3invVvb2Dw6P7OOTjhKpxKSNBROyFyJFGOWkralmpJdIguKQkW44uc/97pRIRQV/0rOE+DEacRpRjLSRAtuuDYTx83jG5kGjFthVt+4u4KwTryBVKNAK7K/BUOA0JlxjhpTqe26i/QxJTTEj88ogVSRBeIJGpG8oRzFRfra4fO5cGGXoREKax7WzUH8nMhQrNYtDMxkjPVarXi7+5/VTHd36GeVJqgnHy0VRyhwtnLwGZ0glwZrNDEFYUnOrg8dIIqxNWRVTgrf65XXSadS96/rVY6PavCvqKMMZnMMleHADTXiAFrQBwxSe4RXerMx6sd6tj+VoySoyp/AH1ucPFCiTRg==</latexit>l2<latexit sha1_base64="Qdbfj5AAvzVC0KeOtreD+6n4Pbc=">AAAB+XicbVDLSsNAFL2pr1pfUZduBlvBVUmq+NgV3LisYG2hDWEynbRDJ5kwMymU0D9x40IRt/6JO//GSZuFth4YOJxzD/fOCRLOlHacb6u0tr6xuVXeruzs7u0f2IdHT0qkktA2EVzIboAV5Symbc00p91EUhwFnHaC8V3udyZUKibiRz1NqBfhYcxCRrA2km/btb4wfh7P+My/qPl21ak7c6BV4hakCgVavv3VHwiSRjTWhGOleq6TaC/DUjPC6azSTxVNMBnjIe0ZGuOIKi+bXz5DZ0YZoFBI82KN5urvRIYjpaZRYCYjrEdq2cvF/7xeqsMbL2Nxkmoak8WiMOVIC5TXgAZMUqL51BBMJDO3IjLCEhNtyqqYEtzlL6+Sp0bdvapfPjSqzduijjKcwCmcgwvX0IR7aEEbCEzgGV7hzcqsF+vd+liMlqwicwx/YH3+ABWtk0c=</latexit>l3<latexit sha1_base64="bTD4EhFJZr7sSTLAS4FKb/7iAZk=">AAAB+XicbVDLSsNAFL2pr1pfUZdugq3gqiSl+NgV3LisYGuhDWEynbRDJzNhZlIooX/ixoUibv0Td/6NkzYLbT0wcDjnHu6dEyaMKu2631ZpY3Nre6e8W9nbPzg8so9PukqkEpMOFkzIXogUYZSTjqaakV4iCYpDRp7CyV3uP02JVFTwRz1LiB+jEacRxUgbKbDt2kAYP49nbB40a4FddevuAs468QpShQLtwP4aDAVOY8I1Zkipvucm2s+Q1BQzMq8MUkUShCdoRPqGchQT5WeLy+fOhVGGTiSkeVw7C/V3IkOxUrM4NJMx0mO16uXif14/1dGNn1GepJpwvFwUpczRwslrcIZUEqzZzBCEJTW3OniMJMLalFUxJXirX14n3Ubdu6o3HxrV1m1RRxnO4BwuwYNraME9tKEDGKbwDK/wZmXWi/VufSxHS1aROYU/sD5/ABcyk0g=</latexit>l4<latexit sha1_base64="pxDBz1Y0sIvTBrx6tEGnoIcYw0E=">AAAB+XicbVDLSsNAFL2pr1pfUZduBlvBVUmKz13BjcsK1hbaECbTSTt0kgkzk0IJ/RM3LhRx65+482+ctFlo64GBwzn3cO+cIOFMacf5tkpr6xubW+Xtys7u3v6BfXj0pEQqCW0TwYXsBlhRzmLa1kxz2k0kxVHAaScY3+V+Z0KlYiJ+1NOEehEexixkBGsj+bZd6wvj5/GMz/zLmm9XnbozB1olbkGqUKDl21/9gSBpRGNNOFaq5zqJ9jIsNSOczir9VNEEkzEe0p6hMY6o8rL55TN0ZpQBCoU0L9Zorv5OZDhSahoFZjLCeqSWvVz8z+ulOrzxMhYnqaYxWSwKU460QHkNaMAkJZpPDcFEMnMrIiMsMdGmrIopwV3+8ip5atTdq/rFQ6PavC3qKMMJnMI5uHANTbiHFrSBwASe4RXerMx6sd6tj8VoySoyx/AH1ucPGLeTSQ==</latexit>l5<latexit sha1_base64="oxyJMoegxqninlsP7bZYOglOOvA=">AAAB+XicbVBNS8NAFHypX7V+RT16CbaCp5IUqXorePFYwdZCG8Jmu2mXbnbD7qZQQv+JFw+KePWfePPfuGlz0NaBhWHmDe/thAmjSrvut1Xa2Nza3invVvb2Dw6P7OOTrhKpxKSDBROyFyJFGOWko6lmpJdIguKQkadwcpf7T1MiFRX8Uc8S4sdoxGlEMdJGCmy7NhDGz+MZmwfNWmBX3bq7gLNOvIJUoUA7sL8GQ4HTmHCNGVKq77mJ9jMkNcWMzCuDVJEE4Qkakb6hHMVE+dni8rlzYZShEwlpHtfOQv2dyFCs1CwOzWSM9Fitern4n9dPdXTjZ5QnqSYcLxdFKXO0cPIanCGVBGs2MwRhSc2tDh4jibA2ZVVMCd7ql9dJt1H3mvWrh0a1dVvUUYYzOIdL8OAaWnAPbegAhik8wyu8WZn1Yr1bH8vRklVkTuEPrM8fGjyTSg==</latexit>l6<latexit sha1_base64="ea5393g+R3KZgaC3p4znYDUYiL8=">AAAB+XicbVBNS8NAFHypX7V+RT16CbaCp5IUsXorePFYwdZCG8Jmu2mXbnbD7qZQQv+JFw+KePWfePPfuGlz0NaBhWHmDe/thAmjSrvut1Xa2Nza3invVvb2Dw6P7OOTrhKpxKSDBROyFyJFGOWko6lmpJdIguKQkadwcpf7T1MiFRX8Uc8S4sdoxGlEMdJGCmy7NhDGz+MZmwfNWmBX3bq7gLNOvIJUoUA7sL8GQ4HTmHCNGVKq77mJ9jMkNcWMzCuDVJEE4Qkakb6hHMVE+dni8rlzYZShEwlpHtfOQv2dyFCs1CwOzWSM9Fitern4n9dPdXTjZ5QnqSYcLxdFKXO0cPIanCGVBGs2MwRhSc2tDh4jibA2ZVVMCd7ql9dJt1H3rutXD41q67aoowxncA6X4EETWnAPbegAhik8wyu8WZn1Yr1bH8vRklVkTuEPrM8fG8GTSw==</latexit>l7<latexit sha1_base64="H1XMotuaFiPkjNoByrUQJLxGgQI=">AAAB+XicbVBNS8NAFHypX7V+RT16CbaCp5IU0XorePFYwdZCG8Jmu2mXbnbD7qZQQv+JFw+KePWfePPfuGlz0NaBhWHmDe/thAmjSrvut1Xa2Nza3invVvb2Dw6P7OOTrhKpxKSDBROyFyJFGOWko6lmpJdIguKQkadwcpf7T1MiFRX8Uc8S4sdoxGlEMdJGCmy7NhDGz+MZmwfNWmBX3bq7gLNOvIJUoUA7sL8GQ4HTmHCNGVKq77mJ9jMkNcWMzCuDVJEE4Qkakb6hHMVE+dni8rlzYZShEwlpHtfOQv2dyFCs1CwOzWSM9Fitern4n9dPddT0M8qTVBOOl4uilDlaOHkNzpBKgjWbGYKwpOZWB4+RRFibsiqmBG/1y+uk26h71/Wrh0a1dVvUUYYzOIdL8OAGWnAPbegAhik8wyu8WZn1Yr1bH8vRklVkTuEPrM8fHUaTTA==</latexit>l8Augment<latexit sha1_base64="ydkyrB0GQk5kCVD0SR6i/ENqtEc=">AAAB6nicbVA9TwJBEJ3DL8Qv1NJmI5hYkTti1JJooSVGERK4kL1lDzbs7V1250wI4SfYWGiMrb/Izn/jAlco+JJJXt6bycy8IJHCoOt+O7mV1bX1jfxmYWt7Z3evuH/waOJUM95gsYx1K6CGS6F4AwVK3ko0p1EgeTMYXk/95hPXRsTqAUcJ9yPaVyIUjKKV7ss35W6x5FbcGcgy8TJSggz1bvGr04tZGnGFTFJj2p6boD+mGgWTfFLopIYnlA1pn7ctVTTixh/PTp2QE6v0SBhrWwrJTP09MaaRMaMosJ0RxYFZ9Kbif147xfDSHwuVpMgVmy8KU0kwJtO/SU9ozlCOLKFMC3srYQOqKUObTsGG4C2+vEweqxXvvHJ2Vy3VrrI48nAEx3AKHlxADW6hDg1g0IdneIU3RzovzrvzMW/NOdnMIfyB8/kDVcuNLg==</latexit>G<latexit sha1_base64="KG2eaa4Ph25qRuQ1hPLEuVZBFhA=">AAAB9XicbVDLTgIxFL2DL8QX6tJNI5i4IjPEqEuiC11iIo8ERtIpBRo67aTtaMiE/3DjQmPc+i/u/Bs7MAsFT9Lk5Jx7cm9PEHGmjet+O7mV1bX1jfxmYWt7Z3evuH/Q1DJWhDaI5FK1A6wpZ4I2DDOctiNFcRhw2grG16nfeqRKMynuzSSifoiHgg0YwcZKD+WutG4aTm6m5V6x5FbcGdAy8TJSggz1XvGr25ckDqkwhGOtO54bGT/ByjDC6bTQjTWNMBnjIe1YKnBItZ/Mrp6iE6v00UAq+4RBM/V3IsGh1pMwsJMhNiO96KXif14nNoNLP2Eiig0VZL5oEHNkJEorQH2mKDF8YgkmitlbERlhhYmxRRVsCd7il5dJs1rxzitnd9VS7SqrIw9HcAyn4MEF1OAW6tAAAgqe4RXenCfnxXl3PuajOSfLHMIfOJ8/NUuSVA==</latexit>G<latexit sha1_base64="P3fg4aYLLeo7xQrQ7uvxm/GKzXU=">AAAB73icbVDLSgNBEOyNrxhfUY9eBhPBU9gN4uMW8OIxgnlAsoTZyWwyZHZ2nekVQshPePGgiFd/x5t/4yTZgyYWNBRV3XR3BYkUBl3328mtrW9sbuW3Czu7e/sHxcOjpolTzXiDxTLW7YAaLoXiDRQoeTvRnEaB5K1gdDvzW09cGxGrBxwn3I/oQIlQMIpWape7HGnPK/eKJbfizkFWiZeREmSo94pf3X7M0ogrZJIa0/HcBP0J1SiY5NNCNzU8oWxEB7xjqaIRN/5kfu+UnFmlT8JY21JI5urviQmNjBlHge2MKA7NsjcT//M6KYbX/kSoJEWu2GJRmEqCMZk9T/pCc4ZybAllWthbCRtSTRnaiAo2BG/55VXSrFa8y8rFfbVUu8niyMMJnMI5eHAFNbiDOjSAgYRneIU359F5cd6dj0VrzslmjuEPnM8f6kuPNg==</latexit>⌘1<latexit sha1_base64="/SoUdAZIY7aldfFAX9XV8qYHyZI=">AAAB73icbVDLTgJBEJzFF+IL9ehlIph4IrvE543Ei0dMBElgQ2aHXpgwO7vO9JoQwk948aAxXv0db/6NA+xBwUo6qVR1p7srSKQw6LrfTm5ldW19I79Z2Nre2d0r7h80TZxqDg0ey1i3AmZACgUNFCihlWhgUSDhIRjeTP2HJ9BGxOoeRwn4EesrEQrO0EqtcgeQdc/L3WLJrbgz0GXiZaREMtS7xa9OL+ZpBAq5ZMa0PTdBf8w0Ci5hUuikBhLGh6wPbUsVi8D449m9E3pilR4NY21LIZ2pvyfGLDJmFAW2M2I4MIveVPzPa6cYXvljoZIUQfH5ojCVFGM6fZ72hAaOcmQJ41rYWykfMM042ogKNgRv8eVl0qxWvIvK2V21VLvO4siTI3JMTolHLkmN3JI6aRBOJHkmr+TNeXRenHfnY96ac7KZQ/IHzucP8F+POg==</latexit>⌘5<latexit sha1_base64="HLkGsbu5Sprfwqy3ielL238CCvk=">AAAB73icbVA9TwJBEN3DL8Qv1NJmI5hYkTtiUDsSG0tMBEngQvaWATbs7Z27cybkwp+wsdAYW/+Onf/GBa5Q8CWTvLw3k5l5QSyFQdf9dnJr6xubW/ntws7u3v5B8fCoZaJEc2jySEa6HTADUihookAJ7VgDCwMJD8H4ZuY/PIE2IlL3OInBD9lQiYHgDK3ULncBWa9W7hVLbsWdg64SLyMlkqHRK351+xFPQlDIJTOm47kx+inTKLiEaaGbGIgZH7MhdCxVLATjp/N7p/TMKn06iLQthXSu/p5IWWjMJAxsZ8hwZJa9mfif10lwcOWnQsUJguKLRYNEUozo7HnaFxo4yokljGthb6V8xDTjaCMq2BC85ZdXSata8WqVi7tqqX6dxZEnJ+SUnBOPXJI6uSUN0iScSPJMXsmb8+i8OO/Ox6I152Qzx+QPnM8f8eSPOw==</latexit>⌘6<latexit sha1_base64="isnAWzm1LtNf3OYQICWUDCSJ0xY=">AAAB73icbVDLSgNBEOyNrxhfUY9eBhPBU9gN4uMW8OIxgnlAsoTZSScZMju7zswKYclPePGgiFd/x5t/4yTZgyYWNBRV3XR3BbHg2rjut5NbW9/Y3MpvF3Z29/YPiodHTR0limGDRSJS7YBqFFxiw3AjsB0rpGEgsBWMb2d+6wmV5pF8MJMY/ZAOJR9wRo2V2uUuGtqrlnvFkltx5yCrxMtICTLUe8Wvbj9iSYjSMEG17nhubPyUKsOZwGmhm2iMKRvTIXYslTRE7afze6fkzCp9MoiULWnIXP09kdJQ60kY2M6QmpFe9mbif14nMYNrP+UyTgxKtlg0SAQxEZk9T/pcITNiYgllittbCRtRRZmxERVsCN7yy6ukWa14l5WL+2qpdpPFkYcTOIVz8OAKanAHdWgAAwHP8ApvzqPz4rw7H4vWnJPNHMMfOJ8/69CPNw==</latexit>⌘2<latexit sha1_base64="pzmdPvGKwssdiCWNY2x6Bdd+mVQ=">AAAB73icbVDLTgJBEJzFF+IL9ehlIph4IrtofNxIvHjERJAENmR26IUJs7PrTK8JIfyEFw8a49Xf8ebfOMAeFKykk0pVd7q7gkQKg6777eRWVtfWN/Kbha3tnd294v5B08Sp5tDgsYx1K2AGpFDQQIESWokGFgUSHoLhzdR/eAJtRKzucZSAH7G+EqHgDK3UKncAWfes3C2W3Io7A10mXkZKJEO9W/zq9GKeRqCQS2ZM23MT9MdMo+ASJoVOaiBhfMj60LZUsQiMP57dO6EnVunRMNa2FNKZ+ntizCJjRlFgOyOGA7PoTcX/vHaK4ZU/FipJERSfLwpTSTGm0+dpT2jgKEeWMK6FvZXyAdOMo42oYEPwFl9eJs1qxbuonN9VS7XrLI48OSLH5JR45JLUyC2pkwbhRJJn8krenEfnxXl3PuatOSebOSR/4Hz+AO1Vjzg=</latexit>⌘3<latexit sha1_base64="eImPQnWUgpAWgTt34FzBClNzuck=">AAAB73icbVA9TwJBEN3DL8Qv1NJmI5hYkTtiRDsSG0tMBEngQvaWATbs7Z27cybkwp+wsdAYW/+Onf/GBa5Q8CWTvLw3k5l5QSyFQdf9dnJr6xubW/ntws7u3v5B8fCoZaJEc2jySEa6HTADUihookAJ7VgDCwMJD8H4ZuY/PIE2IlL3OInBD9lQiYHgDK3ULncBWa9W7hVLbsWdg64SLyMlkqHRK351+xFPQlDIJTOm47kx+inTKLiEaaGbGIgZH7MhdCxVLATjp/N7p/TMKn06iLQthXSu/p5IWWjMJAxsZ8hwZJa9mfif10lwcOWnQsUJguKLRYNEUozo7HnaFxo4yokljGthb6V8xDTjaCMq2BC85ZdXSata8S4rF3fVUv06iyNPTsgpOSceqZE6uSUN0iScSPJMXsmb8+i8OO/Ox6I152Qzx+QPnM8f82mPPA==</latexit>⌘7<latexit sha1_base64="ud+9DDrvGMmT08NELB3xekNSMuM=">AAAB73icbVA9TwJBEJ3DL8Qv1NJmI5hYkTtiFDsSG0tMBEngQvaWATbs7Z27eybkwp+wsdAYW/+Onf/GBa5Q8CWTvLw3k5l5QSy4Nq777eTW1jc2t/LbhZ3dvf2D4uFRS0eJYthkkYhUO6AaBZfYNNwIbMcKaRgIfAjGNzP/4QmV5pG8N5MY/ZAOJR9wRo2V2uUuGtqrlXvFkltx5yCrxMtICTI0esWvbj9iSYjSMEG17nhubPyUKsOZwGmhm2iMKRvTIXYslTRE7afze6fkzCp9MoiULWnIXP09kdJQ60kY2M6QmpFe9mbif14nMYOan3IZJwYlWywaJIKYiMyeJ32ukBkxsYQyxe2thI2ooszYiAo2BG/55VXSqla8y8rFXbVUv87iyMMJnMI5eHAFdbiFBjSBgYBneIU359F5cd6dj0VrzslmjuEPnM8f9O6PPQ==</latexit>⌘8<latexit sha1_base64="sQhMqyeUnID2qy69XnDtEv4SVYA=">AAAB73icbVDLTgJBEJzFF+IL9ehlIph4IruE+LiRePGIiSAJbMjs0MCE2dl1pteEbPgJLx40xqu/482/cYA9KFhJJ5Wq7nR3BbEUBl3328mtrW9sbuW3Czu7e/sHxcOjlokSzaHJIxnpdsAMSKGgiQIltGMNLAwkPATjm5n/8ATaiEjd4yQGP2RDJQaCM7RSu9wFZL1auVcsuRV3DrpKvIyUSIZGr/jV7Uc8CUEhl8yYjufG6KdMo+ASpoVuYiBmfMyG0LFUsRCMn87vndIzq/TpINK2FNK5+nsiZaExkzCwnSHDkVn2ZuJ/XifBwZWfChUnCIovFg0SSTGis+dpX2jgKCeWMK6FvZXyEdOMo42oYEPwll9eJa1qxbuo1O6qpfp1FkeenJBTck48cknq5JY0SJNwIskzeSVvzqPz4rw7H4vWnJPNHJM/cD5/AO7ajzk=</latexit>⌘4to avoid the out of memory (OOM) error. For each device,
+we obtain the memory footprint of each operator through the
+APIs (e.g., torch.profiler) and constrain the total memory
+of the operators placed on a device not to exceed the memory
+capacity of the device.
+
+(2) Non-overlapping constraints. By default,
+
+inference
+frameworks, such as PyTorch and TensorFlow, execute op-
+erators placed on the same device sequentially. Therefore, for
+any two operators assigned to the same device, we ensure
+that the their processing time does not overlap. Equation (4a)
+maintains the order of execution for the two operators with
+precedence relationship. Given the two operators i and j
+without precedence constraints, we mathematically express the
+non-overlapping condition with
+
+
+
+
+
+
+Si ≥ Cj − M sδij − M l(2 − xik − xjk),
+Sj ≥ Ci − M s(1 − δij) − M l(2 − xik − xjk),
+i ̸= j,
+∀ηi, ηj ∈ N,
+ηi ̸∈ Succ(j) and ηj ̸∈ Succ(i),
+∀k ∈ K,
+
+(6)
+
+where δij ∈ {0, 1} is a 0-1 indicator variable. If two operators
+i and j are placed on the device k, which is termed as xik =
+xjk = 1, the inequalities in constraints (6) are
+
+(cid:40)
+
+Si ≥ Cj − M sδij,
+Sj ≥ Ci − M s(1 − δij),
+
+in which both inequalities hold when δij takes different values.
+For every two operators of a DNN, we apply the constraints
+in (6).
+
+(3) Communication constraints. Naturally, when two adja-
+cent operators are placed on two distinct devices, a commu-
+nication overhead is incurred by the data flow between the
+operators. We formalize the communication overhead with
+the indicator zq. Moreover, our model depicts bandwidth
+difference of the uplink bandwidth and downlink bandwidth
+between two devices. We capture the selection of channels
+between two devices with the indicator uqk′k′′ .
+
+
+
+
+zq ≤ 2 − xik − xjk
+zq ≥ xik − xjk
+zq ≥ xjk − xik
+(cid:88)
+(cid:88)
+
+
+
+uqk′k′′ = zq
+
+,
+
+∀q ∈ N − N,
+(i, q), (q, j) ∈ L,
+
+k′′∈K
+
+k′∈K
+uqk′k′′ ≥ xik′ + xjk′′ − 1
+(cid:88)
+
+(cid:88)
+
+Cq = Sq +
+
+uqk′k′′ · pcomm
+qk′k′′
+
+k′′∈K
+
+k′∈K
+(cid:123)(cid:122)
+(cid:124)
+Transmission time of data flow q
+over the channel k′→k′′.
+
+(cid:125)
+
+,
+
+∀q ∈ N − N,
+(i, q), (q, j) ∈ L,
+∀k′, k′′ ∈ K,
+k′ ̸= k′′.
+
+(7)
+Given two contiguous operators i and j, if only one of them is
+placed on device k, which implies that there is a communica-
+tion overhead for data flow q , zq = 1 is enforced by the first
+three inequalities in constraints (7). Otherwise, zq = 0. The
+
+
+
+
+
+
+
+
+
+channel where data flow q is transmitted is indicated by uqk′k′′.
+If the transfer of data flow q exists, which implies zq = 1, the
+fourth equation ensures that the communication task q selects
+at most one communication channel k′ → k′′ for transmission.
+The fifth constraint indicates that the communication task q
+selects the channel k′ → k′′ for transmission only when task
+i, task j are deployed on device k′ and device k′′ respectively
+(i.e. xik′ = xjk′′ = 1). The last equation in (7) bridges the
+start and end time of transmitting the data flow q.
+
+(4) Congestion control. Lastly, we address the contention
+of data transmission, when there are multiple outputs waiting
+to be transferred on the same communication channel. Given
+a device k and two pairs of adjacent operators a, b and c, d
+where (a, q), (q, b), (c, r), (r, d) ∈ L, the congestion happens
+when xak = 1, xbk = 0 and xck = 1, xdk = 0. In other
+words, two communication operations should not be process-
+ing simultaneously on the same channel. In other words, either
+Sq ≥ Cr or Sr ≥ Cq holds. Formally, the congestion control
+can be casted as
+
+
+
+
+
+
+Sq ≥ Cr − M sδqr − M l(2 − zq − zr)
+
++ M r(xak + xck − xbk − xdk − 2),
+Sr ≥ Cq − M s(1 − δqr) − M l(2 − zq − zr)
++ M r(xak + xck − xbk − xdk − 2),
+
+Sq ≥ Cr − M sδqr − M l(2 − zq − zr)
+
++ M r(xbk + xdk − xak − xck − 2),
+Sr ≥ Cq − M s(1 − δqr) − M l(2 − zq − zr)
++ M r(xbk + xdk − xak − xck − 2),
+
+q ̸= r,
+∀ηq, ηr ∈ N − N,
+ηq ̸∈ Succ(r) and ηr ̸∈ Succ(q),
+(a, q), (q, b), (c, r), (r, d) ∈ L,
+∀k ∈ K,
+
+(8)
+
+where δqr ∈ {0, 1} is a 0-1 indicator variable. For multiple
+transmission tasks on the same communication channel, we
+bound every two communication tasks by the constraints (8).
+We solve the MILP model described in (4) using the
+optimization solver Gurobi [18]. Indicator variable xik implies
+the placement decision of each operator. After obtaining
+the placement decision of operators, we employ PyTorch to
+implement the inter-operator model parallel inference.
+
+IV. EXPERIMENTS
+In this section, we conduct extensive experiments to em-
+pirically evaluate MOIRAI. Broadly, we intend to answer the
+following research questions:
+
+• RQ1: How does MOIRAI compare against the state-of-
+
+the-art approaches?
+
+• RQ2: How much does our graph coarsening method
+
+contribute to the performance of MOIRAI?
+
+• RQ3: What
+
+interesting insights and findings can we
+
+obtain from the empirical results?
+
+Next, we present our experiment settings, followed by answer-
+ing the above research questions one by one.
+
+TABLE III
+TESTBED CONFIGURATIONS OF TWO EXPERIMENT SCENARIOS.
+
+Scenario
+
+Device
+
+Memory (GB)
+
+Network Interface
+
+Inter-server
+
+Intra-server
+
+A: NVIDIA GeForce RTX 2080 Ti
+B: NVIDIA Tesla T4
+C: NVIDIA Tesla P4
+D: NVIDIA RTX 3060 Ti
+A: NVIDIA Tesla V100
+B: NVIDIA Tesla V100
+C: NVIDIA Tesla P100
+D: NVIDIA Tesla P100
+
+11
+16
+8
+8
+32
+32
+16
+16
+
+InfiniBand
+
+NVLink + NVSwitch
+
+Average Network Bandwidth (Gbps)
+
+Device A
+N.A.
+42.39
+33.2
+42.08
+N.A.
+1148.16
+630.43
+622.67
+
+Device B
+44.26
+N.A.
+35.31
+43.22
+1170.04
+N.A.
+609.82
+575.08
+
+Device C
+32.92
+35.32
+N.A.
+33.28
+626.10
+618.98
+N.A.
+581.35
+
+Device D
+44.28
+44.51
+32.95
+N.A.
+610.56
+581.09
+571.96
+N.A.
+
+TABLE IV
+MODEL ARCHITECTURE WITH INCREASING NUMBER OF PARAMETERS. M: MILLION. B: BILLION.
+
+Model
+
+Parameters
+
+Layer Number
+
+Hidden Size
+
+Head Number
+
+N.O. Operators in Original Graph
+
+N.O. Operators in Coarsened Graph
+
+Swin-Transformer [19]
+GPT-3 [2]
+AlphaFold2 [?]
+
+{1.8B, 6.6B, 13B}
+{330M, 1.3B, 2.7B, 13B}
+{87M, 930M, 2.4B, 3.2B}
+
+{32, 48, 56}
+{24, 32, 32, 40}
+{48, 64, 96, 128}
+
+{512, 768, 1024}
+{1024, 2048, 2560, 5120}
+{256, 512, 1024, 1024}
+
+{16, 24, 32}
+{16, 32, 32, 40}
+{8, 16, 32, 32}
+
+{6496, 14352, 22120}
+{4872, 9480, 12640, 19640}
+{5136, 12992, 37920, 50560}
+
+{5204, 11512, 17947}
+{3682, 7308, 9825, 15283}
+{3618, 9252, 26824, 35096}
+
+to 1100 × 1100. (2) GPT-3 [2] is a cutting-edge language
+model based on Transformer. The input of GPT-3 is word
+tokens. We employ a language sequence of 2048 tokens as
+its input. (3) AlphaFold2 [20] is a biological model lies in
+its ability to accurately predict protein structures. Following
+the experiment setting in [20], we choose the input sequence
+batch size of 128.
+
+Methods. We compare MOIRAI with both learning-based
+and algorithmic methods. (1) Placeto [9] is a reinforcement
+learning approach. We revise its reward function to accommo-
+date only the forward calculations of an input. Placeto serves
+as the baseline in our experiment. (2) m-SCT, which is raised
+in Baechi [11], is a heuristic-based solution. m-SCT places
+operators on a device with the earliest start time and leverages
+an ILP model to find child operators. (3) GETF [33] is an
+exact algorithm-based method. We implement GETF following
+the guidelines outlined in [33]. We solve the GETF MILP with
+Gurobi.
+
+Metrics. We employ two performance metrics to evaluate
+the inter-operator model parallel
+inference performance of
+MOIRAI. (1) End-to-end inference latency refers to the time
+required for a DNN to process an input and generate an output.
+We deploy DNN models based on the placement generated by
+each algorithm and measure its end-to-end inference latency.
+To mitigate variances caused by warm-up, we exclude the
+running time of the first five batches from the measurement, as
+specified in [8]. (2) Placement generation time denotes the
+duration taken by a device placement algorithm to generate
+a placement solution. We implement MOIRAI and its coun-
+terparts on devices equipped with Intel Core i7-8700 CPU
+and NVIDIA RTX 2080 Ti GPU, measuring the placement
+generation time.
+
+B. Comparison with Existing Methods (RQ1)
+
+We compare the end-to-end inference speedup of MOIRAI
+with three counterparts under two scenarios. To verify the
+impact of the proposed graph coarsening method, we try ap-
+
+(a) Inter-server scenario.
+
+(b) Intra-server scenario.
+
+Fig. 9. Network bandwidth between two devices over 100s.
+
+A. Experiment Setup
+
+Testbed configurations. We demonstrate the advancement
+of MOIRAI through two scenarios. (1) Inter-server inference:
+We investigate an inter-server inter-operator model parallel
+inference setting, where multiple GPU servers are intercon-
+nected with a 100Gbps InfiniBand network. (2) Intra-server
+inference: We scrutinize an intra-server inter-operator model
+parallel inference setting, where within each server rack, GPUs
+are connected via NVLink and expanded through NVSwitch
+to enable all-to-all communication among the GPUs. We
+measured the bandwidth between every device during a 100-
+second period and performed calculations using the average
+bandwidth over this duration. The network bandwidth over
+the 100 seconds is presented in Fig. 9. We list the machine
+configurations and the network conditions of the two scenarios
+in TABLE III. We install NCCL 2.16 and PyTorch v1.12 on
+all devices.
+
+Models. We empirically evaluate MOIRAI with with three
+emerging models from diverse domains, including computer
+language processing, and biology analysis.
+vision, natural
+to its variants in dif-
+For each model, we apply MOIRAI
+ferent model size that is shown in TABLE IV. (1) Swin-
+Transformer [19] is a highly accurate vision model designed
+for image recognition. We set the resolution of input images
+
+0102030405060708090100Time Interval (s)32.535.037.540.042.545.047.5Network Bandwidth (Gbps)A to BA to CA to DB to AB to CB to DC to AC to BC to DD to AD to BD to C0102030405060708090100Time Interval (s)600700800900100011001200Network Bandwidth (Gbps)A to BA to CA to DB to AB to CB to DC to AC to BC to DD to AD to BD to C(a) Inter-server scenario with original
+computation graphs.
+
+(b) Intra-server scenario with original
+computation graphs.
+
+(c) Inter-server scenario with coars-
+ened computation graphs.
+
+(d) Intra-server scenario with coars-
+ened computation graphs.
+
+Fig. 10.
+
+Inference latency speedup comparison among four algorithms.
+
+TABLE V
+PLACEMENT GENERATION TIME.
+
+Original Computation Graph
+
+Coarsened Computation Graph
+
+Model
+
+Swin-Transformer
+
+GPT-3
+
+AlphaFold2
+
+Type
+
+HRL
+4hrs
+1.8B
+5hrs
+6.6B
+13B
+5hrs
+330M 3.5hrs
+4hrs
+1.3B
+5hrs
+2.7B
+5.5hrs
+13B
+3.5hrs
+87M
+5hrs
+930M
+5.75hrs
+2.4B
+7hrs
+3.2B
+
+m-SCT
+17.63s
+64.32s
+148.25s
+15.92s
+39.82s
+54.17s
+125.53s
+20.18s
+56.62s
+226.34s
+507.65s
+
+GETF
+2min
+12.4min
+19.75min
+1.25min
+8.65min
+10.82min
+15.7min
+1.78min
+11.05min
+22.5min
+35.75min
+
+MOIRAI
+2.15min
+13.28min
+22.54min
+1.38min
+9.02min
+11.48min
+16.5min
+1.9min
+12.87min
+23.91min
+38.42min
+
+HRL
+4hrs
+4.8hrs
+5hrs
+3hrs
+3.85hrs
+4.75hrs
+5hrs
+3.3hrs
+4.82hrs
+5hrs
+6.5hrs
+
+m-SCT
+15.24s
+58.57s
+142.9s
+14.4s
+37.39s
+51.52s
+117.48s
+18.62s
+53.71s
+215.48s
+485.35s
+
+GETF
+1.58min
+9.72min
+14.95min
+58.04s
+5.29min
+7.84min
+10.92min
+1.24min
+7.95min
+17.92min
+21.5min
+
+MOIRAI
+1.64min
+10.51min
+15.46min
+1.04min
+6.88min
+8.51min
+11.07min
+1.38min
+8.75min
+18.02min
+22.18min
+
+plying the MILP model of MOIRAI on both the original DNN
+computation graph and the coarsened computation graph.
+
+End-to-end inference latency. Fig. 10(a) demonstrates the
+end-to-end inference latency speedup of MOIRAI under inter-
+server scenario on original computation graphs. The result
+shows that MOIRAI reduces the end-to-end inference latency
+up to 2.98×, 1.77×, 1.33× compared to Placeto, m-SCT, and
+GETF respectively. Fig. 10(b) provides inference acceleration
+details of MOIRAI under intra-server scenario on original
+computation graphs. We observe that MOIRAI provides the
+latency speedup up to 4.12×, 1.7×, 1.35× compared to
+Placeto, m-SCT, and GETF respectively.
+
+Next, we are interested in evaluating the impact of the
+graph coarsening method of MOIRAI on reducing the end-
+to-end inference latency. Fig. 10(c) and 10(d) exhibits the
+inference latency speedup of MOIRAI after coarsening the
+DNN computation graphs with Algorithm 1. In the inter-server
+setting, MOIRAI outperforms Placeto, m-SCT, and GETF
+up to 3.15×, 1.9×, and 1.25× respectively in reduction of
+the end-to-end latency. In the intra-server setting, MOIRAI
+surpasses Placeto, m-SCT, and GETF up to 4.28×, 1.74×,
+1.34× respectively in reduction of the end-to-end latency.
+
+Placement generation time. TABLE V presents the place-
+ment generation time of all the approaches. It is observed
+that the HRL algorithm requires several hours for training
+and generating the final results. m-SCT, due to its small
+algorithm search space, requires the least amount of time.
+Considering the vast search space and limitations of the Gurobi
+optimizer, both GETF and our algorithm need minutes to
+generate placement. However, since this process is offline, and
+the optimal placement solutions of MOIRAI are superior to
+those of the m-SCT, we believe that our approach still holds an
+
+advantage in the placement generation. Moreover, by further
+relaxing MOIRAI MILP model, we can significantly reduce
+the placement generation time.
+
+C. Contributions of Graph Coarsening (RQ2)
+
+The last two columns of TABLE IV show the number of
+operators in the original computation graphs and the number
+of operators in the coarsened computation graphs. According
+to the results shown in Fig. 10, compared to using the
+original computation graph to generate placement results, the
+graph coarsening method has reduced the end-to-end inference
+latency by up to 5.7% in the inter-server setting and up to 3.8%
+in the intra-server setting. From TABLE V, we observe that the
+graph coarsening method has a significant effect on reducing
+the placement generation time, with an average time reduction
+to 71.87% of the placement generation time with the original
+computation graphs.
+
+D. Discussion (RQ3)
+
+The experiments on three types of DNNs suggest that in-
+corporating higher communication bandwidth between devices
+achieves better inference speedup. Interestingly, a point that
+attracts our attention is: we observe that as DNN models be-
+come larger, although the computation resource demand rises,
+large models provide greater search space, which increases
+the parallelism of the model, making full use of computation
+resources, and achieving a better inference acceleration with
+MOIRAI.
+
+V. CONCLUSION
+
+In this paper, we proposed an algorithmic solution named
+MOIRAI for the device placement problem. MOIRAI incor-
+porates graph optimization, device heterogeneity, and inter-
+operator model parallel inference constraints. We have used
+a graph coarsening method that considers runtime operator
+fusion to shrink the solution search space while maintaining
+optimality. The use of MILP in MOIRAI accommodates vari-
+ous constraints and can be extended to multiple heterogeneous
+devices. Extensive experiments demonstrate that MOIRAI con-
+sistently outperforms the state-of-the-art methods in reducing
+the end-to-end inference latency while ensuring a reasonable
+placement generation time. Future work involves proposing a
+meta-heuristic algorithm to expedite the placement generation
+
+swin-1.8Bswin-6.6Bswin-13Bgpt3-330Mgpt3-1.3Bgpt3-2.7Bgpt3-13Balphafold2-87Malphafold2-930Malphafold2-2.4Balphafold2-3.2B012345Latency Speedup (Times)Placetom-SCTGETFMoiraiswin-1.8Bswin-6.6Bswin-13Bgpt3-330Mgpt3-1.3Bgpt3-2.7Bgpt3-13Balphafold2-87Malphafold2-930Malphafold2-2.4Balphafold2-3.2B012345Latency Speedup (Times)Placetom-SCTGETFMoiraiswin-1.8Bswin-6.6Bswin-13Bgpt3-330Mgpt3-1.3Bgpt3-2.7Bgpt3-13Balphafold2-87Malphafold2-930Malphafold2-2.4Balphafold2-3.2B012345Latency Speedup (Times)Placetom-SCTGETFMoiraiswin-1.8Bswin-6.6Bswin-13Bgpt3-330Mgpt3-1.3Bgpt3-2.7Bgpt3-13Balphafold2-87Malphafold2-930Malphafold2-2.4Balphafold2-3.2B012345Latency Speedup (Times)Placetom-SCTGETFMoiraiprocess and providing proofs concerning the approximation
+ratio of the meta-heuristic algorithm.
+
+REFERENCES
+
+[1] Z.-Q. Zhao, P. Zheng, S.-t. Xu, and X. Wu, “Object detection with deep
+learning: A review,” IEEE transactions on neural networks and learning
+systems, vol. 30, no. 11, pp. 3212–3232, 2019.
+
+[2] T. Brown, B. Mann, N. Ryder, M. Subbiah, J. D. Kaplan, P. Dhariwal,
+A. Neelakantan, P. Shyam, G. Sastry, A. Askell et al., “Language mod-
+els are few-shot learners,” Advances in neural information processing
+systems, vol. 33, pp. 1877–1901, 2020.
+
+[3] S. Smith, M. Patwary, B. Norick, P. LeGresley, S. Rajbhandari, J. Casper,
+Z. Liu, S. Prabhumoye, G. Zerveas, V. Korthikanti et al., “Using
+deepspeed and megatron to train megatron-turing nlg 530b, a large-scale
+generative language model,” arXiv preprint arXiv:2201.11990, 2022.
+[4] J. M. Tarnawski, A. Phanishayee, N. Devanur, D. Mahajan, and
+F. Nina Paravecino, “Efficient algorithms for device placement of dnn
+graph operators,” Advances in Neural Information Processing Systems,
+vol. 33, pp. 15 451–15 463, 2020.
+
+[5] L. Zheng, Z. Li, H. Zhang, Y. Zhuang, Z. Chen, Y. Huang, Y. Wang,
+Y. Xu, D. Zhuo, J. E. Gonzalez, and I. Stoica, “Alpa: Automating inter-
+and Intra-Operator parallelism for distributed deep learning,” in 16th
+USENIX Symposium on Operating Systems Design and Implementation
+(OSDI 22). USENIX Association, Jul. 2022, pp. 559–578.
+
+[6] A. Mirhoseini, H. Pham, Q. V. Le, B. Steiner, R. Larsen, Y. Zhou,
+N. Kumar, M. Norouzi, S. Bengio, and J. Dean, “Device placement
+optimization with reinforcement learning,” in International Conference
+on Machine Learning. PMLR, 2017, pp. 2430–2439.
+
+[7] C. Szegedy, S. Ioffe, V. Vanhoucke, and A. A. Alemi, “Inception-v4,
+inception-resnet and the impact of residual connections on learning,” in
+Thirty-first AAAI conference on artificial intelligence, 2017.
+
+[8] A. Mirhoseini, A. Goldie, H. Pham, B. Steiner, Q. V. Le, and J. Dean, “A
+hierarchical model for device placement,” in International Conference
+on Learning Representations, 2018.
+
+[9] R. Addanki, S. B. Venkatakrishnan, S. Gupta, H. Mao, and M. Al-
+izadeh, “Placeto: learning generalizable device placement algorithms for
+distributed machine learning,” in Proceedings of the 33rd International
+Conference on Neural Information Processing Systems, 2019, pp. 3981–
+3991.
+
+[10] H. Lan, L. Chen, and B. Li, “Accelerated device placement optimization
+with contrastive learning,” in 50th International Conference on Parallel
+Processing, 2021, pp. 1–10.
+
+[11] B. Jeon, L. Cai, P. Srivastava, J. Jiang, X. Ke, Y. Meng, C. Xie, and
+I. Gupta, “Baechi: fast device placement of machine learning graphs,” in
+Proceedings of the 11th ACM Symposium on Cloud Computing, 2020,
+pp. 416–430.
+
+[12] U. U. Hafeez, X. Sun, A. Gandhi, and Z. Liu, “Towards optimal
+placement and scheduling of dnn operations with pesto,” in Proceedings
+of the 22nd International Middleware Conference, 2021, pp. 39–51.
+[13] B. Zhang, T. Xiang, H. Zhang, T. Li, S. Zhu, and J. Gu, “Dynamic dnn
+decomposition for lossless synergistic inference,” in 2021 IEEE 41st
+International Conference on Distributed Computing Systems Workshops
+(ICDCSW).
+
+IEEE, 2021, pp. 13–20.
+
+[14] F. Chen, P. Li, C. Wu, and S. Guo, “Hare: Exploiting inter-job and
+intra-job parallelism of distributed machine learning on heterogeneous
+gpus,” in Proceedings of the 31st International Symposium on High-
+Performance Parallel and Distributed Computing, 2022, pp. 253–264.
+[15] M. Abadi, P. Barham, J. Chen, Z. Chen, A. Davis, J. Dean, M. Devin,
+S. Ghemawat, G. Irving, M. Isard et al., “{TensorFlow}: A system
+for {Large-Scale} machine learning,” in 12th USENIX symposium on
+operating systems design and implementation (OSDI 16), 2016, pp. 265–
+283.
+
+[16] T. Chen, T. Moreau, Z. Jiang, L. Zheng, E. Yan, H. Shen, M. Cowan,
+L. Wang, Y. Hu, L. Ceze et al., “{TVM}: An automated {End-to-End}
+optimizing compiler for deep learning,” in 13th USENIX Symposium on
+Operating Systems Design and Implementation (OSDI 18), 2018, pp.
+578–594.
+
+[17] A. Paszke, S. Gross, F. Massa, A. Lerer, J. Bradbury, G. Chanan,
+T. Killeen, Z. Lin, N. Gimelshein, L. Antiga et al., “Pytorch: An
+imperative style, high-performance deep learning library,” Advances in
+neural information processing systems, vol. 32, 2019.
+
+[18] Gurobi. (2021) Gurobi optimizer. [Online]. Available: https://www.gu
+
+robi.com
+
+[19] Z. Liu, H. Hu, Y. Lin, Z. Yao, Z. Xie, Y. Wei, J. Ning, Y. Cao,
+Z. Zhang, L. Dong et al., “Swin transformer v2: Scaling up capacity and
+resolution,” in Proceedings of the IEEE/CVF conference on computer
+vision and pattern recognition, 2022, pp. 12 009–12 019.
+
+[20] P. Cramer, “Alphafold2 and the future of structural biology,” Nature
+structural & molecular biology, vol. 28, no. 9, pp. 704–705, 2021.
+[21] S. Rajbhandari, J. Rasley, O. Ruwase, and Y. He, “Zero: Memory
+optimizations toward training trillion parameter models,” in SC20:
+International Conference for High Performance Computing, Networking,
+Storage and Analysis.
+IEEE, 2020, pp. 1–16.
+
+[22] Y. Jiang, Y. Zhu, C. Lan, B. Yi, Y. Cui, and C. Guo, “A unified
+architecture for accelerating distributed {DNN} training in heteroge-
+neous {GPU/CPU} clusters,” in 14th USENIX Symposium on Operating
+Systems Design and Implementation (OSDI 20), 2020, pp. 463–479.
+
+[23] Z. Bian, H. Liu, B. Wang, H. Huang, Y. Li, C. Wang, F. Cui, and
+Y. You, “Colossal-ai: A unified deep learning system for large-scale
+parallel training,” arXiv preprint arXiv:2110.14883, 2021.
+
+[24] C. Hu and B. Li, “Distributed inference with deep learning models
+across heterogeneous edge devices,” in IEEE INFOCOM 2022-IEEE
+Conference on Computer Communications.
+
+IEEE, 2022.
+
+[25] Y. Huang, Y. Cheng, A. Bapna, O. Firat, D. Chen, M. Chen, H. Lee,
+J. Ngiam, Q. V. Le, Y. Wu et al., “Gpipe: Efficient training of giant neu-
+ral networks using pipeline parallelism,” Advances in neural information
+processing systems, vol. 32, 2019.
+
+[26] D. Narayanan, A. Harlap, A. Phanishayee, V. Seshadri, N. R. Devanur,
+G. R. Ganger, P. B. Gibbons, and M. Zaharia, “Pipedream: generalized
+pipeline parallelism for dnn training,” in Proceedings of the 27th ACM
+Symposium on Operating Systems Principles, 2019, pp. 1–15.
+
+[27] D. Narayanan, A. Phanishayee, K. Shi, X. Chen, and M. Zaharia,
+“Memory-efficient pipeline-parallel dnn training,” in International Con-
+ference on Machine Learning. PMLR, 2021, pp. 7937–7947.
+
+[28] Z. Lin, Y. Miao, G. Liu, X. Shi, Q. Zhang, F. Yang, S. Maleki, Y. Zhu,
+X. Cao, C. Li et al., “Superscaler: Supporting flexible dnn parallelization
+via a unified abstraction,” arXiv preprint arXiv:2301.08984, 2023.
+[29] T. Chen, B. Xu, C. Zhang, and C. Guestrin, “Training deep nets with
+sublinear memory cost,” arXiv preprint arXiv:1604.06174, 2016.
+[30] M. Li, D. G. Andersen, J. W. Park, A. J. Smola, A. Ahmed, V. Josifovski,
+J. Long, E. J. Shekita, and B.-Y. Su, “Scaling distributed machine
+learning with the parameter server,” in 11th {USENIX} Symposium on
+Operating Systems Design and Implementation ({OSDI} 14), 2014, pp.
+583–598.
+
+[31] A. Sergeev and M. Del Balso, “Horovod: fast and easy distributed deep
+learning in tensorflow,” arXiv preprint arXiv:1802.05799, 2018.
+[32] Y. Gao, L. Chen, and B. Li, “Post: Device placement with cross-entropy
+minimization and proximal policy optimization,” Advances in Neural
+Information Processing Systems, vol. 31, 2018.
+
+[33] Y. Su, X. Ren, S. Vardi, and A. Wierman, “Communication-aware
+scheduling of precedence-constrained tasks on related machines,” arXiv
+preprint arXiv:2004.14639, 2020.
+
+[34] H. Xu, Y. Liao, H. Xie, and P. Zhou, “Celeritas: Fast optimizer for large
+
+dataflow graphs,” arXiv preprint arXiv:2208.00184, 2022.
+
+[35] C. Perkins, E. Belding-Royer, and S. Das, “Rfc3561: Ad hoc on-demand
+
+distance vector (aodv) routing,” 2003.
+
+[36] G. Guennebaud, B. Jacob et al., “Eigen v3,” http://eigen.tuxfamily.org,
+
+2010.
+
+[37] M. Dukhan et al., “Nnpack,” https://github.com/Maratyszcza/NNPACK,
+
+2016.
+
+[38] M. Boehm, B. Reinwald, D. Hutchison, P. Sen, A. V. Evfimievski, and
+N. Pansare, “On optimizing operator fusion plans for large-scale machine
+learning in systemml,” Proceedings of the VLDB Endowment, vol. 11,
+no. 12, 2018.
+
+[39] L. L. Zhang, S. Han, J. Wei, N. Zheng, T. Cao, Y. Yang, and Y. Liu,
+“nn-meter: Towards accurate latency prediction of deep-learning model
+inference on diverse edge devices,” in Proceedings of the 19th Annual
+International Conference on Mobile Systems, Applications, and Services,
+2021, pp. 81–93.
+
+[40] S. Williams, A. Waterman, and D. Patterson, “Roofline: an insightful
+visual performance model for multicore architectures,” Communications
+of the ACM, vol. 52, no. 4, pp. 65–76, 2009.
+
+[41] X. Y. Geoffrey, Y. Gao, P. Golikov, and G. Pekhimenko, “Habitat:
+A {Runtime-Based} computational performance predictor for deep
+neural network training,” in 2021 USENIX Annual Technical Conference
+(USENIX ATC 21), 2021, pp. 503–521.
+
+

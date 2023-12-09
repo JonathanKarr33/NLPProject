@@ -1,0 +1,32 @@
+Abstract
+
+Open Set Domain Adaptation (OSDA) aims to adapt
+a model trained on a source domain to a target domain
+that undergoes distribution shift and contains samples from
+novel classes outside the source domain. Source-free OSDA
+(SF-OSDA) techniques eliminate the need to access source
+domain samples, but current SF-OSDA methods utilize only
+the known classes in the target domain for adaptation, and
+require access to the entire target domain even during in-
+ference after adaptation, to make the distinction between
+known and unknown samples. In this paper, we introduce
+Unknown Sample Discovery (USD) as an SF-OSDA method
+that utilizes a temporally ensembled teacher model to con-
+duct known-unknown target sample separation and adapts
+the student model to the target domain over all classes using
+co-training and temporal consistency between the teacher
+and the student. USD promotes Jensen-Shannon distance
+(JSD) as an effective measure for known-unknown sample
+separation. Our teacher-student framework significantly re-
+duces error accumulation resulting from imperfect known-
+unknown sample separation, while curriculum guidance
+helps to reliably learn the distinction between target known
+and target unknown subspaces. USD appends the target
+model with an unknown class node, thus readily classifying
+a target sample into any of the known or unknown classes in
+subsequent post-adaptation inference stages. Empirical re-
+sults show that USD is superior to existing SF-OSDA meth-
+ods and is competitive with current OSDA models that uti-
+lize both source and target domains during adaptation.
+
+1. 

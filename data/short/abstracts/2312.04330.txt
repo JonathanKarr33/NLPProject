@@ -1,0 +1,17 @@
+Abstract
+
+The modeling and forecasting of sea ice conditions in the
+Arctic region are important tasks for ship routing, offshore
+oil production, and environmental monitoring. We propose
+the adaptive surrogate modeling approach named LANE-SI
+(Lightweight Automated Neural Ensembling for Sea Ice) that
+uses ensemble of relatively simple deep learning models with
+different loss functions for forecasting of spatial distribution
+for sea ice concentration in the specified water area.
+Experimental studies confirm the quality of a long-term fore-
+cast based on a deep learning model fitted to the specific water
+area is comparable to resource-intensive physical modeling,
+and for some periods of the year, it is superior. We achieved a
+20% improvement against the state-of-the-art physics-based
+forecast system SEAS5 for the Kara Sea.
+

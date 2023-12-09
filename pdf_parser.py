@@ -27,8 +27,12 @@ abstract_start_pattern = re.compile(r'\babstract\b', re.IGNORECASE)
 introduction_pattern = re.compile(r'\bintroduction\b', re.IGNORECASE)
 
 # Iterate through the PDF files in the input folder
+already_done = ["2310.08569", "2312.03758", "2312.04318", "2312.04379","2312.04479"] #! need to skip these as these have been cleaned already
 for root, _, files in os.walk(pdf_folder):
     for file in files:
+        if file[:-4] in already_done:
+            print("Skipping", file[:-4])
+            continue
         if file.endswith('.pdf'):
             pdf_file_path = os.path.join(root, file)
             # Extract text from the PDF

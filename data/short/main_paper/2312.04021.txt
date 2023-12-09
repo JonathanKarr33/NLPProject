@@ -1,0 +1,997 @@
+Introduction
+
+that
+
+Language models
+encompass
+(LMs)
+transformer-based architectures (Brown et al.,
+2020; Chowdhery et al., 2023; OpenAI, 2023) can
+generate coherent and contextually relevant texts
+for various use cases. Despite their impressive
+performance, these models occasionally produce
+erroneous or overconfident outputs, leading to
+concerns about their calibration (Dawid, 1982;
+DeGroot and Fienberg, 1983) which measures how
+faithful a model’s prediction uncertainty is. Such a
+problem is pressing as users adapt them using a
+recent paradigm called in-context learning (Brown
+et al., 2020) to construct performant predictors,
+in safety-critical
+especially for applications
+domains (Bhatt et al., 2021; Kadavath et al., 2022;
+Pan et al., 2023).
+
+We provide an in-depth evaluation and analysis
+
+of how well these models are calibrated - that is,
+the alignment between the model’s confidence in
+its predictions and the actual correctness of those
+predictions. This token-level calibration assess-
+ment will enable us to measure the discrepancy
+between the model’s perceived and actual perfor-
+mance through a Bayesian uncertainty lens, pro-
+viding a valuable metric for assessing the model’s
+accuracy and reliability.
+
+We find that LMs including GPT-2 (Radford
+et al., 2019) and LLaMA (Touvron et al., 2023a)
+are poorly calibrated and there exists a calibration-
+accuracy trade-off (Fig.1), i.e. as we increase the
+amount of in-context samples, the prediction ac-
+curacy and calibration error both increase. Cru-
+cially, this calibration degradation worsens as the
+model size increases or when fine-tuning occurs
+using specialized data, such as curated instructions
+(Dubois et al., 2023), dialogues (Zheng et al., 2023),
+or human preference data (Ziegler et al., 2019).
+Though previous work (Braverman et al., 2020)
+shows the entropy of each generation step is drift-
+ing and can be recalibrated via scaling techniques
+(Platt et al., 1999) such as temperature scaling (Guo
+et al., 2017), we show that the miscalibration issue
+in ICL can not be easily addressed using such well-
+established recalibration approaches that rely on
+additional validation data.
+
+Moreover, we study the trade-off in reasoning
+tasks that involve the generation of explanations
+(Camburu et al., 2018; Nye et al., 2021; Wei et al.,
+2022) before the answer, showing that the model
+can produce confidently wrong answers (using
+confidence histograms and reliability plots) when
+prompted with explanations on Strategy QA (Geva
+et al., 2021), Commonsense QA (Talmor et al.,
+2018), OpenBook QA (Mihaylov et al., 2018),
+World Tree (Jansen et al., 2018). We carefully
+design our human assessment to observe that, with
+the increase in model sizes and the quantity of ICL
+examples, there is a corresponding rise in the pro-
+
+3
+2
+0
+2
+c
+e
+D
+7
+
+]
+L
+C
+.
+s
+c
+[
+
+1
+v
+1
+2
+0
+4
+0
+.
+2
+1
+3
+2
+:
+v
+i
+X
+r
+a
+
+ 
+ 
+ 
+ 
+ 
+ 
+(a) Demonstration of In-context Learning
+
+(b) The accuracy and calibration of LLaMA-30B
+
+Figure 1: The accuracy-calibration trade-off of in-context learning. (a) ICL concerns taking task-specific
+examples as the prompt to adapt a frozen LLM to predict the answer. (b) Classification accuracy and expected
+calibration error of ICL. As the number of ICL samples increases, the prediction accuracy improves (Left); at the
+same time, the calibration gets worse (Right).
+
+portion of confidently predicted examples among
+those incorrectly forecasted. Moreover, we find
+that a high proportion of wrong predictions are of
+high confidence and showcase those typical confi-
+dently wrong examples of LLMs.
+
+In-context learning has been expected to learn
+models by gradient descent in their forward pass
+(Von Oswald et al., 2023), which might hopefully
+yield calibrated predictions (Błasiok et al., 2023)
+if the models are getting close to local optimality
+with respect to test loss through meta-optimization.
+However, the fact that choosing ICL samples from
+the validation set does not naturally lead to cali-
+brated predictions shows that ICL learns in a fairly
+different way than SGD. We design controlled ex-
+periments to illustrate task learning properties of
+ICL, showing that when examples in the prompt
+demonstrate consistent task properties, the learning
+performance, and calibration would be improved.
+
+2 Related Work
+
+Uncertainty quantification in NLP. Uncertainty
+quantification in NLP, which often adopts the
+Bayesian principle to sophisticated methods tai-
+lored for neural networks, aims to enhance the re-
+liability of model predictions. This may involve
+non-trivial designs as directly interpreting language
+model predictions via probabilities (Kadavath et al.,
+2022) and linguistic expressions (Lin et al., 2022;
+Mielke et al., 2022; Zhou et al., 2023) may in-
+advertently lead to over-reliance on the model’s
+uncertainties (Si et al., 2023), thus complicating
+the establishment of trustworthy common ground
+between humans and models (Buçinca et al., 2021).
+Notable recent advancements include employing
+model confidence as a critical factor in various ap-
+plications like dialogue generation (Mielke et al.,
+
+2022), cascading prediction (Schuster et al., 2021),
+open-domain QA (Fisch et al., 2020; Angelopoulos
+et al., 2022), summarization (Laban et al., 2022),
+language modeling (Schuster et al., 2022), image
+captioning (Petryk et al., 2023).
+
+Calibration of LLMs. Calibration is a safety
+property to measure the faithfulness of machine
+learning models’ uncertainty, especially for error-
+prone tasks using LLMs. Previous works find that
+pre-training (Desai and Durrett, 2020) and explana-
+tion (Zhang et al., 2020; González et al., 2021) im-
+proves calibration. Models can be very poorly cali-
+brated when we prompt LMs (Jiang et al., 2021),
+while calibration can also depend on model size
+(Kadavath et al., 2022). (Braverman et al., 2020)
+assesses the long-term dependencies in a language
+model’s generations compared to those of the un-
+derlying language and finds that entropy drifts as
+models such as GPT-2 generate text. The intricacy
+of explanations on complementary team perfor-
+mance poses additional challenges due to the over-
+reliance on explanations of users regardless of their
+correctness (Bansal et al., 2021). (Mielke et al.,
+2022) gives a framework for linguistic calibra-
+tion, a concept that emphasizes the alignment of a
+model’s expressed confidence or doubt with the ac-
+tual accuracy of its responses. The process involves
+annotating generations with <DK>, <LO>, <HI>
+for confidence levels, then training the confidence-
+controlled model by appending the control token
+<DK/LO/HI> at the start of the output, followed
+by training a calibrator to predict these confidence
+levels, and finally predicting confidence when gen-
+erating new examples. (Tian et al., 2023) finds that
+asking LLMs for their probabilities can be better
+than using conditional probabilities in a traditional
+way. (Shih et al., 2023) proposes a simple amor-
+
+Language Model𝒙𝟏:Books were sent to each other by students. 𝒚𝟏:Wrong𝒙𝟐:I went out for dinner. 𝒚𝟐:Correct𝒙𝟑:I know how writing.❄				𝒚𝟑:Wrong012345678Shots405060708090100AccAccDatasetAGNewsSST-2OpenBookQACommonSenseQA012345678Shots0.10.20.30.40.5ECEECEDatasetAGNewsSST-2OpenBookQACommonSenseQAtized inference trick for temperature-scaled sam-
+pling from LMs and diffusion models. To enhance
+the estimation of uncertainty in language models,
+(Kuhn et al., 2023) developed a method that aggre-
+gates log probabilities across semantically equiva-
+lent outputs. This approach utilizes bidirectional
+entailment through a model to identify outputs that
+are semantically similar, thereby refining the un-
+certainty estimation process. (Cole et al., 2023)
+identifies the calibration challenge in ambiguous
+QA and distinguishes uncertainty about the answer
+(epistemic uncertainty) from uncertainty about the
+meaning of the question (denotational uncertainty),
+proposing sampling and self-verification methods.
+(Kamath et al., 2020) trains a calibrator to iden-
+tify inputs on which the QA model errs and ab-
+stains when it predicts an error is likely. (Zhao
+et al., 2023) proposes the Pareto optimal learning
+assessed risk score for calibration and error cor-
+rection but requires additional training. (Kalai and
+Vempala, 2023) shows the trade-off between cal-
+ibration and hallucination but they didn’t study it
+in an ICL setting and how the predicted answer’s
+accuracy would impact those two safety aspects.
+
+3 Background
+
+en
+(cid:125)(cid:124)
+
+Setting. Given a pre-trained language model
+Pθ(wt|w<t), we seek to adapt it using the prompt
+w0 = [x1, y1, x2, y2, . . . , xn−1, yn−1, xn]
+to
+generate a predicted answer yn = Pθ(w0).
+In
+the context of reasoning, a popular approach is
+to hand-craft some explanations/rationales/chain-
+=
+of-thoughts
+the
+[x1, e1, y1, x2, e2, y2, . . . , xn−1, en−1, yn−1, xn]
+to generate explanation en and answer yn, for the
+
+prompt w0
+
+in
+
+e
+
+test sample:
+
+(cid:122)
+(cid:123)
+w1, w2, . . . , wk, yn = Pθ(w0).
+
+We extract token-level answer probabilities of
+LLMs,1 e.g. for binary classification tasks, we filter
+and extract probabilities P (“Yes”) and P (“No”),
+based on which we calculate the following statistics
+for studying the confidence and calibration of LMs:
+Confidence and feature norm. We record the
+maximum probability of the answer token as its
+confidence Conf = Pθ(yn|w<n) and the feature
+norm zn as the hidden states of the answer token
+from the output of the last layer of the model.
+Entropy rate. We denote the entropy of
+a token wt at position t as H(wt|w<t) =
+
+1We also normalize the probability Pθ (yn | w<n) ∈ ∆K
+
+for classification problems with K choices
+
+−Ewt∼Pθ(·|w<t)[log Pθ(wt|w<t)]. We typically
+measure it based on the answer token via setting
+wt = yn. Note that auto-regressive LLMs are
+trained via maximizing the negative log-likelihood
+objective L = −Et[log Pθ (wt|w<t)] on massive
+corpora.
+Empirical estimate of the expected calibration
+error (ECE) In the realm of probabilistic classi-
+fiers, calibration is a crucial concept. A classifier,
+denoted as Pθ with parameters θ and operating over
+C classes, is said to be "canonically calibrated"
+when, for every probability distribution p over the
+C classes and for every label y, the probability that
+the label is y given the classifier’s prediction is p
+matches the component of p corresponding to y.
+This is mathematically represented as:
+
+∀p ∈ ∆C−1, ∀y ∈ Y : P (Y = y | Pθ(X) = p) = py.
+(1)
+Here, ∆C−1 symbolizes the (C − 1)-dimensional
+simplex, which encompasses all potential probabil-
+ity distributions over the C classes.
+
+A simpler calibration criterion is the "top-label
+calibration." In this case, a classifier is deemed cali-
+brated if, for every top predicted probability p∗, the
+probability that the true label belongs to the class
+with the highest predicted probability, given that
+this maximum predicted probability is p∗, equals
+p∗. Formally:
+
+∀p∗ ∈ [0, 1] : P (Y ∈ arg max p | max Pθ(X) = p∗) = p∗.
+(2)
+To gauge the calibration of a model, we adopt
+
+Expected Calibration Error (ECE) defined as:
+
+E [|p∗ − E [Y ∈ arg max Pθ(X) | max Pθ(X) = p∗]|] .
+(3)
+In real-world applications, this quantity cannot
+be computed without quantization. So, the ECE is
+approximated by segmenting predicted confidences
+into M distinct bins, B1, . . . , BM . The approxima-
+tion is then computed as:
+
+(cid:91)ECE =
+
+M
+(cid:88)
+
+m=1
+
+|Bm|
+n
+
+|acc (Bm) − conf (Bm)| .
+
+Here, acc (Bm) is the accuracy within bin Bm,
+and conf (Bm) is the average confidence of pre-
+dictions in bin Bm. The total number of samples
+is represented by n, and the dataset consists of n
+
+(a) 7B
+
+(b) 13B
+
+(c) 30B
+
+Figure 2: Reliability plots of LLaMA models.
+
+Table 1: Accuracy and Calibration of LLaMA-30B model with three sizes across four text classification datasets
+and four reasoning datasets
+
+Dataset
+
+0-shot
+
+1-shot
+
+4-shot
+
+8-shot
+
+Acc
+
+ECE
+
+Acc
+
+ECE
+
+Acc
+
+ECE
+
+Acc
+
+ECE
+
+Text Classification
+
+LLaMA-30B
+
+AGNews
+TREC
+CB
+SST-2
+DBPdia
+
+0.383
+0.651
+0.50
+0.537
+0.363
+
+Strategy QA
+
+0.452
+Commonsense QA 0.354
+0.53
+0.388
+
+World Tree
+OpenBook QA
+
+0.10
+0.392
+0.143
+0.047
+0.287
+
+0.039
+0.143
+0.253
+0.122
+
+0.835
+0.70
+0.696
+0.873
+0.792
+
+0.416
+0.442
+0.409
+0.367
+0.669
+
+0.406
+0.492
+0.383
+0.458
+0.69
+Reasoning with Scratchpad
+
+0.828
+0.76
+0.821
+0.958
+0.83
+
+0.617
+0.613
+0.594
+0.55
+
+0.047
+0.268
+0.276
+0.15
+
+0.679
+0.642
+0.655
+0.641
+
+0.045
+0.279
+0.31
+0.226
+
+0.856
+0.777
+0.798
+0.958
+0.782
+
+0.678
+0.733
+0.24
+0.66
+
+0.425
+0.542
+0.359
+0.458
+0.646
+
+0.088
+0.313
+0.230
+0.246
+
+independent and identically distributed samples,
+{(xi, yi)}n
+i=1. In our work, we use this estimator
+to approximate the ECE.
+
+4 Experimental Results
+
+4.1 Experimental Settings
+
+Models. We study decoder-only autoregressive
+LMs involving GPT-2, LLaMA (Touvron et al.,
+2023a), and their variants fine-tuned with instruc-
+tion, dialog, or RLHF like Alpaca (Dubois et al.,
+2023), Vicuna (Zheng et al., 2023), and LLaMA2-
+Chat (Touvron et al., 2023b).
+
+Datasets and tasks. We used both traditional
+NLU tasks such as AGNews (Zhang et al., 2015),
+TREC (Voorhees and Tice, 2000), CB (Schick and
+Schütze, 2021), SST-2 (Socher et al., 2013), DBPe-
+dia (Zhang et al., 2015), as well as reasoning ques-
+tion answering tasks like Strategy QA (Geva et al.,
+2021), Commonsense QA (Talmor et al., 2018),
+OpenBook QA (Mihaylov et al., 2018), World Tree
+
+(Jansen et al., 2018). Notably, the reasoning task
+performance can be greatly improved in general
+via prompting methods like scratchpad (Nye et al.,
+2021; Wei et al., 2022) that enables models to gen-
+erate natural language explanations before predict-
+ing an answer.
+
+In-context learning settings. We prompt the
+model via sampling k examples from the training
+set for each test example in the k-shot setting. Each
+experiment is repeated 10 times to reduce variance
+and we report the mean results. We use M = 10
+bins for calculating calibration errors.
+
+4.2 Numerical Results
+
+The performance of LLaMA. We seek to char-
+acterize the calibration-accuracy trade-off in both
+simple and realistic settings (Tab. 1). We record
+the performance and calibration errors in both mis-
+calibrated and recalibrated settings. Moreover, we
+take a close look at the prompting approaches that
+explicitly include explanations in reasoning tasks
+
+0.000.250.500.751.00Test AccuracyAcc=0.92  ECE=0.27sst20.00.20.40.60.81.0Model Confidence0.000.250.500.751.00Test AccuracyAcc=0.96  ECE=0.29sst20.00.20.40.60.81.0Model Confidence0.000.250.500.751.00Test AccuracyAcc=0.97  ECE=0.31sst20.00.20.40.60.81.0Model Confidencesuch as scratchpad (Nye et al., 2021) or chain-of-
+thought (Wei et al., 2022), showing that the cali-
+bration degrades after generating a long context for
+reasoning and explaining the final answer.
+
+The effect of temperature scaling. We experi-
+ment with three strategies in applying temperature
+scaling methods (Guo et al., 2017) to fix miscali-
+bration:
+
+1. We learn one temperature for each n-shot ICL,
+i.e., we learn different temperatures for differ-
+ent shot numbers in ICL;
+
+2. Learn a temperature from the training split
+(zero-shot) and apply it to all test samples
+with different shot numbers;
+
+3. For each experiment, we fix the prompt and
+learn the temperature for the fixed prompt.
+That is, for every possible ICL prompt, we
+learn a corresponding temperature for calibra-
+tion.
+
+Looking into Fig. 6, none of the above strate-
+gies achieves satisfactory calibration performance,
+which is in contrast to the well-studied super-
+vised learning setting where scaling the confidence
+scores (via temperature scaling) can effectively re-
+duce calibration errors (Guo et al., 2017). The fact
+that applying a post-processing calibration method,
+such as temperature scaling, as used in most previ-
+ous work, cannot directly resolve the miscalibration
+issue suggests that ICL might have substantially
+different properties compared to making predic-
+tions via classical supervised learning models, thus
+future investigations are needed to address such
+miscalibration issues.
+
+The effect of finetuning. We show that vicuna
+and alpaca are both more accurate but less cali-
+brated than their LLaMA counterpart backbones,
+the margin is especially large for reasoning tasks
+and vicuna. Thus we compare those models’ accu-
+racy and ECE in Fig. 3, showing that finetuning
+might significantly degrade calibration, corrobo-
+rating the evidence shown in (OpenAI, 2023), al-
+beit it can improve the reasoning accuracy dramati-
+cally. Our results provide evidence that though fine-
+tuned on carefully curated datasets can greatly im-
+prove question-answering performance, especially
+for hard tasks like reasoning problems, attention
+may need to be paid when assessing the calibration
+of those models’ predictions.
+
+The accuracy is high for 0-shot ICL but has not
+increased much as we include more in-context ex-
+amples. We also note that the pattern of zero-shot
+performance is totally different for two fine-tuned
+models, i.e. vicuna, and alpaca.
+
+The effect of prompt repetition.
+In our study
+investigating the impact of various prompt strate-
+gies, we employ three distinct approaches: Repeat-
+context: In this strategy, we construct the prompt
+as w0 = [x1, x1, ..., x1, y1], where we repetitively
+include only the context x1 a total of n times,
+excluding the label y1 from repetition. Repeat-
+prompt: Here, we shape the prompt as w0 =
+[x1, y1, ..., x1, y1], repeating both the context x1
+and the label y1 n times within the prompt. Normal:
+In this strategy, we construct the prompt as w0 =
+[x1, y1, x2, y2, ..., xn−1, yn−1, xn, yn], where dis-
+tinct context-label pairs are systematically chosen
+to form the prompt. The results presented in Ta-
+ble 3 unveil essential insights: (1) The inclusion of
+labels within the prompt contributes to a reduction
+in uncertainty and facilitates more effective rea-
+soning. Conversely, merely repeating the context
+without incorporating labels fails to yield improved
+performance. (2) Notably, the diversity inherent in
+the prompt’s construction significantly impacts per-
+formance, particularly concerning larger language
+models.
+
+4.3 Qualitative Results
+
+Reliability diagram and confidence histogram.
+A reliability diagram is a graphical tool used to
+evaluate the calibration of probabilistic predictions
+of a model across multiple classes; it compares
+the predicted probabilities of each class against
+the actual outcomes, with a perfectly calibrated
+model having its values lie on the diagonal y = x
+line. A confidence histogram, on the other hand,
+displays the distribution of the model’s prediction
+confidences across all classes, showing how often
+the model predicts certain probabilities.
+
+We showcase that in SST-2 (4-shot), showing
+that both ACC and ECE of LLaMA increase as the
+model size increases (Fig. 2). We can observe that
+confidence scores tend to concentrate on values
+above 0.8 as we enlarge model sizes.
+
+4.4 Ablation Studies
+
+For case studies, we research how miscalibration
+can impact the selective classification of LLMs,
+where models are supposed to abstain from uncer-
+
+Table 2: Norm of representation, entropy, and confidence of LLaMA-30B model across three text classification
+datasets.
+
+Dataset
+
+AGNews
+CB
+DBPdia
+
+Norm
+
+LLaMA-30B
+Entropy
+
+Confidence
+
+0-shot
+78.8
+88.4
+77.9
+
+1-shot
+92.3
+91.7
+89.5
+
+4-shot
+92.1
+89.2
+91.0
+
+8-shot
+92.2
+87.9
+90.1
+
+0-shot
+3.920
+3.857
+4.105
+
+1-shot
+0.650
+1.266
+1.438
+
+4-shot
+0.595
+0.935
+0.848
+
+8-shot
+0.444
+0.823
+0.718
+
+0-shot
+0.214
+0.193
+0.078
+
+1-shot
+0.821
+0.566
+0.578
+
+4-shot
+0.819
+0.629
+0.705
+
+8-shot
+0.865
+0.577
+0.671
+
+(a) Classification Accuracy
+
+(b) Calibration error
+
+Figure 3: Accuracy and calibration errors of LLaMA and its finetuned variants.
+
+tain predictions in high-stakes settings.
+Ablation with model sizes. As we enlarge the sizes
+of models, they will become more confident and
+accurate (Fig. 2). As a result, the entropy decreases
+and ECE increases, showing that token-level cali-
+bration might have an inverse scaling relationship
+with model sizes.
+A closer look at the hidden state and confidence
+score. To better understand the miscalibration is-
+sue of ICL, we conduct fined-grained experiments
+to take a closer look at ICL properties: we measure
+the norm of the representation vectors2 for differ-
+ent number of shots in ICL, to better understand
+how the representation vectors are changing when
+increasing the number of shots in ICL. Meanwhile,
+we also measure the confidence and entropy of the
+prediction for yn, and the results are summarized
+in Table 2. When switching from 0-shot to 1-shot,
+all three measurements (representation norm, en-
+tropy, and confidecent) drastically change. Mean-
+while, more ICL samples lead to smaller entropy
+and higher confidence in most cases.
+Confidence and wrongly classified reasoning ex-
+amples. To take a closer look at the failure modes
+of LMs, we randomly sample 100 reasoning exam-
+
+2The representation vector refers to the intermediate output
+
+before the linear prediction layer.
+
+ples of LLaMA and plot the distribution of wrongly
+predicted samples and the confidence scores via
+thresholding. Similar to previous observations, as
+model sizes and the number of ICL examples scale
+up, LMs would generate more confident samples
+(Fig. 4 (c, d)). Note, that we observe "inverse
+scaling" behaviors where models with larger sizes
+are more error-prone and tend to generate more
+confidently wrong samples (Fig, 5).
+Examples of hallucinated explanations for
+highly confident predictions. Next, we showcase
+in Table 4 that models generate both wrong expla-
+nations and incorrect predictions with high confi-
+dence. We also observe that most of the wrong
+predictions are highly confident. We manually ex-
+amine the correctness of explanations on common-
+sense QA, and found its high correlations with pre-
+dicted answer accuracy, which is the opposite of
+token-level explainability that tends to get worse
+when the accuracy improves.
+
+5 Discussion and Concluding Remarks
+
+In our investigation of the token-level calibration
+of in-context learning in contemporary Large Lan-
+guage Models (LLMs), we have delineated the in-
+tricate balance between ICL performance and cali-
+bration. Our findings underscore the importance of
+
+AGNewsTRECC BSST-2DBPdiaStrategicQACommonseQAOpenBookQAWorldTreeDataset0.00.20.40.60.8AccLLaMAVicunaAlpacaLLaMA2-ChatAGNewsTRECC BSST-2DBPdiaStrategicQACommonseQAOpenBookQAWorldTreeDataset0.00.10.20.30.40.50.6ECELLaMAVicunaAlpacaLLaMA2-Chat(a) 0-shot
+
+(b) 1-shot
+
+(c) 4-shot
+
+(d) 8-shot
+
+Figure 4: Illustration of confidence distribution: The number of samples whose confidence is greater than a
+threshold on Commonsense QA.
+
+(a) 0-shot
+
+(b) 1-shot
+
+(c) 4-shot
+
+(d) 8-shot
+
+Figure 5: The number of wrongly classified examples whose confidence is above a threshold with different numbers
+of shots on Commonsense QA.
+
+being circumspect in model deployment, as maxi-
+mizing ICL performance does not invariably trans-
+late to improved calibration. As LMs continue to
+evolve and gain more capabilities such as having
+long enough context windows that can include the
+whole training set as in-context examples for some
+downstream tasks, our result can be pedagogical
+when users would like to examine their uncertainty
+through prediction probabilities. Moreover, the
+work suggests the following future directions:
+
+Understanding the internal mechanism of ICL
+for calibration.
+In this work, we observe that ex-
+isting scaling recalibration methods cannot fully re-
+solve the miscalibration issues of ICL, so better un-
+derstanding and mitigation strategies are needed. A
+potential approach can be leveraging transparency
+tools and studying whether predictable errors exist
+during text generation.
+Calibration beyond classification regimes. Our
+findings indicate that in multi-choice or multi-class
+classification tasks, even though the calibration of
+answer tokens may deteriorate in high-performance
+settings, there may be a positive correlation be-
+tween accuracy and the correctness of explanations
+in reasoning tasks. This suggests potential avenues
+for future research such as exploring strategies such
+as the use of hedging words to express uncertainty
+and examining their relationship with predictive
+performance.
+
+Figure 6: The comparison of calibration errors before
+and after applying different recalibration strategies.
+
+0.20.40.60.81.0020406080100# samples p(y|x)Model Size7B13B30B0.20.40.60.81.0020406080100# samples p(y|x)Model Size7B13B30B0.20.40.60.81.020406080100# samples p(y|x)Model Size7B13B30B0.20.40.60.81.020406080100# samples p(y|x)Model Size7B13B30B0.20.40.60.81.0020406080# samples p(y|x)Model Size7B13B30B0.20.40.60.81.00204060# samples p(y|x)Model Size7B13B30B0.20.40.60.81.00204060# samples p(y|x)Model Size7B13B30B0.20.40.60.81.00204060# samples p(y|x)Model Size7B13B30B0.00.1ECEAgnewsModelBeforeAfter0.000.050.10ECEC BModelBeforeAfter0.00.20.4ECEDBPdiaModelBeforeAfter0.00.10.2ECESST-2ModelBeforeAfterEachAllFixedType0.000.050.10ECETRECModelBeforeAfterTable 3: Accuracy and Calibration of LLaMA-7B model and GPT-2 with different prompt repetition strategies.
+
+Model
+
+Strategy
+
+1-shot
+
+4-shot
+
+8-shot
+
+AVG ACC AVG ECE
+
+LLaMA-7B
+
+GPT-2
+
+Repeat-context
+Repeat-Prompt
+Normal
+
+Repeat-context
+Repeat-Prompt
+Normal
+
+Acc
+78.200
+78.200
+78.200
+
+65.970
+65.970
+65.970
+
+ECE
+0.281
+0.281
+0.281
+
+0.287
+0.287
+0.287
+
+Acc
+78.370
+89.470
+95.200
+
+55.300
+62.500
+63.030
+
+ECE
+0.283
+0.395
+0.452
+
+0.230
+0.147
+0.212
+
+Acc
+77.470
+90.330
+96.130
+
+54.330
+57.970
+56.270
+
+ECE
+0.274
+0.403
+0.462
+
+0.230
+0.176
+0.220
+
+78.013
+86.000
+89.843
+
+58.533
+62.147
+61.757
+
+0.279
+0.360
+0.398
+
+0.249
+0.204
+0.240
+
+Table 4: Qualitative Results of LLaMA on Commonsense and OpenBook
+
+Dataset
+
+Commonsense
+
+Open Book
+
+Case Reasoning
+
+p
+Question: What would you do if you have curiosity but are blind and paralyzed?
+Options: A) hear news, B) analyse, C) go somewhere, D) examine thing, E) see favorite show
+Ground Truth: B
+
+ˆy
+
+7B
+
+If you have curiosity but are blind and paralyzed, you would
+go somewhere to see things. You cannot hear news, analyse,
+go somewhere, examine thing or see favorite show.
+
+13B If you are blind and paralyzed, you can’t see anything. So, you
+can’t go somewhere. You can’t examine thing. You can’t see
+favorite show. You can’t analyse. So, you can hear news.
+
+C
+
+A
+
+0.5046
+
+0.8684
+
+30B If you are blind and paralyzed, you cannot see your favorite
+show. You cannot hear news as you are blind. You cannot
+examine thing as you are paralyzed. You can go somewhere to
+see things.
+Question: What would you do if you have curiosity but are blind and paralyzed?
+Options: A) hear news, B) analyse, C) go somewhere, D) examine thing, E) see favorite show
+Ground Truth: B
+A girl and her mom have the same hair length.
+
+0.9720
+
+C
+
+7B
+13B A girl and her mom have the same date of birth.
+30B A girl and her mom have the same genes.
+
+D
+A
+A
+
+0.6365
+0.9782
+0.9831
+
+Acknowledgment
+
+We thank Jean-Stanislas Denain for valuable feed-
+back. Kempner Institute computing resources en-
+abled this work.
+

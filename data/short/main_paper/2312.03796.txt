@@ -1,0 +1,468 @@
+INTRODUCTION
+
+Multi-modal biomedical time series (MBTS) data have been widely
+used for various bio-medical applications, such as combining photo-
+plethysmogram (PPG) and blood oxygen level (SpO2)[1] to jointly
+predict sleep apnea-hypopnea syndrome (OSAHS).
+
+Deep learning (DL) models especially temporal convolution net-
+works (TCN)[2][3] are widely used for MBTS data mining due to
+their good performance and low resource consumption, which uses
+dilated causal convolutions to capture long-term temporal depen-
+dency. To better capture extract multi-scale patterns (MS) in MBTS,
+MS extraction methods[4][5][6] are designed. Besides, to learn use-
+ful representations from MBTS, contrastive learning[3][7][8] is also
+often used.
+
+However, the performance of existing models is limited due to
+the ignorance of the distribution gap across modalities and under-
+fitted MS feature extraction modules. Hence, to further improve
+
+the performance, this paper presents a multi-scale and multi-modal
+biomedical time series contrastive learning (MBSL) network which
+includes the following main parts. 1) Inter-modal grouping tech-
+nique to address distribution gap across modalities. The ampli-
+tude range of MBTS, which may vary significantly across modal-
+ities, is unbounded. For example, SpO2 values usually vary from
+70% to 100%, while the acceleration values vary from 0 to 1000
+cm/s2. MBTS also features diverse structured patterns, such as the
+seasonally dominant PPG and trend dominant SpO2, suited for fre-
+quency and time domain modeling respectively[9]. Therefore, the
+commonly used parameter-sharing encoder for all modalities[3][8]
+may limit the capability of the encoders to represent different modal-
+ities. An intuitive approach is to customize a specific encoder for
+each modality to extract heterogeneous features, but this approach
+would be inefficient and lack robustness[10]. To achieve a more ca-
+pable and robust model, inter-modal grouping (IMG) is proposed
+to group MBTS into different groups with minimum intra-model
+distances, thus data in the same group manifest similar distribu-
+tions, which is simple to represent with a shared encoder. Then
+distinct encoders are trained for each group to handle multi-modal
+data distribution gaps. 2) A lightweight multi-scale data trans-
+formation using multi-scale patching and multi-scale masking.
+Most MS extraction algorithms primarily rely on multi-branch con-
+volution utilizing receptive fields of varying scales[5][6]. However,
+it quadratically increases the memory and computing requirements.
+Some works like MCNN[4] use down-sampling to generate multi-
+scale data, but it would lose considerable useful information. This
+paper proposes a lightweight multi-scale data transformation using
+multi-scale patching and multi-scale masking, where different patch
+lengths are defined to obtain input tokens with semantically mean-
+ingful information at different resolutions, and the different mask
+ratios are adaptively defined according to the scale of features to be
+extracted. 3) Cross-modal contrastive learning. Inappropriate data
+augmentation can alter the intrinsic properties of MBTS, leading to
+the formation of false positive pairs. This issue causes many time
+series contrastive learning models to encode invariances that might
+not align with the requirements of downstream tasks.[11] For in-
+stance, excessive masking risks obscuring physiologically informa-
+tive sub-segments. To construct more reasonable contrastive pairs,
+cross-modal contrastive learning is utilized to learn modal-invariant
+representations that capture information shared among modalities.
+The intuition behind the idea is that different modalities commonly
+reflect the physiological state so the modal-invariant semantic is use-
+ful information for BMA. The contributions are summarized as fol-
+lows:
+
+* Hao Wu is the correspondence author.
+© 20XX IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future
+media, including reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or
+redistribution to servers or lists, or reuse of any copyrighted component of this work in other works
+
+ 
+ 
+ 
+ 
+ 
+ 
+Fig. 1. MBSL architecture. (a) Inter-modal grouping; (b) Multi-scale Temporal Dependency Extraction; (c) Cross-modal Contrasting. xi
+represents the i-th input series, v1
+
+i represents the raw data and embedding of the first group of the i-th sample, respectively.
+
+i , and h1
+
+1. We propose multi-scale patching and multi-scale masking for
+extracting features at various resolutions and adaptively en-
+hancing the capacity of the model, respectively.
+
+2. We propose inter-modal grouping to process multi-modal
+data and use cross-modal contrastive learning for effective
+positive pairs construction and multi-modal data fusion.
+3. Our model outperforms state-of-the-art (SOTA) methods
+
+across four datasets.
+
+2. METHOD
+
+The overall MBSL architecture, illustrated in Fig. 1, includes IMG,
+multi-scale temporal dependency extraction (MTDE), and cross-
+modal contrastive loss, briefly described below.
+
+2.1. Inter-modal Grouping
+
+As mentioned before, the distribution gap severely impairs the gen-
+eralization ability of the network.
+IMG is utilized to address this
+challenge. Intuitively, MBTS is divided into distinct grouped modal-
+ities based on their inter-modal distances. Modalities within each
+group exhibit similar distributions. Independent encoders are used
+to model different grouped modalities, respectively. Our approach
+aligns with the intuition that similar data should be processed simi-
+larly.
+
+.
+
+.
+
+In detail, we consider a set of M modalities of the data, repre-
+sented as X1, .
+, XM . Each modality is first dimensionally
+reduced using t-SNE, and then the inter-modal distance is calculated
+through the Euclidean distance. K group modalities v1, .
+, vK
+will be obtained. Within a group, the minimum distance between
+any modality Xi and other modalities Xj (i ̸= j ) needs to be less
+than a threshold I:
+
+.
+
+.
+
+Di = argmin {d(Xi, Xj}g
+
+j=1 < I
+
+(1)
+
+where g is the number of modalities within a group. K group-specific
+encoders will be used for the K-grouped modalities.
+
+2.2. Improved multi-scale Temporal Dependency Extraction
+
+Recently, TCN has been proven to be a highly effective network ar-
+chitecture for BMA. However, real-world MBTS is very complex,
+a unified receptive field (RF) within each layer of TCN is often not
+powerful enough to capture the intricate temporal dynamics. What’s
+more, the effective RFs of the input layers are limited, causing tem-
+poral relation loss during feature extraction. To adaptively learn a
+more comprehensive representation, we designed an MTDE mod-
+ule, which uses MS data transformation (patching and masking) and
+MS feature extraction encoder.
+
+2.2.1. Multi-scale patching and Multi-scale Masking
+
+Multi-scale patching Different lengths of patches are used to trans-
+form the time series from independent points to tokens with semantic
+information within adaptive subseries, allowing the model to capture
+features of different scales. In particular, by aggregating more sam-
+ples, long-term dependence with less bias can be obtained instead of
+short-term impact. Simultaneously, patching can efficiently alleviate
+the computational burden caused by the explosive increase in mul-
+tiple TCN branches by reducing the sequence length from L to L
+P ,
+where P is the patch length.
+
+Multi-scale Masking Masking random timestamps helps im-
+prove the robustness of learned representations by forcing each
+timestamp to reconstruct itself in distinct contexts, which can be
+formulated as xmaski = xi ∗ m, where m ∈ 0, 1. Commonly,
+the ratio of masked samples to the whole series, denoted as MR is
+set to be small to avoid distortion of original data. However, as to
+different scales of features, the optimized MR is adaptive based on
+the experimental results. For instance, for coarser-grained features,
+larger MR is preferred so that ample semantic information can still
+be retained while introducing strong variances,
+thereby enhanc-
+ing the robustness. Hence, different MRs are selected to adapt to
+multi-scale features.
+
+Table 1. Results of RR detection. W represents the length of the sig-
+nal. The best results are in bold and the second best are underlined.
+
+Methods
+TFC[8]
+TS2Vec[3]
+TimeMAE[12]
+RespNet[13]
+RRWAVE[6]
+Ours
+
+MAE (W=16) MAE (W=32) MAE (W=64)
+4.54 ± 3.65
+2.96 ± 3.19
+4.16 ± 3.31
+2.34 ± 3.01
+2.56 ± 2.93
+3.27 ±3.35
+1.60 ± 1.49
+1.82 ± 1.22
+2.02 ± 1.97
+2.06 ± 1.25
+2.07 ± 0.98
+2.45 ± 0.69
+1.80 ± 0.95
+1.66 ± 1.01
+1.62 ± 0.86
+0.91 ± 0.81
+1.13 ± 0.95
+1.28 ± 0.84
+
+Table 2. Results of exercise HR detection. The best results are in
+bold and the second best are underlined.
+
+Methods
+TFC[8]
+TS2Vec[3]
+TimeMAE[12]
+TST[14]
+InceptionTime[5]
+Ours
+
+RMSE
+31.1
+31.2
+30.9
+25.0
+23.9
+20.6
+
+3. EXPERIMENTAL RESULT
+
+3.1. Experimental Setup
+
+The size of the hidden layers and output layer is 32 and 64 respec-
+tively. The mask ratio, MR is 0.05, 0.1, and 0.15 and the patch
+length is 0.04 ∗ f s, 0.08 ∗ f s, and 0.16 ∗ f s for small, middle, and
+large scales, respectively, where f s is the sample rate of the dataset.
+The temperature τ of the contrastive learning is 0.1. The model is
+optimized using Adam with a batch size of 480 and a learning rate
+of 0.002.
+
+3.2. Results
+
+The proposed MBSL is applied to MBTS datasets in two major prac-
+tical tasks including regression and classification. The two latest
+contrastive learning works, i.e. TFC[8]and TS2Vec[3], and one lat-
+est non-contrastive self-supervised learning work TimeMAE[12] are
+used as baseline models, and we also compare them with SOTA un-
+der the corresponding datasets. The t-SNE visualization of these
+datasets is shown in Fig. 2, which shows that there is a significant
+distribution gap between different modalities.
+
+3.2.1. MBTS regression
+
+We evaluate MBSL on open-source time series regression datasets:
+Respiratory rate (RR) detection[15], providing 53 8-minute PPG
+data segment (125 HZ) recordings, and exercise heart rate (HR)
+detection[16], including 3196 2-channel PPG and 3-axis accelera-
+tion sampled at a frequency of 125Hz.
+
+Evaluation method: 1) RR The PPG signal and its Fourier
+transform in frequency domain signal are used as multivariate bi-
+ological time series. Leave-one-out cross-validation is applied and
+the preprocessing method follows [6]. The average mean absolute
+error (MAE) and the standard deviation (SD) across all patients are
+used to evaluate the performance of the model [6].
+
+Fig. 2. Distribution gap in multi-modal biomedical time series. Dif-
+ferent colors represent different modalities in that dataset.
+
+2.2.2. Multi-scale feature extraction encoder
+
+After MS data transformation, sketches of a time series at different
+scales are generated. Then MS time series pass through parallel TCN
+encoders with different kernel sizes and layers and then concatenated
+at the end. Average pooling is used to align sequence lengths to
+uniform lengths.
+
+2.3. Cross-modal Contrastive Loss
+
+Previous research on contrastive representation learning mainly
+In
+tackled the problem of faulty positive pairs and noise in data.
+the process of generating positive pairs by data augmentation, in-
+correct positive samples are also introduced, leading to suboptimal
+performance.
+
+In this work, the same segments from different modalities are
+chosen as positive pairs instead of generating them by data augmen-
+tation, thus avoiding the risk of introducing faulty positive pairs. Be-
+sides, this is beneficial to learn the semantic information shared by
+modalities because signals from different modalities of the same seg-
+ments can intuitively reflect the subject’s physiological state. Hence,
+during reducing the loss of contrastive learning, effective informa-
+tion among different modalities of the same segment will be max-
+imized while redundant information across different segments will
+be ignored.
+
+In particular, we consider all grouped modality pairs (i, j), i ̸= j,
+
+and optimize the sum of a set of pair-wise contrastive losses:
+
+LCM =
+
+(cid:88)
+
+LVi,Vj
+
+0<i<j≤M
+
+LV1,V2 = − log
+
+exp (cid:0)sim (cid:0)h1
+i , h2
+i
+⊮k̸=i exp (sim (hi, hk) /τ )
+
+(cid:1) /τ (cid:1)
+
+(cid:80)N
+
+k=1
+
+(2)
+
+(3)
+
+where h1
+i , h2
+i
+
+i is the embedding of the first group of the i-th sample,
+(cid:13)
+(cid:1) = h1
+sim (cid:0)h1
+(cid:13), ⊮k̸=i in 0,1 is an indicator func-
+tion evaluating to 1 if k ̸= i and τ denotes a temperature parameter,
+N represents the size of batch size.
+
+i / (cid:13)
+
+(cid:13)
+(cid:13)h2
+i
+
+(cid:13)h1
+i
+
+i h2
+
+(cid:13)
+(cid:13)
+
+Table 3. Result of HAR and OSAHS. The best results are in bold
+and the second best are underlined.
+
+Methods
+TFC[8]
+TS2Vec[3]
+
+HAR
+Acc AUPRC
+90.22
+90.57
+TimeMAE[12] 95.10
+94.05
+94.63
+96.51
+
+COT[21]
+BTSF[11]
+Ours
+
+0.95
+0.85
+0.99
+/
+0.99
+0.99
+
+OSAHS
+F1
+
+Methods
+TFC[8]
+TS2Vec[3]
+
+Acc
+Re
+62.30 57.76 82.38
+60.57 55.40 81.82
+TimeMAE[12] 74.41 75.43 86.01
+75.70 76.54 87.62
+76.20 76.49 87.92
+77.34 78.67 88.38
+
+ConCAD[7]
+U-Sleep[1]
+Ours
+
+Table 4. Ablation Experiments on Exercise Heart Rate Dataset.
+
+MBSL
+
+RMSE MAE
+15.3
+20.6
+
+Inter-modal grouping
+
+w/o IMG
+Random Grouping
+Full Grouping
+
+25.5
+24.0
+25.9
+
+20.7
+24.0
+21.9
+
+Multi-scale temporal dependency extraction
+
+w/o multi-scale masking
+Three moderate mask ratios
+w/o multi-scale patching
+Three moderate patch lengths
+MTDE—>TCN
+
+21.9
+21.3
+24.1
+23.6
+32.5
+
+Cross-modal contrastive loss
+
+Supervised learning
+Cross-modal contrastive loss
+—> instance contrastive objective
+
+22.2
+
+22.4
+
+15.9
+16.0
+18.5
+18.1
+26.0
+
+16.3
+
+16.2
+
+confirming that our grouped MI approach is effective and general.
+MTDE. Without patching and masking, MS feature extraction is
+limited, leading to poor performance. Using moderate mask ratios
+(0.1) and patch lengths (10) also reduces effectiveness, highlighting
+the need for varied data transformations for different scale feature
+extraction. Surprisingly, substituting MTDE with TCN results in a
+significant performance drop. Cross-modal contrastive loss. Elim-
+inating or replacing this loss with standard instance contrastive loss
+leads to reduced model performance, underscoring the effectiveness
+of the cross-modal contrastive loss.
+
+4. 

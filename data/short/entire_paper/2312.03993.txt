@@ -1,0 +1,623 @@
+STYLE TRANSFER USING STABLE DIFFUSION
+
+Sloke Shrestha, Sundar Sripada V. S., Asvin Venkataramanan
+
+The University of Texas at Austin
+
+3
+2
+0
+2
+c
+e
+D
+7
+
+]
+
+V
+C
+.
+s
+c
+[
+
+1
+v
+3
+9
+9
+3
+0
+.
+2
+1
+3
+2
+:
+v
+i
+X
+r
+a
+
+ABSTRACT
+
+This project report summarizes our journey to perform sta-
+ble diffusion fine-tuning on a dataset containing Calvin and
+Hobbes comics. The purpose is to convert any given input
+image into the comic style of Calvin and Hobbes, essentially
+performing style transfer. We train stable-diffusion-v1.5 us-
+ing Low Rank Adaptation (LoRA) to efficiently speed up the
+fine-tuning process. The diffusion itself is handled by a Vari-
+ational Autoencoder (VAE), which is a U-net. Our results
+were visually appealing for the amount of training time and
+the quality of input data that went into training.
+
+Index Terms— Diffusion, Style Transfer, Low Rank
+
+Adaptation
+
+1. INTRODUCTION
+
+In the realm of artistic expression and cultural preservation,
+the desire to revitalize a timeless treasure such as Calvin and
+Hobbes comics has fueled our motivation to seamlessly blend
+nostalgia with modern techniques. This endeavor not only
+aims to breathe new life into the beloved comic strips but also
+stands as a testament to the ongoing exploration of advanced
+machine learning approaches.
+
+One such avenue of exploration is the utilization of stable
+diffusion fine-tuning, a cutting-edge process that holds the
+promise of achieving a delicate balance between preserving
+the essence of the original artwork and infusing it with con-
+temporary flair. By undertaking this project, we endeavor to
+unravel the intricacies of stable diffusion fine-tuning, delving
+into its nuances to better comprehend its potential applica-
+tions in the domain of artistic style transfer.
+
+Amidst a myriad of deep learning based style transfer ap-
+proaches, we chose stable diffusion as our preferred method
+due to its unique ability to synthesize artistic styles. The deci-
+sion to leverage LoRA (Low-Rank Adaptive) for fine-tuning
+plays a pivotal role in optimizing the training process. LoRA
+enables a significant acceleration in training speed, unlocking
+the potential for a more streamlined and effective convergence
+towards the desired style transfer outcomes. LoRA combined
+with the underlying diffusion model offers a compelling solu-
+tion to revitalize Calvin and Hobbes comics.
+
+In summary, this report submitted for the 2023 edition of
+ECE371Q Digital Image Processing by Dr. Bovik describes
+
+Fig. 1: Left Input images of Jay Hartzell, Alan Bovik, and the UT
+Austin mascot Bevo. Right Results of our fine-tuned stable diffusion
+model performing style transfer on these images into the Calvin and
+Hobbes comics style.
+
+our attempt at learning how to perform fine-tuning of stable
+diffusion models and revitalize Calvin and Hobbes comics
+along the way.
+
+2. DATASET PREPARATION
+
+To create the dataset for the fine-tuning process, we down-
+loaded 11 Volumes of the Calvin and Hobbes comics from the
+Internet Archive. These PDF documents were available free
+of copyright. We then extracted pages from these documents.
+Pages from the beginning and the end with the foreward and
+publishing details were discarded since we wanted to focus
+on images with the original comic strips.
+
+ 
+ 
+ 
+ 
+ 
+ 
+2.1. Black and White Pages
+
+The original Calvin and Hobbes comic strips were syndi-
+cated and published in newspapers worldwide every day for
+10 years from 1985 to 1995. The comic strips published from
+Monday to Saturday were in black and white and consisted of
+four panels in a single row. The comics published on Sundays
+had 3 rows of images all in color.
+
+We separated the pages based on color by using simple
+image processing techniques. The black and white pages
+are ”nearly” binary images as the pixels are clustered in two
+modes around 3 and 250 in grayscale values. We use this fact
+to sort the images. If IR, IG, IB represent the red, green and
+blue channels of the input image respectively, we analyze the
+pixelwise difference between two consecutive channels, i.e.
+abs(IR − IG) and abs(IG − IB). The black and white images
+have a max absolute channel-wise difference of 10 while this
+does not hold true for color images as the red, green and blue
+channels encode different intensities.
+
+Once we sort the pages based on color, we decided to work
+solely with black and white comic strips sunce we had nearly
+twice as many samples for black and white as we had for col-
+ored ones. Another motivation for this choise was the fact
+that the weekday black and white comic strips tend to follow
+a consistent and reliable four panel structure that allows us to
+easily extract panels of the same size. The weekend colored
+comic strips tend to be more artistic and do not follow the
+same sizes for each panel and thus pose a lot of variation in
+the dataset.
+
+2.2. Panel Extraction
+
+To extract panels from the black and white images, we used
+simple coordinate-based cropping techniques. Each page fea-
+tures two rows of comic strips and each comic strip contains
+4 panels. We started with 11 Volumes and approximately 166
+pages in each volume. Considering we discard a third of the
+pages because they are in color, we expected approximately
+11 ∗ 166 ∗ 2/3 ∗ 2 ∗ 4 = 9738 panels. Due to variation in num-
+ber of pages between the volumes, we ended up with 11,033
+black and white panels of the same size.
+
+2.3. Text Captions
+
+To create a dataset for fine-tuning diffusion models, each im-
+age in the dataset needs a meaningful accompanying text cap-
+tion. Since these images were manually generated, they were
+missing any alt-text captions.
+
+We explored the idea of using the multi-modal vision-
+language framework BLIP2 [1], capable of answering ques-
+tions based on any input image, to generate captions for our
+input panels. However, the generated captions were unsatis-
+factory.
+
+Another approach we tried was to use the multi-modal
+GPT-4 [2] that can accept image and text inputs to generate
+
+Fig. 2: The Markov chain of forward (reverse) diffusion process of
+generating a sample by slowly adding (removing) noise.
+
+text outputs. This service provided high quality accurate cap-
+tions for our image panels. However, GPT-4, being a paid
+service, proved infeasible too.
+
+Finally, we settled with using the same caption for all im-
+ages. Although this is not an ideal choice, we expected the
+diffusion model to generalize sufficiently owing to the large
+dataset size. We used the synthetic keyword ”CNH3000” to
+avoid any potential clashes with existing text prompts that the
+diffusion model is already familiar with.
+
+3. METHODOLOGY
+
+As described in Section 1, we use a denoising diffusion
+probabilistic model [3] to perform a style transfer operation.
+Specifically, we use the open-source model Stable Diffusion
+v1.5 [4] from RunwayML. To fine-tune this large model effi-
+ciently, we use a training technique developed by Microsoft
+Research called LoRA [5] which stands for Low Rank Adap-
+tation. More about the network and the training procedure in
+the following two subsections.
+
+3.1. Network
+
+The Stable Diffusion Model v1.5 consists of many pieces.
+(Describe all that here)
+
+3.1.1. Forward Diffusion Process
+
+Given a data point sampled from a real data distribution x0 ∼
+q(x), let us define a forward diffusion process in which we
+add small amount of Gaussian noise to the sample in steps,
+producing a sequence of noisy samples. The step sizes are
+controlled by a variance schedule βt ∈ (0, 1)T
+1 − βtxt−1, βtI(cid:1)
+
+q (xt | xt−1) = N (cid:0)xt;
+t=1 q (xt | xt−1).
+The data sample x0 gradually loses its distinguishable fea-
+tures as the step t becomes larger. Eventually when T →
+∞, xT is equivalent to an isotropic Gaussian distribution.
+
+t=1.
+
+(cid:81)T
+
+√
+
+q (x1:T | x0) =
+
+3.1.2. Reverse Diffusion Process
+
+If we can reverse the above process and sample from
+q(xt−1|xt), we will be able to recreate the true sample from a
+
+Fig. 3: An example of training a diffusion model for modeling a 2D
+swiss roll data.
+
+Fig. 4: Stable diffusion uses CLIP for jointly training an im-
+age encoder and a text encoder to predict the correct pairings of
+image, text
+
+Gaussian noise input, xT ∼ N (0, I). Note that if βt is small
+enough, q(xt−1|xt) will also be Gaussian. Unfortunately, we
+cannot easily estimate q(xt−1|xt) because it needs to use the
+entire dataset and therefore we need to learn a model p0 to
+approximate these conditional probabilities in order to run the
+reverse diffusion process.
+pθ (x0:T ) = p (xT ) (cid:81)T
+
+t=1 pθ (xt−1 | xt)
+
+pθ (xt−1 | xt) =
+
+N (xt−1; µθ (xt, t) , Σθ (xt, t))
+
+Fig. 5: The architecture of latent diffusion model.
+
+Latent diffusion model [4] runs the diffusion process in the
+latent space instead of pixel space, making training cost lower
+and inference speed faster. It is motivated by the observation
+that most bits of an image contribute to perceptual details and
+the semantic and conceptual composition still remains after
+aggressive compression. LDM loosely decomposes the per-
+ceptual compression and semantic compression with genera-
+tive modeling learning by first trimming off pixel-level redun-
+dancy with autoencoder and then manipulate/generate seman-
+tic concepts with diffusion process on learned latent.
+
+The perceptual compression process relies on an autoen-
+coder model. An encoder E is used to compress the input im-
+age x ∈ RH×W ×3 to a smaller 2D latent vector z = E(x) ∈
+Rh×w×c, where the downsampling rate f = H/h = W/w =
+2m, m ∈ N. Then an decoder D reconstructs the images from
+the latent vector, xx = D(z).
+
+The diffusion and denoising processes happen on the latent
+vector z. The denoising model is a time-conditioned U-Net,
+augmented with the cross-attention mechanism to handle flex-
+ible conditioning information for image generation (e.g. class
+labels, semantic maps, blurred variants of an image). The de-
+sign is equivalent to fuse representation of different modality
+into the model with cross-attention mechanism. Each type
+of conditioning information is paired with a domain-specific
+encoder τθ to project the conditioning input y to an interme-
+diate representation that can be mapped into cross-attention
+component, τθ(y) ∈ RM ×dτ .
+
+3.2. Text and Image Encoding
+
+3.3. Training
+
+For text conditioning, we use Contrastive Language-Image
+Pre-training (CLIP) [6]. CLIP embeds text and image in the
+same space via a projection layer. Thus, it can efficiently learn
+visual concepts, in the form of text, via natural language su-
+pervision and perform zero-shot classification (Figure 4)
+
+In the pre-training stage, the image and text encoders are
+trained to predict which images are paired with which texts
+in a dataset of 400M image-caption pairs. CLIP is trained to
+maximize the cosine similarity of the image and text embed-
+dings of image-caption pairs via a multi-modal embedding
+space.
+
+We use a training method called Low Rank Adaptation
+(LoRA) [5] to fine-tune the diffusion model. LoRA is a tech-
+nique proposed by researchers at Microsoft Research to fine-
+tune Large Language Models. Other researchers have found
+that this method can be successfully adapted to diffusion mod-
+els as well.
+In this technique, weight matrices in existing
+layers, typically attention layers, are fine-tuned to a specific
+dataset by adding update matrices. These update matrices are
+further decomposed as a product of two matrices of lower-
+rank. During the fine-tuning process, the original weights are
+frozen and the weights in the update matrices are learnt. The
+
+LoRA framework is flexible as we have control over the rank
+of the matrices in the decomposition of the update matrix. It
+also allows for using multiple low-rank update matrices si-
+multaneously.
+
+Consider an attention layer with a weight matrix W ∈
+Rd×h then we can associate it with an update matrix ∆W =
+BA where B ∈ Rd×k and A ∈ Rk×h. In our experiments,
+we set k = 4 and we use one update matrix for each attention
+layer in the UNet.
+
+Fine-tuning using LoRA has several advantages. First, this
+approach uses far less memory than traditional fine-tuning ap-
+proaches since we only need to compute the gradients for the
+relatively smaller weight matrices. This has the added ben-
+efit that the training process is faster. Another challenge in
+using traditional fine-tuning approaches for diffusion models
+that LORA overcomes is one called catastrophic forgetting
+or catastrophic interference. [7] [8] [9] [10] In DDPMs, this
+manifests as the model forgetting old text-to-image associa-
+tions upon learning new ones. Since the weight matrices from
+the base model are frozen, original knowledge is preserved.
+
+For our custom Calvin and Hobbes dataset, we fine tune
+the model on 11,000 input images paired with the synthetic
+text caption ”CNH3000” as mentioned earlier. We train with
+a batch size of 1 and train for 30,000 steps. At each step, a
+random image from the dataset and a random denoising time
+step for the DDPM are sampled. These are used to create
+the noisy and denoised versions of the image at the sampled
+denoising time step. For example, we might sample image
+number 1,345 from the dataset and a denoising time step of
+33 for training step 13,576/30,000. In that training step, the
+UNet model receives a time embedding corresponding to 33
+and a corresponding noisy and denoised image pair. In this
+framework, it’s easy to see that the denoising network sees
+approximately 600 pairs of examples for each denoising time
+step. This number is far less than the 11,000 samples we have.
+Though the network does not train on all available input im-
+ages at each time steps, it is able to generalize the denoising
+process with a significantly smaller subset. This is also im-
+portant as we do not want our diffusion model to overfit to the
+available data.
+
+The network was fine-tuned with an initial learning rate of
+1e-4. We used a cosine learning rate scheduler with restarts
+to decrease the learning rate gradually to 0 over a period of
+15,000 training steps. Overall, the fine-tuning process took
+about 6 hours for our choice of hyperparameters while pro-
+viding satisfactory results.
+
+4.1. Text to Image
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 6: Txt2Img Image generation before fine tuning
+
+First, we observe the images generated before fine tun-
+ing stable diffusion on Calvin and Hobbes images. Figure
+6 shows the images generated without fine tuning. The text
+prompts given were:
+
+1. A happy dog in car with its head out of the window in
+
+the style of Calvin and Hobbes
+
+2. A policeman at a traffic light on a busy street wearing a
+
+hat in the style of Calvin and Hobbes
+
+3. A little girl with a balloon walking down a street with
+buildings in the background in the style of Calvin and
+Hobbes
+
+After fine tuning stable diffusion on Calvin and Hobbes
+images, we generated some more images using the same
+prompts.
+is
+that we replaced ”Calvin and Hobbes” with our keyword,
+”CNH3000”. Figure 7 shows the images generate after fine
+tuning. The text prompts given were:
+
+The only thing different with the prompt
+
+1. A happy dog in car with its head out of the window in
+
+the style of CNH3000
+
+2. A policeman at a traffic light on a busy street wearing a
+
+hat in the style of CNH3000
+
+3. A little girl with a balloon walking down a street with
+buildings in the background in the style of CNH3000
+
+(a)
+
+(b)
+
+(c)
+
+Fig. 7: Txt2Img Image generation after fine tuning
+
+4. EXPERIMENTS & RESULTS
+
+4.2. Image to Image
+
+We performed four major experiments: Text to Image, Image
+to Image with original image, Image to Image with edge map
+inputs, and Videos.
+
+Stable diffusion takes in noisy images as starting point. Then,
+the denoising U-Net iteratively removes the noise from the
+image to generate another image. For text to image models,
+
+Fig. 8: Here are all of our results for different input images, as well as different input modalities.
+Row 1: Img2Img Image generation with Jay Hartzel’s original image input
+Row 2: Img2Img Image generation with Prof. Bovik’s original image input
+Row 3: Img2Img Image generation with Bevo’s original image as input
+Row 4: Img2Img Image generation with Prof. Bovik’s edeg map input; Img2Img Image generation with Taylor Swift’s edge map input
+Row 5: Sequence of 8 frames of the input video
+Row 6: Sequence of 8 frames of the output video
+
+the denoising process starts with gaussian image sample. For
+image to image models, the denoising process starts with an
+image with some noise added to it. This pipeline where we
+add some noise to the image and start the reverse diffusion
+process is called the Image2Image pipeline. The noised im-
+age with some prompts can allow us to style transfer an im-
+age.
+
+For all these image generation, we used similar prompts as
+
+4.1 with the keyword, ”CNH3000.”
+
+FFNeRV [15] and InstructPix2Pix [16] as demonstrated by
+other projects would be interesting.
+
+Finally, one of the natural questions in the age of Large
+Language Models (LLMs) is whether we can use a model to
+generate entire comic strips in the style of Calvin and Hobbes.
+Currently, we restrict ourself to style transfer of separate im-
+ages. Combining LLMs along with a diffusion pipeline to
+generate consistent and meaningful stories would be an inter-
+esting task.
+
+4.3. Image to Image (Edge Map)
+
+6. CONTRIBUTION
+
+We experimented with starting with noisy sample of edge
+maps of images instead of using the original image. We hy-
+pothesized that this would give a simpler input to the diffusion
+model which would help the diffusion model produce more
+cartoon like images.
+
+4.4. Videos
+
+We tried to apply diffusion models’ output to individual
+frames of a video. The last two rows of Figure 8 shows the
+8 input and output frames. Notice the inconsistency in the
+results. The outputs are not temporally cohesive.
+
+5. FUTURE WORK
+
+Our work was a relatively simple approach to fine-tuning a
+baseline diffusion model to the style transfer task. There are
+many areas with scope for improvement and exploration.
+
+We could start off with improving the dataset. Currently,
+we simply extract panels from the original comics. Since
+these comics aim to convey a short story within 4 panels, they
+are often filled with text. The generative model learns that
+these texts are part of the calvin and hobbes style. This is
+unideal and does not align with a regular person’s expectation
+of the comic’s style. Removing the text using available open-
+source OCR tools like pytesseract is a good starting point.
+Alternatively, we could generate better captions for the im-
+ages use tools like GPT-4 or Flamingo [11] to incorporate the
+text from the images into the captions. This could aid the dif-
+fusion model in understanding the style of the comics better.
+Towards improving the dataset, it would also be interesting
+to include color images and have the model jointly learn the
+style from black and white as well as colored panels simulta-
+neously.
+
+Thinking about the training mechanisms, we explored
+LoRA as described in Section 3.3.
+It would be interesting
+to explore ideas such as DreamBooth [12], Textual Inversion
+[13] and ControlNet [14] since they have shown promising
+results for other image-based tasks.
+
+We briefly experimented with applying our style transfer
+model on videos as described in Section 4.4. Our results were
+temporaly inconsistent. Exploring more complex models like
+
+All the authors of this paper contributed actively at all stages
+of the project. If we had to assign credit to specific authors,
+we would say that Sundar was heavily responsible for dataset
+creation and pre-processing, Asvin was responsible for the
+fine-tuning of diffusion models and Sloke was responsible for
+running extensive experiments with the fine-tuned model.
+
+7. ACKNOWLEDGEMENTS
+
+The authors acknowledge the Texas Advanced Computing
+Center (TACC) at The University of Texas at Austin for pro-
+viding HPC resources that have contributed to the results re-
+ported within this paper. URL: http://www.tacc.utexas.edu.
+We would also like to thank Prof. Alan C. Bovik for his in-
+sights and guidance in the development of this project.
+
+8. REFERENCES
+
+[1] Junnan Li, Dongxu Li, Silvio Savarese, and Steven
+Hoi,
+“Blip-2: Bootstrapping language-image pre-
+training with frozen image encoders and large language
+models,” arXiv preprint arXiv:2301.12597, 2023.
+
+[2] OpenAI, “Gpt-4 technical report,” 2023.
+
+[3] Jonathan Ho, Ajay Jain, and Pieter Abbeel, “Denoising
+
+diffusion probabilistic models,” 2020.
+
+[4] Robin Rombach, Andreas Blattmann, Dominik Lorenz,
+Patrick Esser, and Bj¨orn Ommer, “High-resolution im-
+age synthesis with latent diffusion models,” 2021.
+
+[5] Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan
+Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and
+Weizhu Chen, “Lora: Low-rank adaptation of large lan-
+guage models,” 2021.
+
+[6] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sas-
+try, Amanda Askell, Pamela Mishkin, Jack Clark, et al.,
+“Learning transferable visual models from natural lan-
+guage supervision,” in International conference on ma-
+chine learning. PMLR, 2021, pp. 8748–8763.
+
+[7] James L McClelland, Bruce L McNaughton, and Ran-
+dall C O’Reilly, “Why there are complementary learn-
+ing systems in the hippocampus and neocortex: insights
+from the successes and failures of connectionist models
+of learning and memory.,” Psychological review, vol.
+102, no. 3, pp. 419, 1995.
+
+[8] Robert M French, “Catastrophic forgetting in connec-
+tionist networks,” Trends in cognitive sciences, vol. 3,
+no. 4, pp. 128–135, 1999.
+
+[9] Roger Ratcliff, “Connectionist models of recognition
+memory: constraints imposed by learning and forgetting
+functions.,” Psychological review, vol. 97, no. 2, pp.
+285, 1990.
+
+[10] Robert M French, “Catastrophic forgetting in connec-
+tionist networks,” Trends in cognitive sciences, vol. 3,
+no. 4, pp. 128–135, 1999.
+
+[11] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, An-
+toine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur
+Mensch, Katie Millican, Malcolm Reynolds, Roman
+Ring, Eliza Rutherford, Serkan Cabi, Tengda Han, Zhi-
+tao Gong, Sina Samangooei, Marianne Monteiro, Jacob
+Menick, Sebastian Borgeaud, Andrew Brock, Aida Ne-
+matzadeh, Sahand Sharifzadeh, Mikolaj Binkowski, Ri-
+cardo Barreira, Oriol Vinyals, Andrew Zisserman, and
+Karen Simonyan, “Flamingo: a visual language model
+for few-shot learning,” 2022.
+
+[12] Nataniel Ruiz, Yuanzhen Li, Varun Jampani, Yael
+Pritch, Michael Rubinstein, and Kfir Aberman, “Dream-
+booth: Fine tuning text-to-image diffusion models for
+subject-driven generation,” 2022.
+
+[13] Rinon Gal, Yuval Alaluf, Yuval Atzmon, Or Patashnik,
+Amit H. Bermano, Gal Chechik, and Daniel Cohen-Or,
+“An image is worth one word: Personalizing text-to-
+image generation using textual inversion,” 2022.
+
+[14] Lvmin Zhang, Anyi Rao, and Maneesh Agrawala,
+“Adding conditional control to text-to-image diffusion
+models,” 2023.
+
+[15] Joo Chan Lee, Daniel Rho, Jong Hwan Ko, and Eun-
+byung Park,
+“Ffnerv: Flow-guided frame-wise neu-
+ral representations for videos,” in Proceedings of the
+31st ACM International Conference on Multimedia. Oct.
+2023, MM ’23, ACM.
+
+[16] Tim Brooks, Aleksander Holynski, and Alexei A. Efros,
+“Instructpix2pix: Learning to follow image editing in-
+structions,” 2023.
+
+

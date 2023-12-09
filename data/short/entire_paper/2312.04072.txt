@@ -1,0 +1,413 @@
+Voice Recognition Robot with Real-Time
+Surveillance and Automation
+
+Lochan Basyal
+Stevens Institute of Technology, Hoboken, NJ, USA
+bashyallochan@gmail.com, lbasyal@stevens.edu
+
+3
+2
+0
+2
+c
+e
+D
+7
+
+]
+
+O
+R
+.
+s
+c
+[
+
+1
+v
+2
+7
+0
+4
+0
+.
+2
+1
+3
+2
+:
+v
+i
+X
+r
+a
+
+Abstract—Voice recognition technology enables the execution
+of real-world operations through a single voice command. This
+paper introduces a voice recognition system that involves con-
+verting input voice signals into corresponding text using an
+Android application. The text messages are then transmitted
+through Bluetooth connectivity, serving as a communication
+platform. Simultaneously, a controller circuit, equipped with a
+Bluetooth module, receives the text signal and, following a coding
+mechanism, executes real-world operations. The paper extends
+the application of voice recognition to real-time surveillance
+and automation, incorporating obstacle detection and avoidance
+mechanisms, as well as control over lighting and horn functions
+through predefined voice commands. The proposed technique not
+only serves as an assistive tool for individuals with disabilities
+but also finds utility in industrial automation, enabling robots to
+perform specific tasks with precision.
+
+Index Terms—Voice Recognition, Android Applications, Blue-
+tooth Connectivity, Real-time Surveillance, Automation, Obstacle
+Detection, Assistive Technology, Industrial Automation
+
+I. INTRODUCTION
+
+A robot
+
+is a complex machine incorporating electrical,
+mechanical, communication, and computing components to
+effectively perform specific tasks. Robotics, as a technology,
+aims to minimize the necessity for human involvement in
+various work processes. While speech recognition involves the
+system comprehending spoken words, it does not necessarily
+grasp their meaning[1]. Voice recognition robots, on the other
+hand, operate based on predefined voice commands. The
+initial step involves processing a voice command through
+the Android platform, where the conversion of voice to text
+occurs within the system. The development of this Android
+application utilizes a drag-and-drop programming technique
+and is implemented with the MIT App Inventor. This platform
+is chosen for its simplicity compared to other development
+platforms, and the Google speech recognizer is employed for
+an effective system response. Establishing a communication
+network necessitates Bluetooth and internet connectivity. The
+robot’s control mechanism relies on various commands such
+as right, left, backward, forward, light on, horn please, etc.
+These commands are processed through a smartphone, and
+the real-world operation is accomplished through a control
+circuit interfacing with the motor mechanism. The Bluetooth
+technology utilized for automation is cost-effective compared
+to alternative communication platforms like Zigbee, GSM
+(Global System for Mobile Communication), and General
+Packet Radio Service (GPRS), with a simple installation
+process. Research indicates that Bluetooth systems are faster
+
+than GSM systems[1]. Furthermore, the integration of a mo-
+tor driver and relay driver module with Arduino enhances
+the effectiveness of driving output
+loads. This paper also
+emphasizes real-time surveillance and automation concepts,
+incorporating an obstacle detection and avoidance mechanism
+facilitated by the ultrasonic sensor HCSR04. The ultrasonic
+sensor measures the distance between the target and the robot’s
+actual position. This is achieved by transmitting an ultrasonic
+wave that reflects off a target, and the time taken for the echo
+to return helps calculate the distance. The robot’s movement
+is determined based on the distance measurement by the
+ultrasonic sensor, and this concept is implemented through
+programming in the Arduino IDE (Integrated Development
+Environment) and loading it onto the Arduino Atmega 328.
+The subsequent sections of this paper are organized to pro-
+vide a comprehensive understanding of the development of
+this technology. Section II delves into the crucial technical
+components necessary for its implementation. In Section III,
+the simulation of this concept has been executed using Pro-
+teus simulation software, and the results are presented. The
+programming concept of the robot is elucidated in Section IV,
+detailing the software aspects essential for its functionality.
+Moving on to Section V,
+the design architecture of this
+technology is thoroughly depicted, offering insights into the
+overall structural framework. Similarly, Section VI is dedicated
+to the hardware implementation of this concept. It provides a
+detailed account of how the theoretical concepts are translated
+into a physical system, including the integration of components
+such as motor drivers, relay modules, and Arduino boards.
+Finally, the paper is concluded in Section VII, summarizing
+the key findings and implications of the study. Additionally,
+possible avenues for future work in the field are explored.
+
+II. TECHNICAL COMPONENTS
+
+A. Arduino
+
+The first essential technical component for this project is
+the Arduino Uno (Figure1), a microcontroller based on the
+Atmega328[2]. It encompasses 14 digital input/output pins,
+with 6 of them designated as pulse width modulation (PWM)
+outputs. Additionally,
+it features 6 analog pins designed
+for sensor interfacing. The inclusion of a 16 MHz ceramic
+resonator[1] and the incorporation of all necessary circuitry
+within a single module contribute to the operational simplicity
+of the Arduino Uno. This microcontroller is chosen for its
+
+ 
+ 
+ 
+ 
+ 
+ 
+Fig. 1: Arduino Uno ATmega328[1]
+
+Fig. 3: PCB design real-world view[1]
+
+user-friendly design and ease of operation compared to other
+microcontroller circuits.
+
+B. Bluetooth Module HC-05
+
+The Bluetooth module (HC-05) (Figure2) functions as an
+interface with an Arduino circuit to establish a communication
+platform. Primarily, this module is utilized in this project for
+the reception of serial data from an Android application. In
+practice, the module operates within a range of 50 meters[1].
+
+Fig. 4: PCB design artwork view[1]
+
+E. Ultrasonic Sensor HCSR04
+
+The interfacing mechanism between an Arduino and the
+ultrasonic sensor HCSR04 involves measuring the distance
+between a target and the real position of the sensor. This
+is achieved by calculating the time duration between the
+transmission and reception of an ultrasonic wave. The module
+contains four terminals: Vcc, Trigger, Echo, and Gnd. Figure6
+illustrates the module.
+
+F. Android Application
+
+Fig. 2: Bluetooth module HC-05[1]
+
+C. PCB Design of L293D Module
+
+The L293D is an H-bridge motor driver IC with an operating
+voltage range of up to 36V from 5V. It provides a bidirectional
+drive current of up to 600mA, enabling control over two
+DC motors and their directions. Speed control is achieved
+using pulse width modulation (PWM)[1]. For this project, a
+motor driver module was created through PCB (Printed Circuit
+Board) design, with each module containing two L293D ICs.
+Figure3 shows the real-world view of designing on PCB
+Wizard, whereas Figure4 represents the design artwork view.
+
+D. Control Circuit Module
+
+This module incorporates a relay driver mechanism with the
+BC547 transistor and a buzzer, serving as the robot’s horn. It
+activates any output system through a relay by applying a
+digital pulse through an Arduino. This segment of the project
+will govern the lighting and horn mechanisms of the robot.
+The design of this module is depicted in Figure5.
+
+The Android application (Figure7) serves as the primary
+interface for voice signals and has been developed using
+the MIT App Inventor[3] platform, employing a drag-and-
+drop programming approach. The application operates based
+on Bluetooth and internet connectivity and was designed
+with the utilization of the Google Voice Recognizer module.
+Its functionality includes converting voice commands into
+corresponding text messages displayed on the screen. Subse-
+quently, this message is transmitted to an electronic hardware
+circuit
+through Bluetooth connectivity. Upon receiving the
+text generated from the voice command, the system employs
+an ’if’ statement to check whether the command matches
+a predefined set of commands. If a match is detected, the
+system activates, initiating the execution of the programmed
+actions. In practical terms, this activation results in the Arduino
+providing a digital high signal, delivering 5 volts of direct
+current (DC). This approach allows for a responsive and
+conditional control mechanism where the system’s behavior is
+
+grammed sequence. The simulation of the concept is presented
+in Figure8.
+
+IV. PROGRAMMING CONCEPT OF THE ROBOT
+
+The communication platform established in our project is
+Bluetooth, based on serial data transmission and reception.
+When serial data is available, the program reads the bytes from
+Bluetooth, initiates string processing, and checks the received
+string against predefined voice commands. Upon a match, the
+program executes a statement. Function definitions illustrating
+the robot’s movement mechanism have been presented in
+this paper. Figure9 illustrates the code for ultrasonic sensor
+interfacing with an Arduino, while Figure10 depicts the code
+for string processing. Similarly, Figure11 showcases the code
+for voice command execution, and Figure12 introduces the
+concept of automation, demonstrating the control of light-
+ing and horn mechanisms through voice commands. In this
+program, the voice is defined as a string, and parameters
+such as distance, duration, and safety distance are declared
+as integer, long, and integer, respectively. These parameters
+are represented by their short forms, as shown in Figure 10.
+The ultrasonic sensor is employed for obstacle detection and
+avoidance, a crucial condition applied to the robot. This sensor
+has four pins for Vcc (DC 5V supply voltage), Ground (GND),
+trigger pin, and echo pin. Distance measurement is facilitated
+by the pulse received from digital pin 6 of an Arduino,
+utilized as the echo pin in our project. Similarly, digital pin
+7 represents the trigger pin. Upon detecting an obstacle, the
+robot halts immediately, moves backward, and takes a left
+direction, as per the code depicted in Figure9. The robot
+ceases its movement within 10 centimeters of obstacles, and
+after completing subsequent movements, the safety distance
+condition is removed from the programming loop. In real-
+world operation, when the user provides a voice command
+through an Android application and the string check condition
+becomes true, the program executes based on the function
+call within that particular condition. This process demonstrates
+real-world operation, meaning the robot’s movement in a spec-
+ified direction. Real-time distance surveillance is conducted by
+the ultrasonic sensor.
+
+V. DESIGN ARCHITECTURE
+
+Design Architecture illustrates the overall mechanism of the
+proposed methodology. Figures13 (design architecture) and14
+(block diagram) depict the different sections of the project,
+encompassing two main components: an Android application
+and a robot equipped with a wheel mechanism, light, and
+buzzer. In this methodology, wireless communication is estab-
+lished through serial communication, where one bit at a time
+is transmitted and can be processed by a controller. This setup
+forms the foundation for implementing the proposed system.
+
+VI. HARDWARE IMPLEMENTATION
+
+This section provides a detailed account of how the theo-
+retical concepts are translated into a physical system, encom-
+passing the integration of components like motor drivers, relay
+
+Fig. 5: Bluetooth module HC-05[1]
+
+Fig. 6: Ultrasonic sensor HCSR04[1]
+
+contingent on the recognized voice command meeting specific
+predefined criteria.
+
+Fig. 7: Android Application[1]
+
+III. PROTEUS SIMULATION SOFTWARE
+
+Proteus simulation software, version 7, is utilized to validate
+circuit connections in the virtual realm. Using this platform, a
+circuit can be drawn, and the programming file in hexadecimal
+format—generated after compiling the program in the Arduino
+IDE—can be uploaded. In this simulation, Arduino interfaces
+with the L293D IC as the motor driver. The communication
+platform is established through the virtual terminal, and a
+circuit has been identified that operates according to a pro-
+
+Fig. 8: Simulation of the motor mechanism using Proteus[1].
+
+Fig. 10: Code for string processing[1]
+
+Fig. 9: Ultrasonic sensor interfacing[1]
+
+modules, and Arduino boards. In the hardware testing phase,
+rigorous evaluation and validation were conducted to ensure
+
+Fig. 11: Code for voice command execution[1]
+
+the seamless functioning of each component. This involved
+testing the responsiveness of the motor drivers, assessing the
+reliability of the relay modules, and confirming the proper
+integration of Arduino boards within the system. The objective
+of this phase was to identify and address any potential issues
+before proceeding to the full-scale hardware implementation.
+
+Fig. 12: Code for automation concept[1]
+
+Fig. 14: Block Diagram[1]
+
+cess of hardware testing, ensuring the reliability of individual
+components, followed by the successful physical development
+of the robot. The figures provide a visual representation of both
+the testing and implementation phases, offering a complete
+understanding of the hardware journey in the realization of
+the voice recognition robot concept.
+
+Fig. 13: Design Architecture[1]
+
+Figure15 illustrates the hardware testing process, showcasing
+the systematic evaluation of individual components and their
+collective functionality. This phase aimed to verify the ro-
+bustness of the hardware setup, ensuring that each element
+performs as intended and is ready for the subsequent stages of
+development. Moving forward, the hardware implementation
+phase involved the physical development of the robot, inte-
+grating the tested components into a cohesive and functional
+system. The construction included mounting the motor drivers,
+relay modules, and Arduino boards onto the robot chassis,
+aligning with the design architecture presented in earlier
+sections. Figure16 visually represents the completed hardware
+implementation, illustrating the integrated components within
+the physical structure of the robot. The design carefully
+incorporates voice recognition technology, highlighting how
+the hardware components seamlessly interact with the software
+system.
+
+The integration of voice recognition technology into the
+physical robot marks a crucial advancement, bringing the con-
+cept to life. This section emphasizes the comprehensive pro-
+
+Fig. 15: Hardware Testing[1]
+
+Fig. 16: Hardware Implementation[1]
+
+VII. CONCLUSION WITH FUTURE WORK
+
+This paper successfully demonstrates the concept of a voice
+recognition robot with real-time surveillance and automation,
+integrating both software and hardware implementations. The
+potential use cases of this concept have the potential
+to
+significantly enhance the ease of human life by automating
+control over manual operations. The concept presented in this
+paper could be further improved in terms of the recognition
+system’s performance and the matching of predefined com-
+mands with user input commands. This improvement involves
+calculating the similarity between two different vector embed-
+dings representing user input and the predefined command.
+Implementing this enhancement would allow flexibility in user
+input, meaning the command provided by the user wouldn’t
+need to precisely match the predefined command for the robot
+to execute the desired action. This approach addresses issues
+encountered when the robot is handled by multiple users,
+ensuring more robust and user-friendly interaction. Future
+work in this area could focus on refining the recognition
+system, exploring additional use cases, and advancing human-
+robot interaction for broader applications in various scenarios.
+
+ACKNOWLEDGMENT
+
+The author would like to acknowledge the foundation laid
+by his previous work[1]. This paper represents an iteration
+aiming to enhance clarity and eliminate typos.
+
+REFERENCES
+
+[1] Basyal, L., Kaushal, S. and Singh, G., 2018. Voice recognition robot
+with real-time surveillance and automation.
+Journal
+of Creative Research Thoughts, 6(1), pp.2320-2882. Available:
+https://scholar.google.com/citations?view op=view citation&hl=
+en&user=Z0JsbwQAAAAJ&citation for view=Z0JsbwQAAAAJ:
+u5HHmVD uO8C. [Accessed: 2023-12-06].
+
+International
+
+[2] ”ATmega328P Datasheet.” [Online]. Available: https://content.arduino.
+cc/assets/Atmel-7810-Automotive-Microcontrollers-ATmega328P
+Datasheet.pdf. [Accessed: 2023-12-06].
+
+[3] ”MIT App Inventor.” [Online]. Available: https://appinventor.mit.edu/.
+
+[Accessed: 2023-12-06].
+
+

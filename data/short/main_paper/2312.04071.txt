@@ -1,0 +1,961 @@
+INTRODUCTION
+
+ACM Reference Format:
+Zijie Huang, Baolin Li, Hafez Asgharzadeh, Anne Cocos, Lingyi Liu, Evan
+Cox, Colby Wise, and Sudarshan Lamkhede. 2023. Synergistic Signals: Ex-
+ploiting Co-Engagement and Semantic Links via Graph Neural Networks .
+In Proceedings of ACM Conference (WWW’24). ACM, New York, NY, USA,
+9 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn
+
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than ACM
+must be honored. Abstracting with credit is permitted. To copy otherwise, or republish,
+to post on servers or to redistribute to lists, requires prior specific permission and/or a
+fee. Request permissions from permissions@acm.org.
+WWW’24, May 2024, Singapore
+© 2023 Association for Computing Machinery.
+ACM ISBN 978-x-xxxx-xxxx-x/YY/MM. . . $15.00
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+
+Recommender systems at Netflix rely on entity (e.g. video title,
+game, actor) embeddings that accurately reflect the similarity be-
+tween entity pairs. In many cases these representations are learned
+from user co-engagement data [19, 24, 28, 29]: if two entities are
+frequently co-engaged by users, they should have similar embed-
+dings. A well-known drawback of leveraging user collaborative
+signals in isolation to train entity embeddings is that these data
+suffer popularity biases and have low coverage for new and unpop-
+ular items [21, 42]. At the same time, there may exist rich semantic
+information about items (such as genre, content maturity level,
+intellectual property, and storyline). This semantic data can pro-
+vide an important signal in learning entity representation and also
+provides fine-grained interpretability for similarity scores.
+
+Figure 1 provides a concrete example. Based on co-engagement
+signals alone, a title similar to “Titanic” which was released in
+1997 is “Pride & Prejudice ”, which is also a popular romantic movie
+
+MoreLikeThisYear1997Pride&Prejudice(2005)Samegenre(romantics)HighSeas(2020)Similarstoryline(seas)>=100DegreeMean (EEL)=38.7915DegreeMean (noEEL)=3.5683NumberofNeighbors(Degree)TitleDegreeDistributione!"e#$e%$e&"e’$e($e#"e’"e%"e("Entity-entityLinks (EEL)Semanticrelations(a)Titledegreedistribution(b)SemanticKnowledgeGraph 
+ 
+ 
+ 
+ 
+ 
+WWW’24, May 2024, Singapore
+
+Zijie Huang, Baolin Li, Hafez Asgharzadeh, Anne Cocos, Lingyi Liu, Evan Cox, Colby Wise, and Sudarshan Lamkhede
+
+released in 2005. However, another more recent similar title is “High
+Seas” released in 2020. Compared with “Pride & Prejudice”, it has
+a weaker co-engagement signal with "Titanic" but is semantically
+similar in the sense that both stories take place on the sea. Therefore,
+semantic information yields a more diverse set of similar titles and
+possibly helps us to understand why two movies are similar, e.g.
+due to genre or storyline.
+
+Motivated by these observations, we develop a novel method to
+learn entity embeddings from both co-engagement and content-
+based semantic information. Specifically, we train a Graph Neural
+Network (GNN) [20, 33] over the knowledge graph (KG) [3, 22] de-
+picted in Figure 2(b). This enables us to capture both co-engagement
+and entity-specific semantic information in the GNN embeddings
+by modeling entities, semantic concepts (e.g. genres, maturity levels,
+storylines), and their relationships jointly.
+
+GNNs [10, 13, 20] have gained significant attention in recent
+years due to their superior ability to perform representation learn-
+ing on graph-structured data [12, 33, 38]. They have been suc-
+cessfully employed to perform industrial tasks such as building
+recommender systems [7, 11], modeling user interest [30, 31, 35],
+etc. However, there are three unique challenges in training on this
+particular KG within Netflix, which existing GNN architecture
+designs are not fully aware of.
+
+(1) Relation type class imbalance: most entity nodes have se-
+mantic relations (i.e. links to semantic concept nodes), but
+entity-entity co-engagement links (EEL) between entity pairs
+are sparse as illustrated in Figure 2(a). Moreover, the number
+of semantic concepts associated with each entity also varies,
+resulting in imbalanced semantic edge distribution as well.
+(2) Lack of informative features for semantic concept nodes:
+Unlike entities that are usually associated with abundant
+textual or visual features, semantic concepts are represented
+as short phrases that only contain limited information.
+(3) Graph scalability issue: To handle web-scale graph data, we
+must design an efficient distributed training framework to
+train over the entire graph with millions of nodes and billions
+of edges on GPUs.
+
+To this end, we propose SemanticGNN, a large-scale end-to-
+end training pipeline for learning entity embeddings through a
+relation-aware GNN. We design a two-step training strategy, where
+we first run pre-training via a KG completion task to generate
+contextualized representations of semantic nodes (e.g., genre), and
+second train a novel GNN model via link prediction loss utilizing the
+more sparse supervision signals from co-engagement relationships
+between entities. Specifically, the KG pre-training stage addresses
+challenge (ii) by forming representative embeddings for semantic
+concept nodes, in contrast to directly using concepts’ short phrases
+as textual features.
+
+For challenge (i), we design a novel relation-aware GNN that is
+able to distinguish the influence of different neighbors of a node
+through attention weights. The attention weights are aware of dif-
+ferent relation types such as has_genre and has_maturity_level.
+In this way, for a newly released title that lacks any co-engagement
+data, we are able to distinguish the influence of different semantic
+types and thus learn an informative embedding. Distinguishing
+relation types also helps us to better represent popular titles: for a
+
+popular title that has abundant co-engagement links, thanks to the
+learnable prior weights of different relation types, the model is able
+to automatically adjust the influence received from co-engagement
+and from semantic edges, thus preventing noisy co-engagement
+data from dominating its representation.
+
+To address the scalability concerns in challenge (iii), we design
+a Heterogeneity-Aware and Semantic-Preserving (HASP) subgraph
+generation scheme to train our model across multiple GPUs – such
+a framework has been proven efficient and feasible in an industry
+production environment. Our proposed method, SemanticGNN, is
+able to generate general-purpose entity representations that out-
+perform baseline GNN-based entity embeddings in recognizing
+semantic similarity (35% improvement) and co-engagement (21%
+improvement). We also show that our method is especially powerful
+compared with baselines in the inductive setting and for learning
+new title representations. The model has also been successfully
+deployed within Netflix.
+
+2 PROBLEM DEFINITION
+
+A semantic knowledge graph describes entities and their associated
+semantic concepts such as genre. Formally, we represent a semantic
+knowledge graph as G(V𝑡 , V𝑐, E𝑡𝑐, E𝑡𝑡 ), where V𝑡 , V𝑐 are the sets
+of entity nodes and concepts nodes (e.g. core_genre) respectively.
+The number of entity nodes is much larger than that of the con-
+cept nodes, i.e. |V𝑡 | >> |V𝑐 |. There are two relation sets: (1) E𝑡𝑐
+are the directed entity-concept edges where each edge 𝑒𝑡𝑐 points
+from an entity node 𝑣𝑡 to a concept node 𝑣𝑐 . We denote (𝑣𝑡 , 𝑒𝑡𝑐, 𝑣𝑐 )
+as a semantic triple such as (Titanic, has_genre, romantic).
+We use T = {(𝑣𝑡 , 𝑒𝑡𝑐, 𝑣𝑐 )} to denote the set of factual semantic
+triples. (2) E𝑡𝑡 are the undirected entity-entity links (EEL) obtained
+from user co-engagement data where if two titles are frequently
+co-engaged by users, an EEL would be created to denote their sim-
+ilarity. As a consequence of using user co-play data, such EELs
+are usually sparse and only cover a small portion of titles (biased
+toward popular titles) as shown in Fig 2(a).
+
+Given a semantic knowledge graph G(V𝑡 , V𝑐, E𝑡𝑐, E𝑡𝑡 ), we would
+like to learn a model that effectively embeds entities to contextual-
+ized latent representations that accurately reflect their similarities.
+We evaluate the quality of the learned embeddings based on differ-
+ent entity pair similarity measurements, described in Section 6.
+
+3 RELATED WORK
+3.1 Graph Neural Networks (GNNs)
+
+GNNs constitute a category of neural networks designed to directly
+process graph-structured data such as social networks [35], multi-
+agent dynamical systems [14], etc. They are applicable to diverse
+downstream tasks such as node classification [20, 33], graph clus-
+tering and matching [2], etc. Although diverse architectures exist,
+a typical update procedure for a single GNN layer involves two
+primary operations: (1) Information Extraction from Neighbors. In
+this step, information is gathered from each neighboring node. For
+instance, GAT [33] computes attention scores between node pairs
+based on sender and target node representations. These scores are
+then multiplied by the sender node’s representation to yield the
+extracted information. GCN [20] employs the normalized Laplacian
+as the attention weight, treating it as an approximation of spectral
+
+Synergistic Signals: Exploiting Co-Engagement and Semantic Links via Graph Neural Networks
+
+WWW’24, May 2024, Singapore
+
+domain convolution for graph signal processing. (2) Information
+Aggregation from Neighbors. Basic aggregation methods, such as
+mean, sum, and max, are commonly used. Additionally, more ad-
+vanced pooling and normalization functions have been proposed.
+𝑙
+𝑡 represents the node embedding for the target node 𝑡
+Suppose 𝒉
+during the (𝑙)-th GNN layer. In this case, the update procedure from
+the (𝑙-1)-th layer to the (𝑙)-th layer can be succinctly described as
+follows:
+
+𝑙
+𝑡 ← Aggregate
+𝒉
+
+∀𝑠 ∈𝑁 (𝑡 )
+
+(cid:16)Extract (cid:16)
+
+𝑙 −1
+𝒉
+𝑠
+
+𝑙 −1
+; 𝒉
+𝑡
+
+, 𝑒𝑠→𝑡
+
+(cid:17)(cid:17)
+
+,
+
+(1)
+
+where 𝑁 (𝑡) denotes the neighbor (source) node sets of the target
+node 𝑡 and 𝑒𝑠→𝑡 denotes the edge type between pairs of the tar-
+get node and source node. Finally, through the accumulation of
+multiple layers (e.g. 𝐿 layers), each node’s output representation,
+𝐿
+denoted as 𝒉
+𝑡 , incorporates messages from an expanded neighbor-
+hood. This results in a broader reception field, fostering high-order
+interactions among nodes and resulting in a more contextualized
+node representation.
+
+3.2 Knowledge Graph Embeddings (KGE)
+
+Knowledge graph embeddings [1, 4, 15, 32] seek to acquire latent,
+low-dimensional representations for entities and relations, which
+can be utilized to deduce hidden relational facts (triples). They
+measure triple plausibility based on varying score functions. For in-
+stance, translation-based models like TransE [4] interpret relations
+as simple translations from a head entity to a tail entity. Extending
+this concept, TransH [37] projects entities into relation-specific
+hyperplanes, accommodating distinct roles of an entity in vari-
+ous relations. RotatE [32], in contrast, characterizes relations as
+rotations in the complex embedding space, capturing semantic prop-
+erties like compositional relations. Later on, ConvE [1] introduces
+a learnable neural network in computing the score function, and
+some recent studies explore leveraging textual input of entities and
+relations to enhance triple prediction tasks, integrating efficient
+language models like KG-Bert [39].
+
+3.3 Scaling up GNN Training
+
+Training GNNs on large-scale graphs is a major bottleneck of to-
+day’s GNN training when trying to take advantage of GPU ac-
+celeration [6, 36, 43], as large graphs come with large memory
+and computation requirements, and requires system solutions to
+make these GNNs trainable on GPU memory and distributed across
+multiple GPUs [41]. Various system solutions tackle this prob-
+lem by distributing the full graph across multiple GPUs and us-
+ing inter-GPU communication to pass messages between nodes
+across different GPUs: Neugraph [26] and Roc [16] introduce dis-
+tributed full-graph training by partitioning the graph across multi-
+ple GPUs and optimizing the communication and CPU/GPU mem-
+ory management. Several following works have then focused on
+approximation and quantization to further improve distributed
+training speed [5, 34, 40]. In contrast to the full-graph approach,
+Pagraph [23] and DistDGLv2 [44] use random sampling from the
+full graph to train on smaller graphs with optimized node caching
+and data movement. SALIENT [17] and BGL [25] have further opti-
+mized the dataloader and I/O of the sampling-based training process.
+
+However, these approaches are limited in the training of our Se-
+manticGNN due to resource constraints and graph heterogeneity
+(Sec. 5.1).
+
+4 METHOD
+
+Figure 3 shows the overall framework of our proposed Seman-
+ticGNN. It follows a two-step training pipeline: 1.) We first pretrain
+the semantic KG via KG completion loss using TransE in order to
+generate the embeddings for concept nodes. 2.) We then train a
+relation-aware GNN over the KG using link prediction loss over
+EEL to get entity embeddings that reflect entity similarity. Now we
+introduce each component in detail.
+
+4.1 KG Pretraining
+
+Our goal in KG pretraining is to produce high-quality features for
+semantic concept nodes, as concept nodes are usually associated
+with short phrases, which may not be informative enough to serve
+as input features. We choose TransE [4] as our backbone and con-
+duct KG pretrating via the standard KG completion task [15]. It can
+be replaced with any off-the-shelf KG embedding method based on
+different downstream applications and KG structures. Specifically,
+let 𝒆𝑡 , 𝒆𝑐 be the learnable embeddings of entity 𝑡, 𝑐 respectively, we
+train entity embeddings via the hinge loss over semantic triples
+T = {(𝑣𝑡 , 𝑒𝑡𝑐, 𝑣𝑐 )} defined as:
+
+J𝐾 =
+
+∑︁
+
+T
+
+(cid:2)𝑓 (cid:0)𝒆′
+
+𝑡 , 𝒓𝑡𝑐, 𝒆′
+𝑐
+
+(cid:1) − 𝑓 (𝒆𝑡 , 𝒓𝑡𝑐, 𝒆𝑐 ) + 𝛾 (cid:3)
+
+,
+
++
+
+(2)
+
+where 𝛾 > 0 is a positive margin, 𝑓 is the KGE model, and 𝒓𝑡𝑐 is the
+embedding for the relation 𝑒𝑡𝑐 . (𝒆′
+𝑐 ) is a negative sampled
+triple obtained by replacing either the head or tail entity of the true
+triple (𝒆𝑡 , 𝒓𝑡𝑐, 𝒆𝑐 ) from the whole entity pool.
+
+𝑡 , 𝒓𝑡𝑐, 𝒆′
+
+4.2 Relation-Aware GNN
+
+To handle the imbalanced relation distribution in the constructed
+KG, we propose an attention-based relation-aware GNN to learn
+contextualized embeddings for entities following a multi-layer mes-
+sage passing architecture.
+
+In the 𝑙-th layer of GNN, the first step involves calculating the
+relation-aware message transmitted by the entity 𝑣𝑡 in a relational
+fact (𝑣𝑡 , 𝑒𝑡𝑐, 𝑣𝑐 ) using the following procedure:
+
+𝑙
+𝑐 (𝑟 ) = Msg
+𝒉
+
+(cid:17)
+
+(cid:16)
+
+𝑙
+𝑐, 𝒓
+𝒉
+
+:= 𝑾
+
+𝑙
+𝑙
+𝑖, 𝒓),
+𝑣Concat(𝒉
+
+𝑙
+𝑐 (𝑟 ) is the latent representation of 𝑣𝑐 under the relation type
+where 𝒉
+𝑟 at the 𝑙-th layer, Concat(·, ·) is the vector concatenation function, 𝒓
+is the relation embedding and 𝑾𝑙
+𝑣 is a linear transformation matrix.
+Then, we propose a relation-aware scaled dot product attention
+mechanism to characterize the importance of each entity’s neighbor
+to itself, which is computed as follows:
+
+Att
+
+(cid:16)
+
+𝑙
+𝒉
+𝑐 (𝑟 )
+
+𝑙
+, 𝒉
+𝑡
+
+(cid:17)
+
+=
+
+𝛼𝑟
+𝑐𝑡 =
+
+(cid:16)
+𝑾
+
+𝑙
+𝑙
+𝑘 𝒉
+𝑐 (𝑟 )
+
+exp(𝛼𝑟
+
+𝑐𝑡 )
+(cid:205)𝑣𝑐′ ∈ N (𝑣𝑡 ) exp
+(cid:17)𝑇
+1
+√
+𝑑
+
+(cid:16)
+𝑾
+
+𝑙
+𝑙
+𝑞𝒉
+𝑡
+
+(cid:17)
+
+·
+
+·
+
+(cid:17)
+
+(cid:16)
+𝛼𝑟
+𝑐 ′𝑡
+
+· 𝛽𝑟 ,
+
+(3)
+
+WWW’24, May 2024, Singapore
+
+Zijie Huang, Baolin Li, Hafez Asgharzadeh, Anne Cocos, Lingyi Liu, Evan Cox, Colby Wise, and Sudarshan Lamkhede
+
+Figure 3: Overall framework of SemanticGNN: (a) KG pretraining for getting embeddings for concept nodes. (b) Training stage
+based on relation-aware GNN and link prediction loss on EEL.
+
+where 𝑑 is the dimension of the entity embeddings, 𝑾𝑙
+𝑞 are
+𝑘
+two transformation matrices, and 𝛽𝑟 is a learnable relation factor
+for each relation type 𝑟 . Diverging from conventional attention
+mechanisms [2, 33], we incorporate 𝛽𝑟 to represent the overall sig-
+nificance of each relation type 𝑟 . This is crucial, as not all relations
+equally contribute to the targeted entity depending on the overall
+KG structure.
+
+, 𝑾𝑙
+
+We then update the hidden representation of entities by aggregat-
+ing the message from their neighborhoods based on the attention
+score:
+
+𝒉
+
+𝑙
+𝑙 +1
+𝑡 + 𝜎 (cid:169)
+𝑡 = 𝒉
+(cid:173)
+(cid:171)
+
+∑︁
+
+𝑣𝑐 ∈N (𝑣𝑡 )
+
+Att
+
+(cid:16)
+
+𝑙
+𝒉
+𝑐 (𝑟 )
+
+𝑙
+, 𝒉
+𝑡
+
+(cid:17)
+
+𝑙
+· 𝒉
+𝑐 (𝑟 )
+
+,
+
+(cid:170)
+(cid:174)
+(cid:172)
+
+where 𝜎 (·) is a non-linear activation function, and the residual
+connection is used to improve the stability of GNN [9]. Finally, we
+stack 𝐿 layers to aggregate information from multi-hop neighbors
+𝐿
+and obtain the final embedding for each entity 𝑖 as 𝒉𝑖 = 𝒉
+𝑖 .
+
+4.3 Overall Training
+
+Given the contextualized entity embeddings, we train the model
+using standard link prediction loss defined over entity-entity links:
+
+J𝐴= −
+
+1
+𝑁
+
+where
+
+∑︁
+
+log (cid:0)𝑝 (cid:0)𝑒𝑖 𝑗 (cid:1)(cid:1) + log (cid:0)1 − 𝑝 (cid:0)𝑒𝑖 𝑗 ′ (cid:1)(cid:1) ,
+
+𝑒𝑖 𝑗 ∈E𝑡𝑡
+𝑒𝑖 𝑗 ′ ∉E𝑡𝑡
+𝑇
+𝑝 (𝑒𝑖 𝑗 ) = Sigmoid(𝒉
+𝑖
+
+· 𝒉𝑗 ).
+
+(4)
+
+(5)
+
+5 SYSTEM DEPLOYMENT
+
+Next, we describe a practical distributed GNN training framework
+that addresses the challenge of scalability and practicality in train-
+ing GNNs for deployment. Traditional GNN training methodologies
+often hit bottlenecks such as memory limitations and computational
+inefficiencies, particularly when the task involves large-scale graphs
+with complex relations and high-dimensional feature spaces. While
+
+CPU-based training solutions exist, they prove to be prohibitively
+slow for graphs of this scale and complexity (taking days to train).
+On the other hand, training these large graphs solely on GPUs is
+also infeasible due to limitations in GPU DRAM. Our framework
+ameliorates these challenges by training on a set of sub-graphs
+with preserved semantic information and distributing the computa-
+tional workload across multiple GPUs in a cluster. This distributed
+approach allows for parallel processing and significantly reduces
+per-GPU memory consumption, thereby accelerating the training
+process. It does so without sacrificing the model’s ability to learn
+entity embeddings using semantic information, effectively bridging
+the gap between computational efficiency and model performance.
+
+5.1 Training Challenges
+
+Deploying the GNN training workflow on a multi-GPU system
+presents a formidable challenge, primarily stemming from the strin-
+gent limitations of GPU device memory and inter-GPU communica-
+tion. Our input graph boasts a substantial number of entity nodes,
+each accompanied by high-dimensional node features. Moreover,
+Equation 3 highlights another storage-intensive requirement, as
+it necessitates the retention of computed attention coefficients for
+every pair of nodes connected by an edge. In our graph, these edges
+represent user co-play history, resulting in a significant volume of
+entity-entity connections. To put this into perspective, even on a
+powerful NVIDIA A100 Tensor Core GPU with 40GB of memory,
+we can only feasibly train a semantic knowledge graph of a certain
+size. Yet, our target graph encompasses 7× more entity nodes and
+7× more edges than the largest graph we can train on a single A100.
+Furthermore, our knowledge graph is poised for continual expan-
+sion, demanding a training framework that remains future-proof
+in the face of these escalating memory demands.
+
+Distributed training of our knowledge graph over multiple GPUs
+presents a unique set of challenges that are currently unaddressed
+by existing off-the-shelf solutions. As discussed in Sec. 3.3, previous
+multi-GPU GNN training techniques can be categorized into two
+
+InputSemanticGraphe!"e#$e%$e&"e’$e($e)"e*"𝐺𝑁𝑁TitleNodesFeatureInputGNNEmbeddingOutputSimilarityLinkPredictionLoss𝒥+KGModel𝑓(·)𝒥,KGCompletionLossConceptNodesFeatureVectors(a)PretrainingStage(b)TrainingStageSynergistic Signals: Exploiting Co-Engagement and Semantic Links via Graph Neural Networks
+
+WWW’24, May 2024, Singapore
+
+Figure 4: Demonstration of the subgraph generation process on a two-subgraph example.
+
+approaches: (i) the full-graph training approach and (ii) the graph
+sampling approach. However, neither of these approaches can be
+well applied to our use case as we discuss in the following.
+
+While full-graph training preserves cross-GPU edge connections
+through inter-GPU communication during training, it also poses
+limitations. Specifically, the number of GPUs required scales with
+the graph size, making it a less flexible option for our dynamic
+workloads at Netflix. In our setting, we aim for a system that can
+train on an arbitrary number of GPUs, regardless of whether there
+are, for example, at least 16 GPUs available in the system.
+
+The graph sampling approach hosts the graph in CPU memory
+and samples random nodes to create subgraphs, which are then
+loaded into the GPU for training. However, this approach is ill-
+suited for our use-case due to several reasons: First, our semantic
+knowledge graph is highly heterogeneous, with each node type
+having different feature sizes and degrees. Existing solutions either
+focus on homogeneous graphs or convert heterogeneous graphs
+into homogeneous ones [44]. Secondly, the graph sampling and
+streaming from the CPU into the GPUs can become a performance
+bottleneck during training. Finally, Our application features high-
+degree nodes, such as one semantic node connected to tens of
+thousands of entity nodes. The sampling strategy would thus either
+capture an excessively large subgraph or require us to discard many
+neighbors to fit into the GPU memory. Given these challenges, there
+is a clear need for a more adaptable and scalable multi-GPU GNN
+training solution for heterogeneous graphs.
+
+5.2 HASP Multi-GPU Training Framework
+
+We propose a novel and practical framework, termed Heterogeneity-
+Aware and Semantic-Preserving (HASP), for generating subgraphs
+from a comprehensive semantic knowledge graph. Unlike tradi-
+tional methods such as graph sampling, where nodes are randomly
+selected, or graph partitioning, which divides the entire graph into
+several subgraphs, HASP is designed to capture the graph hetero-
+geneity and preserve the semantics within the generated subgraphs.
+The advantages of the HASP approach are manifold. Firstly, each
+HASP-generated subgraph is optimized to fit within the memory
+constraints of modern GPUs, ensuring efficient training without
+memory overflow issues. Secondly, it offers both data parallelism
+and flexibility: enabling simultaneous GNN training on these sub-
+graphs across multiple GPUs, while also accommodating scenarios
+where a single GPU can sequentially process the HASP subgraphs
+using a dataloader. Next, we explain the design details of the HASP
+generation framework, illustrated in Fig. 4.
+
+Entity node partitioning. In the HASP framework, the entity
+nodes within each subgraph are distinct, ensuring no overlap across
+subgraphs. To achieve this, a specific subset of entity nodes is allo-
+cated to each HASP subgraph. Notably, relationships between entity
+nodes are represented by entity-entity links (EELs), indicative of
+relationships like user co-play. A challenge arises when dividing
+entity nodes: if two nodes connected by an EEL are apportioned to
+separate HASP subgraphs, the EEL is effectively bypassed during
+GNN training. This diminishes the utility of such relationships in
+the learning process. Furthermore, to avoid computational dispari-
+ties and ensure efficient distributed training, it is imperative that
+each HASP subgraph contains a roughly equal count of entity nodes.
+Uneven distribution might lead to GPU workload imbalances and
+resource underutilization. Therefore, our entity node partitioning
+strategy strives to achieve two primary objectives: (i) minimizing
+the elimination of EELs across HASP subgraphs and (ii) ensuring
+an equitable distribution of entity nodes across subgraphs.
+
+Our partitioning methodology begins by categorizing entity
+nodes of the original graph into two distinct groups: nodes that
+possess EELs and nodes that lack any EELs, as illustrated in Fig. 4
+(a). For the former group, we engage in a minimum cut graph par-
+titioning process on the EEL subgraph, which is composed of all
+EELs and their interconnected nodes. The METIS library[18] facili-
+tates this operation, delivering 𝑁 approximately uniform partitions
+of the EEL subgraph with minimized EEL eliminations. Here, 𝑁
+stands as a representation of our predetermined number of target
+partitions, generally set to be a multiple of available GPUs and opti-
+mized in line with the GPU memory capacity to ensure each HASP
+subgraph can comfortably reside within GPU memory. Following
+this partitioning, we then integrate nodes without EELs into these
+𝑁 partitions. Allocation begins from the most sparsely populated
+partition, ensuring a balanced distribution of entity nodes across all
+partitions, thus equalizing computational load. This method allows
+us to achieve the dual goals of minimal EEL elimination and equi-
+tably distributed entity nodes. This entity node partition process is
+demonstrated in Fig. 4 (b). We deliberately avoided partitioning the
+entire entity node subgraph, including both the EEL and non-EEL
+nodes, in one go to prevent skewed EEL distributions, where some
+partitions could be densely populated with nodes interconnected by
+EELs while others might be bereft of them, potentially undermining
+the generality of our resulting HASP subgraphs.
+
+Semantic node duplication. In our HASP generation process,
+each subgraph encompasses an exclusive set of entity nodes. Yet, to
+ensure the preservation of all semantic information, every subgraph
+
+1221435321Title (no EEL)Title (EEL)Semantic nodesSemantic edgesEEL(a) Original Graph(b) Title node partition12435Node partition on title nodes with EELRandomly assign non-EEL nodes to each partition12435132(c) Semantic Node Duplication435212121312Subgraph 1Subgraph 2WWW’24, May 2024, Singapore
+
+Zijie Huang, Baolin Li, Hafez Asgharzadeh, Anne Cocos, Lingyi Liu, Evan Cox, Colby Wise, and Sudarshan Lamkhede
+
+Table 1: Evaluation results of baselines and our proposed method SemanticGNN over two ground-truth entity similarities:
+HC-Sim (human-curated semantic sims) and Co-Sim (observed co-engagements). We report the relative improvement ratio
+compared with Netflix-baseline.
+
+Models\
+Metrics
+
+Co-Sim
+
+HC-Sim
+
+MAP@10 MAP@50 MAP@100 MAP@10 MAP@50 MAP@100
+
+GCN
+GAT
+GraphSAGE
+Netflix-baseline
+
+-55.34%
+-15.96%
+-12.01%
+-
+
+SemanticGNN_no_KG
+SemanticGNN
+
+18.59%
+21.67%
+
+Baseline Methods
+-62.26%
+-60.98%
+-13.23%
+-12.61%
+-10.31%
+-9.19%
+-
+-
+
+Proposed Method
+12.54%
+13.05%
+18.25%
+17.06%
+
+-49.32%
+-35.15%
+-30.25%
+-
+
+-54.26%
+-33.07%
+-25.32%
+-
+
+30.79%
+35.42%
+
+27.13%
+29.46%
+
+-55.53%
+-32.93%
+-27.64%
+-
+
+26.20%
+25.96%
+
+retains a full set of semantic nodes, effectively duplicating them
+across all subgraphs. This design choice, illustrated in Fig. 4 (c), is
+motivated by the vast difference in quantity between entity and
+semantic nodes. To elucidate, consider the graph’s representation
+of genres: there might only be 20 distinct genre types, each rep-
+resented by a single semantic node. In contrast, each genre could
+be associated with tens of thousands of Netflix shows (the en-
+tity nodes), highlighting the stark disparity in node counts. This
+approach ensures all the semantic information can be used in the
+message passing when training the GNN on each individual sub-
+graph.
+
+User-defined node sampling. In some scenarios, the distinction
+between entity nodes and semantic nodes may blur. For instance,
+when integrating external show entities into the graph to enrich
+semantic information, these entities don’t neatly fit into the tradi-
+tional semantic node category. Given their potentially vast quanti-
+ties, duplicating these external entities, akin to the way we handle
+traditional semantic nodes, becomes impractical. To address this,
+our HASP framework introduces a user-defined node sampling
+feature. This allows users to specify and randomly sample a set
+number of nodes from particular node types. This inclusion offers
+context within the generated subgraphs while ensuring we remain
+within memory constraints.
+
+In summary, the HASP framework adeptly generates subgraphs
+from a semantic knowledge graph. These subgraphs can be subse-
+quently trained on an arbitrary number of GPUs or even sequen-
+tially on a single GPU. By duplicating semantic nodes across all
+subgraphs, HASP ensures the consistent preservation of semantics.
+Title nodes, on the other hand, are strategically partitioned across
+subgraphs. This ensures their distinctiveness while taking into ac-
+count their intricate interconnections, represented as EELs, and
+simultaneously achieving a balanced distribution. For complex sce-
+narios like integrating external show entities, HASP provides a user-
+defined node sampling, allowing customized node inclusion while
+staying within memory limits. Users can leverage the HASP frame-
+work for efficient GNN training as we have observed an average
+improvement of over 50× when trained on 4 A100 GPUs compared
+to a naive full-graph training on a large-memory CPU machine. For
+inference, given its one-time effort nature, node embeddings can be
+
+generated using a large-memory CPU machine, ensuring all edges
+in the knowledge graph are holistically preserved.
+
+6 EXPERIMENTS
+
+6.1 Experiment Setup
+Datasets. We constructed our semantic knowledge graph by collect-
+ing entities and their associated metadata from Netflix’s catalog.
+To empirically evaluate our model performance, we subsample a
+portion of it and in total, we have over 125k nodes, where nearly
+99% are entities and 1% are semantic concepts. Semantic concepts
+describe basic information associated with each entity such as genre
+and in total we have roughly 10 different categories of such seman-
+tic concepts. For edges, we have both entity-entity edges (EEL)
+with limited amounts and abundant entity-semantic edges. The
+total number of edges is around 10× compared to the total number
+of nodes, where around 90% of them are entity-semantic edges.
+When developing the model at Netflix, it handles graph size to
+around 1 million entity nodes following a similar structure. We
+only report the results on the sampled KG in this paper. In prac-
+tice, the deployed model over the full KG shows great performance
+gain in varying downstream recommendation tasks, especially for
+new/unpopular titles.
+
+6.2 Implementation Details.
+Training Details. Our codebase is written in Python 3.7.12, we
+use Pytorch 1.12.0 as the training framework and use the Pytorch
+Geometric 2.2.0 library to construct the graph. We perform GNN
+training on our Ray [27]-based machine learning training platform
+using NVIDIA A100 Tensor Core GPUs, each with 40GB GPU mem-
+ory. The CUDA version is 11.4.
+
+Evaluation Protocol. We evaluate the quality of the learned entity
+embeddings through two offline evaluation benchmarks, which
+cover two flavors of entity-entity similarity measurements.
+
+• Co-engagement Similarities (Co-Sim): Observed pairs of en-
+tities in which both entities were engaged by the same user.
+• Human-curated Similarities (HC-Sim): Dataset of similar
+
+entity pairs, annotated by human experts.
+
+Synergistic Signals: Exploiting Co-Engagement and Semantic Links via Graph Neural Networks
+
+WWW’24, May 2024, Singapore
+
+Baselines. We compared against GCN [20], GAT (heto version 1) [33],
+GraphSAGE (heto version) [8], and Netflix-baseline model. Net-
+flix-baseline model adopts GAT (heto version) + embedding simi-
+larity loss for training. The embedding similarity loss is designed as
+cosine similarity measurements between the learned embeddings to
+other pre-trained embeddings that also reflect title similarities from
+other data sources (with limited coverage of titles in the constructed
+KG), with negative sampling. It is in general more time-expensive
+compared with the link prediction loss in SemanticGNN.
+
+6.3 Main Results
+
+We first examine whether our SemanticGNN has superior perfor-
+mance compared with baselines as well as the design rationality
+of each component of SemanticGNN. As illustrated in table 1, our
+proposed SemanticGNN in general is able to outperform baselines
+across evaluation metrics. Our model variant without KG pretrain-
+ing has degraded performance compared with SemanticGNN, show-
+ing the effectiveness of designing the KG pre-training stage.
+
+6.4 Results on different entity groups based on
+
+their degree
+
+We next show more fine-grained evaluation results by grouping
+our entities into three groups based on their EEL degree within
+the graph, which is a rough proxy for popularity. We delineate
+group0 (degree≤ 3), group1 (3 <degree<= 6) and group2 (degree>
+6). The number of entities within each group are 60k, 45k, and
+33k, which are relatively balanced. We would like to investigate
+how our model performs on popular entities and new entities in
+this experiment. We compare our method with Netflix-baseline
+which is the strongest baseline we have. Specifically, we compute
+the improvement ratio of SemanticGNN/Netflix-baseline across
+groups and evaluation metrics. The results against three groups are
+shown in Figure 5.
+
+We can firstly observe that SemanticGNN is able to surpass
+Netflix-baseline across groups, showing its superior performance
+among varying entity popularities. Also, SemanticGNN is more
+helpful towards group0 (least popular) and group2 (most popular)
+against baselines. This may indicate that our way of incorporating
+semantic information is in general helpful for learning nodes that
+are solely based on semantic information (group0) and nodes that
+have strong signals in user co-engagement data (group2).
+
+6.5 Results of Inductive Setting
+
+We next would like to test our model performance in the inductive
+setting: if we only train over 80% of the total entities in the graph
+and evaluate over the leftover 20% entities in our graph, how would
+it perform? This would be a more realistic setting when we would
+like to use the model in production: when a new entity comes, we
+do not need to retrain the model, but instead just plug the added
+nodes and edges into the graph, and run the model for inference.
+We again report the results across the three groups. Our train/test
+split is conducted over the three groups and then union them as a
+whole.
+
+1The heterogeneous version implemented in the pytorch geometric library here.
+
+Figure 5: Model performance compared with Netflix-
+baseline over three different entity groups.
+
+Figure 6: Model performance compared with Netflix-
+baseline over three different entity groups in the inductive
+setting.
+
+As shown in Figure 6, we can observe SemanticGNN has bet-
+ter performance compared with Netflix-baseline in the induc-
+tive setting. It indicates that SemanticGNN is more generalizable
+and has better mechanisms for learning and aggregating differ-
+ent edge types. By computing the improvement ratio as Seman-
+ticGNN/Netflix-baseline shown below, we found in general our
+method is more beneficial to new entities (group0).
+
+6.6 Results of Adding New EEL edges during
+
+evaluation
+
+As mentioned previously, the majority of the entities (shown in 2(b))
+are without EELs and are only associated with semantic information.
+However, as we identify that EEL in general serves as a stronger
+signal for learning entity similarities, we wonder whether we can
+
+Co-Sim@10Co-Sim@50Co-Sim@100HC-Sim@10HC-Sim@50HC-Sim@100Evaluation Metrics0.00.20.40.60.81.01.2Improvement RatioImprovement Ratio by Groupsgroup0 (degree<=3)group1 (3<=degree<=6)group2 (degree>6)Co-Sim@10Co-Sim@50Co-Sim@100HC-Sim@10HC-Sim@50HC-Sim@100Evaluation Metrics0.00.20.40.60.81.01.21.4Improvement RatioImprovement Ratio by Groupsgroup0 (degree<=3)group1 (3<=degree<=6)group2 (degree>6)WWW’24, May 2024, Singapore
+
+Zijie Huang, Baolin Li, Hafez Asgharzadeh, Anne Cocos, Lingyi Liu, Evan Cox, Colby Wise, and Sudarshan Lamkhede
+
+Figure 7: Model performance over three different entity
+groups when adding new edges.
+
+utilize our learned embeddings to identify more EELs, and then
+utilize them to revise the graph structure so as to get better results.
+Specifically, we utilize our output entity embeddings from Se-
+manticGNN to compute the top 3 nearest neighbors for each entity
+based on their L2 distance. We inject these new EELs into the graph
+and use the learned model to do inference on the revised graph
+(without retraining the model). The original graph has 482,031 EELs
+in total, after revising it, it has 845,732 EELs. We show our results
+by groups as in Figure 7.
+
+We can observe that adding new EEL edges improves the perfor-
+mance of group0 which is the set of least popular entities. However,
+it harms the performance slightly for group1 and group2. One likely
+interpretation is that the new EELs are most beneficial for new enti-
+ties that previously only received information from semantic nodes.
+For popular entities, adding too many EELs may inject noise into
+their representations. One way to avoid this is during message
+passing, we keep new EELs directed, i.e. there would only be mes-
+sages delivered from popular entities to new entities, without new
+entities to popular entities (as popular entities already have very
+dense EELs).
+
+6.7 Sensitivity to Distributed Training
+
+Recall that in Sec.5.1, we introduced a distributed training frame-
+work that generates a series of subgraphs. Each subgraph is de-
+signed to fit within the GPU memory and is trained independently.
+A natural question arises: How does the performance of this sub-
+graph training approach compare to full-graph training, which
+is restricted to CPUs due to memory constraints? To answer this
+question, we compare the models trained by our subgraph-based
+distributed training method against the CPU-only full-graph train-
+ing. Note that in the CPU-only training, we keep the same graph
+and GNN architecture, but train the GNN on a memory-optimized
+CPU node for the same number of epochs, which takes more than
+a day. Fig. 8 provides a reassuring answer as training the GNN
+
+Figure 8: GNN performance sensitivity to distributed training
+over HASP-generated subgraphs.
+
+using multiple GPUs results in similar model performance as train-
+ing over the full graph on CPU. This success is attributed to our
+meticulous design strategies, including entity node partitioning and
+semantic node duplication, as detailed in Sec. 5.2. This emphasizes
+the advantage of the distributed training framework, as not only
+does our approach offer significant speedup, but it also ensures
+that there’s no compromise on model performance throughout the
+training pipeline.
+
+7 

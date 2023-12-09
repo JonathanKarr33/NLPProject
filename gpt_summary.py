@@ -22,8 +22,8 @@ def summarize_text(text):
 
 
 # Define the file paths
-input_directory = 'data/main_paper'
-output_directory = 'data/gpt_results'
+input_directory = 'data/short/main_paper'
+output_directory = 'data/short/gpt_results'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_directory, exist_ok=True)
@@ -40,8 +40,8 @@ for file_name in input_files:
     with open(input_file_path, 'r') as file:
         text = file.read()
     # Problem limit of summary tokens
-    #This model's maximum context length is 4097 tokens, however you requested 7342 tokens
-    max_summary_tokens = 2250 #not 4097 because of response needed
+    # This model's maximum context length is 4097 tokens, however you requested 7342 tokens
+    max_summary_tokens = 2250  # not 4097 because of response needed
     summary_tokens = len(text.split())
 
     if summary_tokens > max_summary_tokens:
@@ -50,13 +50,12 @@ for file_name in input_files:
 
     # Generate the summary
     summary = summarize_text(text)
-    
-    
+
     # Save the summary in the output directory with the same filename
     with open(output_file_path, 'w') as output_file:
         output_file.write(text)
 
-    #Don't waste money
+    # Don't waste money
     gpt_files += 1
     if gpt_files == 5:
         break

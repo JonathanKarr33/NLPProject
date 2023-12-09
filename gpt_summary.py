@@ -1,24 +1,45 @@
+import nltk
 import os
-import openai
+from openai import OpenAI
+
 
 # Replace 'YOUR_API_KEY' with your actual OpenAI API key
 # Not pushing my key to GitHub for privacy reasons
 # Use gpt3.5 turbo -- see pricing here https://openai.com/pricing#language-models
-api_key = 'YOUR_API_KEY'
+api_key = 'API_KEY'
+
+client = OpenAI(api_key=api_key)
 
 
-def summarize_text(text):
-    openai.api_key = api_key
+def summarize_text(input_text):
+    # Set the model and token limit
+    model = "gpt-3.5-turbo-1106"
+    max_tokens = 4000
+    text_to_gpt = f"Summarize this paper: {input_text}"
+    text_to_gpt = truncate_text(text_to_gpt, max_tokens)
+    # Call the OpenAI API to generate text
+    response = client.chat.completions.create(model=model,
+                                              messages=[
+                                                  {"role": "user", "content": text_to_gpt}]
+                                              )
 
-    response = openai.Completion.create(
-        engine="text-davinci-002",
-        prompt=f"Summarize the following text: \n{text}",
-        n=1,  # Number of summaries to generate
-        stop=None  # Set custom stop tokens if needed
-    )
+    # Extract the generated text from the response
+    generated_text = response.choices[0].message.content
 
-    summary = response.choices[0].text.strip()
-    return summary
+    return generated_text
+
+
+def truncate_text(text, max_tokens):
+    # Tokenize the text
+    tokens = nltk.word_tokenize(text)
+
+    # Truncate to the specified number of tokens
+    truncated_tokens = tokens[:max_tokens]
+
+    # Join the tokens back into a truncated text
+    truncated_text = ' '.join(truncated_tokens)
+
+    return truncated_text
 
 
 # Define the file paths
@@ -39,25 +60,16 @@ for file_name in input_files:
 
     with open(input_file_path, 'r') as file:
         text = file.read()
-    # Problem limit of summary tokens
-    # This model's maximum context length is 4097 tokens, however you requested 7342 tokens
-    max_summary_tokens = 2250  # not 4097 because of response needed
-    summary_tokens = len(text.split())
-
-    if summary_tokens > max_summary_tokens:
-        # Truncate the summary
-        text = ' '.join(text.split()[:max_summary_tokens])
-
     # Generate the summary
     summary = summarize_text(text)
 
     # Save the summary in the output directory with the same filename
     with open(output_file_path, 'w') as output_file:
-        output_file.write(text)
+        output_file.write(summary)
 
     # Don't waste money
     gpt_files += 1
-    if gpt_files == 5:
+    if gpt_files >= 1:
         break
 
 print(f"Summarized and saved {gpt_files} files to {output_file_path}")

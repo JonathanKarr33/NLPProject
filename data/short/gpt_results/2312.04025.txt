@@ -1,0 +1,10 @@
+ connection. This results in a coarsened computation graph with fewer operators, which reduces the solution search space for the device placement algorithm. 
+
+C. Problem Modeling
+Once the computation graph is coarsened, MOIRAI formalizes the device placement problem as a Mixed-Integer Linear Programming (MILP) model. Unlike previous approaches that ignore device heterogeneity, MOIRAI considers computational differences, memory constraints, and communication capabilities of the devices. This optimization model outlines the constraints and objectives of the device placement problem. The MILP model is then solved using the optimization solver Gurobi.
+
+D. Empirical Evaluation
+MOIRAI is implemented in PyTorch and evaluated with 11 large models on two-device settings. The trained models are tested with the placement plan of MOIRAI on two clusters of devices, each consisting of 4 GPUs. MOIRAI outperforms heuristic-based solutions by up to 1.87 times in placement optimality, in terms of the reduction of the makespan. Compared to learning-based solutions, MOIRAI reduces the solution generation time from hours to minutes while reducing the makespan up to 4.28 times. 
+
+E. Conclusion
+MOIRAI provides an effective device placement solution for model parallelism over heterogeneous devices. It addresses the limitations of existing algorithmic approaches and outperforms heuristic-based and learning-based solutions in terms of placement optimality and solution generation time. This approach is applicable to a range of DNNs and can be extended to other situations.

@@ -1,0 +1,7 @@
+visual representations. Plausible statistics improve category recognition slightly when compared to not using any utterances. However, both object instance and category recognition are not as good as supervised learning by an oracle or an ideal caregiver. These results suggest that developmentally relevant utterance statistics can improve the learned visual representations, but not as much as supervised learning or ideal caregiver utterances.
+
+We also observe that with plausible statistics, learning visual representations is much better than not using any utterances. This suggests that even sparse and ambiguous utterances from caregivers can enhance toddlers' visual representations during dyadic play sessions.
+
+Furthermore, t-SNE visualization shows that using plausible statistics for training leads to better clustering of visual representations compared to not using any utterances. This indicates that developmentally relevant utterance statistics can guide the learning of visual representations during dyadic play sessions.
+
+Overall, these experiments demonstrate that plausible utterance statistics can improve toddlers' visual representations during dyadic play sessions, supporting the hypothesis that caregivers' sparse and ambiguous utterances help in building visual representations.

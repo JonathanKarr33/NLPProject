@@ -1,0 +1,11 @@
+ values. For the real-world data, the nominal ranges for these unknown model coefficients were estimated based on expert knowledge and historical data. These nominal ranges were then used in the Physics Guard layer to ensure that the estimated coefficients remained within their physically meaningful ranges.
+
+C. Open-Loop Performance Comparison
+
+The open-loop performance of the Deep Dynamics Model and the Deep Pacejka Model was evaluated using the real and simulated testing datasets. The results showed that the Deep Dynamics Model outperformed the Deep Pacejka Model in predicting the vehicle's trajectory, especially in high-speed and high-acceleration scenarios. The Physics Guard layer ensured that the estimated coefficients remained within their nominal ranges, resulting in more accurate predictions of the vehicle's behavior.
+
+D. Closed-Loop Performance
+
+In closed-loop testing, the Deep Dynamics Model was used with an MPC solver to control the vehicle's steering and throttle. The results showed that the Deep Dynamics Model integrated well with the MPC solver and was able to effectively track the optimal raceline, even in fast-paced racing environments. The Physics Guard layer ensured that the estimated coefficients remained within their physically meaningful ranges, leading to improved performance in controlling the vehicle's trajectory.
+
+Overall, the Deep Dynamics Model showed promising results in accurately estimating the model coefficients for a single-track dynamical model in autonomous racing environments. The use of the Physics Guard layer ensured that the estimated coefficients remained within their nominal ranges, leading to better predictions of the vehicle's behavior and improved performance in closed-loop control scenarios.

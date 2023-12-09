@@ -1,20 +1,4 @@
 INTRODUCTION
-
-Connected mobility is changing all our lives every day,
-be it in the field of social robotics or self driving cars.
-Specifically in the case of self driving cars, the importance
-of predicting Vulnerable Road Users’ (VRUs) positions
-becomes paramount. It also becomes a hard problem to
-solve since most VRU motion, especially that of pedestrians
-and bicyclists on the street are not deterministic but highly
-stochastic. Cars, to navigate safely around such VRUs, need
-to have a high degree of Situational Awareness (SA). In
-literature, one of the methods exploited to achieve this high
-level of SA is to use the Social Force model [1]. Other
-works have dealt with the importance of the semantics and
-the inherent goals existing in the environment in establishing
-pedestrian behaviour [2], [3].
-
 In this work, we aim to model pedestrian behaviour in
 urban areas so as to create a risk map of the environment
 that can then be used by other parts of the AV system to
@@ -23,119 +7,16 @@ social forces around the car in the environment, identifying
 the different possible goals for each pedestrian in the scene
 and utilising the map information around each detected
 pedestrian at each time step in their trajectory.
-
 In summary, our contributions presented in this work are
 as follows: (1) we propose a novel model architecture that
 captures social and environmental interactions to accurately
 model spatio-temporal pedestrian trajectories over a short
 to medium term horizon (2) this architecture incorporates
-
-1
-
-Ecole
-
-des
-Name.LastName@eleves.enpc.fr
-
-Ponts, Marne-la-Vall´ee,
-
-France,
-
-email:
-
-First-
-
-2 Akkodis Research, 78280 Guyancourt, France,
-
-email: First-
-
-Name.LastName@akkodis.com
-
 a novel goal identification module that generates multiple
 likely end points for each observed pedestrian partial trajec-
 tory. (3) A generative model that beats the state of the art
 on two drone datasets proving that the model can generalise
 to similar environmental scenarios.
-
-Section II discusses existing work in the domain of multi-
-modal, medium-horizon,
-trajectory prediction for VRUs.
-Section III discusses our theoretical approach and presents
-the CVAE based model for generating multi-modal pedes-
-trian trajectories. Section IV provides a detailed explanation
-on the implementation and results of our approach on various
-open datasets as well as ablation studies.
-
-II. RELATED WORK
-
-A. Sequence modelling
-
-Capturing temporal sequences and predicting future states
-have long been studied, using classical methods or neural
-network methods, especially in the field of pedestrian tra-
-jectory prediction. In the former category, some methods
-use Hidden Markov models and self organising graphs to
-predict trajectories [3], while in the latter category Recurrent
-Neural Networks have been largely popular in capturing
-pedestrian behaviour [4]–[9]. In other cases, CNNs like in
-Time-Extrapolator Convolution Neural Network (TXP-CNN)
-[10] and U-Net [11] have also been used to extract temporal
-features from pedestrian trajectories.
-
-Recently however, the sequence Transformer which was
-originally proposed in the NLP domain [12], has proven to be
-very successful in modelling pedestrian behaviour [13]–[16].
-This class of architectures have come in handy when used
-in scenarios with partial observability and partial trajectories,
-which are difficult for RNNs to deal with.
-
-B. Social forces modelling
-
-The concept of social forces in humans was first pro-
-pounded in [1] which has then been applied to trajectory
-forecasting [2]. Social forces are those forces that act on
-an ego agent in a built environment as a function of its
-surroundings and other agents present in the scene, causing
-an attractive or repulsive interactions with them. In brief,
-these can be commonly classified as neighbour interactions,
-map interactions and goal based interactions. Modelling of
-these forces using neural networks have been studied in
-mechanisms such as Social pooling [4], [7], attention mech-
-anisms [9], [17], [18] and graph-based neural networks for
-homogeneous [6], [15], [19] and heterogeneous interactions
-[20], [21].
-
- 
- 
- 
- 
- 
- 
-Map-derived interactions have also been studied by em-
-bedding the map information as an aid to prediction [5], [14],
-[22]while [17] utilizes physical attention to take in account
-the map information. This information in turn can be used
-to identify and predict goal based interactions [11], [21] or
-to generate less expensive goal heatmaps [23]–[25]
-
-C. Multi-modal output
-
-Considering that human motion is inherently stochas-
-tic, it becomes necessary to handle this uncertainty while
-performing prediction. This is handled in different ways
-in different works. A simple random noise is added or
-concatenated to the input of the trajectory generator in some
-works [6], [15]. [7], [17] use GANs adding adversarial loss
-to generate prediction with higher quality. CVAE models
-have also been popular to implement multi-modal trajectory
-prediction [5], [8], [14], [18], [25] due to its ability to
-learn the latent variable distribution from prior conditions.
-To explicitly express different modalities, certain anchor-
-conditioned methods have been proposed [26], such as
-predicted endpoint conditioned (PEC) [23] and prototype
-trajectory conditioned (PTC) [27] frameworks to encourage
-more explainable predictions.
-
 In our work, we take ideas from each of these systems such
 as using Transformers to capture temporal trajectories, Graph
 Networks to capture varied and heterogeneous interactions
@@ -143,11 +24,8 @@ and CVAEs to model the multi-modality of human behaviour.
 The exact method in which these components are assembled
 together in our architecture will be described in the next
 section.
-
 III. THEORETICAL APPROACH
-
 A. Problem formulation
-
 Our problem of multimodally predicting pedestrian trajec-
 tories can be formally prescribed as follows. Starting with a
 bird’s eye view (BEV) scene of an environment captured in
@@ -157,81 +35,15 @@ this scene. For each scene, there exist a finite number of
 goals that can be reached by a pedestrian denoted by G.
 Each pedestrian also interacts with every other agent in the
 scene, denoted by E.
-
 Given this information, the model aims to predict the
 distribution of pedestrian’s trajectory for H timesteps in the
 future.
-
-We aim to predict the distribution of the future trajectory
-based on all
-the history information we have, and then
-generate multi-modal trajectories for each agent. We learn
-the parameters θ of the probability Pθ(Y|X, M, G, E) with
-X denoting trajectory history and Y denoting the predicted
-trajectory.
-
-For an observed agent i,
-
-the model outputs the pre-
-dicted future positions in the next H time steps from the
-current time t, defined as Yi = (Yt+1
-).
-Yt
-i ) is the position coordinate of the agent with
-x, y ∈ R. The input of the model is the history information
-in the past n time steps, which can be denoted as Xi =
-
-, ..., Yt+H
-
-i = (xt
-
-, Yt+2
-i
-
-i, yt
-
-i
-
-i
-
-(Xt−n+1
-, Xt−n+2
-, ..., Xt
-i). In order to consider the effect
-i
-i
-the history states of ego agent and all
-of social forces,
-neighbors as well as the semantic map information are input
-to the model. We assume that the number of agents in the
-area of the shared space around the ego agent (including
-the ego agent) is a time varying variable N t. The input at
-i = (St
-each time step can be denoted as Xt
-a=1, where
-St
-a, ˙yt
-a = (xt
-a) represents the state of the agent a, and
-It
-i denotes the semantic map information at time t around
-the ego agent.
-
-i)N t
-
-a, ˙xt
-
-a, yt
-
-a, It
-
 B. Proposed model
-
 Our proposed model can be split into three main compo-
 nents, in two phases as depicted in Fig. 1. In the Encoding
 Phase, we encode the ego agent’s interactions with the
 environment and other agents in the scene to create “Social
-Embeddings”. These Embeddings are used along with other
+Embeddings�. These Embeddings are used along with other
 data to gererate multi-modal trajectories in the Generative
 Phase of the model. The three main components are the
 Graph Attention Encoder (GAE), the Temporal Transfmer
@@ -239,7 +51,6 @@ Encoder-Decoder (TT) and the generative CVAE model for
 the ultimate output of multi-modal trajectories. Each of these
 components and their sub-components are described in detail
 below.
-
 Fig. 1: GSGFormer model overview. Consider various VRUs in a
 structured urban environment, in BEV as shown. Our model uses
 the understanding of the interplay of social forces between different
@@ -248,46 +59,14 @@ map encoder captures the influence of the environment on the VRU
 under consideration while the other encoders - for encoding the ego
 motion of the VRU, identifying the different goals of this VRU and
 those of its neighbours - are fed into a Graph Attention Network
-Encoder to capture a “Social Embedding” within the environment.
+Encoder to capture a “Social Embedding� within the environment.
 Social Embeddings for each time step are then passed on to the
 Generative Phase of the model, where different contexts from the
 Transformer Decoder and the CVAE Encoder are concatenated
 along the last dimension of the tensor and passed to the Residual
 GMM generator. Finally, positions for a time interval h from current
 time t are predicted by integrating these velocities over the time
-interval dt. Best viewed zoomed in.
-
-1) Agent State Encoders: This submodule acts as input
-to the GAE. Each agent in the scene is classified as one of
-four classes - pedestrian, bicycle, car and bus. The state of
-
-each class of agent is embedded by a corresponding linear
-layer. For each ego agent trajectory, neighbour tracks are
-identified by converting to an ego-centric coordinate, their
-position relative to the ego agent [30], also embedded using
-a linear layer. All outputs of the corresponding linear layers
-are denoted by dmodel.
-
-2) Map Encoder: Encoding the Map first requires pro-
-cessing the RGB image a semantically segmented image,
-creating an abstraction over the real observation. To encode
-this, we use a U-Net [31] architecture for semantically seg-
-menting the RGB image. The semantic map labels are drawn
-from [11]. Where such labels are not available for training,
-they were manually annotated in 6 classes. In addition to the
-SDD[32] and inD[33] datasets in the work[11], we also used
-map images and our own segmentation annotations from the
-OpenDD dataset[34] as training set. The model was trained
-with Dice Loss [?] and the resulting segmentation masks are
-as shown in Fig. 2.
-
-Fig. 2: Examples from the inD, SDD and OpenDD dataset. Above
-is the original image and below is the segmentation mask.
-
-This mask output containing semantic information of the
-scene is then encoded using a 2D CNN to generate the map
-embedding of size dmodel
-
+interval dt.
 3) Goal Encoder: This subcomponent is one of our novel
 contributions in this paper. We propose a 1D CNN to estimate
 the goal position. Initially, The state of the ego agent for
@@ -301,7 +80,6 @@ to a linear layer. The output of the network is a vector of
 size dmodel. The vector then serves as the input condition for
 the CVAE-Residual-GMM module detailed further in III-B.6,
 facilitating the generation of a range of potential goals.
-
 4) Social Graph Attention Neural Network: To model the
 social force acting on the ego agent, we introduce a hetero-
 geneous graph representation. This representation comprises
@@ -314,10 +92,8 @@ both node-level and semantic-level attention aggregating the
 social information to the ego agent node. The output is
 the social force embedding in size of dmodel is embedded
 from the aggregated ego agent node. This embedding is then
-
 element-wise combined with the state embedding of the ego
 agent, producing the social embedding at time step t.
-
 5) Temporal Transformer Model: Once the social infor-
 mation are encoded from the social graph of the ego agent
 at each time step, it is necessary to build the dependencies
@@ -328,26 +104,13 @@ the Transformer encoder as the source sequence with a fixed
 length n. Since the primary operation in Transformer is the
 attention mechanism which is not sensitive to the relative or
 the absolute position of the elements in the sequence, we add
-the ”positional encodings” with the same dimension to each
+the �positional encodings� with the same dimension to each
 social embedding in the sequence. We compute positional
 encodings through sine and cosine functions, as described
 in [12], which allows the model to easily learn to attend by
 relative positions. Meanwhile, it enables the model recognize
 any missing observations, as each comes with its distinct
 positional encoding.
-
-The Transformer encoder processes the history sequence
-in parallel and outputs the memory providing the query
-for each observation time step. The Transformer decoder
-takes the embedded future ego agent’s state sequence as
-the target sequence. The query of the memory is used to
-calculate the cross attention between the history sequence
-and future sequence. From the Transformer decoder, we
-obtain the predicted embedding sequence. Every embedding
-within this sequence serves as a condition for the waypoint
-CVAE-Residual-GMM Module (see in III-B.6), generating
-multi-modal states for each prediction horizon.
-
 6) CVAE-Residual-GMM Module: We propose a gener-
 ative CVAE-Residual-GMM Module to realize the one-to-
 many mapping for both goal and waypoints. The module is
@@ -364,9 +127,7 @@ ground truth is accessible, Z is drawn from the posterior
 distribution Qϕ(Z|X, Y) by the recognition network. Y is
 finally generated from the distribution Pψ(Y|X, Z) through
 the generation network.
-
 the training phase, given that
-
 Different from the vanilla CVAE, the generated Y is the
 sum of two parts: the output ˆY from CVAE decoder decoding
 the concatenated (X, Z) and the residual ∆Y, which adheres
@@ -379,63 +140,14 @@ historical state, alongside the entire future state sequence, is
 concurrently fed into the Transformer decoder. A subsequent
 masking is applied to speed up the training and to ensure
 predictions for time step t rely solely on preceding time
-
 steps. The latent variable Z is drawn both from Pθ(Z|X)
 and Qϕ(Z|X, Y).
-
-For inference, the decoder first receives the most recent
-historical state, followed by an auto-regressive procedure.
-The Transformer decoder’s output embedding is then fed into
-the CVAE as condition X. The latent variable Z is sampled
-from the prior network Pθ(Z|X). The predicted state is cal-
-culated by summing up the output from CVAE decoder and
-the residual sampled from Pψ(∆Y|X, Z). This predicted
-state is subsequently appended in the time dimension to the
-previous input of the Transformer decoder to forecast the
-next time step. Notably, all waypoints in a single trajectory
-utilize a consistent Z throughout the sampling phase.
-
-The predicted position is determined by integrating the
-displacement of each time step, which is computed using
-velocity and time intervals. This method has been demon-
-strated to be more precise than directly utilizing the predicted
-position, as supported by [5].
-
-8) Loss function: The loss function consists of two com-
-ponents: the waypoint and the goal loss, both represented
-through the CVAE loss format. The CVAE loss is expressed
-as the negative empirical lower bound (ELBO) [36]. While
-the aim of CVAE is to maximize the ELBO, due to our
-reliance on gradient descent methods for optimizing the
-neural network, we aim to minimize the negative ELBO,
-detailed as follows:
-
-L = Lwaypoint + Lgoal
-
-LCVAE = − EQϕ(Z|Y,X) [log Pψ(Y|X, Z)]
-+ KL (Qϕ(Z|Y, X)∥Pθ(Z|X))
-
-(1)
-
-(2)
-
-where Pθ(Z|X) and Qϕ(Z|Y, X) are derived from the
-normal distribution probability determined by the mean and
-variance as parameterized by prior network and recognition
-network. Pψ(Y|X, Z) corresponds to the residual probability
-Pψ(∆Y|X, Z), which adopts a GMM distribution probabil-
-ity. This is because Y is the sum of ˆY and ∆Y, where ˆY
-is deterministic.
-
 IV. EXPERIMENTS AND RESULTS
-
 A. Datasets
-
 We train and evaluate our model on three stationary BEV
 datasets - the intersection Drone (inD) Dataset [33], the
 Stanford Drone Dataset (SDD) [32] and the ETH/UCY
 Dataset [38], [39].
-
 inD dataset contains 32 drone recordings of various VRU
 trajectories of 5 different classes (pedestrian, bicycle, car,
 truck and bus) in 4 different scenes at German intersections.
@@ -443,23 +155,19 @@ The raw data is samples in 25Hz. Training and test sets are
 split based on previous work done [40] such that scenes 1
 and 2 of the dataset are considered as training data, scene 3
 to be the validation set and scene 4 as the test set.
-
 SDD is a similar drone dataset, with 60 recordings at 8
 unique scenes in the Stanford university campus, each scene
 containing a mixture of 6 classes of VRUs (pedestrians,
 skateboarders, bicyclists, cars, cars and buses). The raw data
-
 is sampled at 30 Hz. The entire dataset is split in two specific
 ways - one proposed in TrajNet [41] and another full split
 as in DESIRE [8].
-
 ETH/UCY is a classic dataset widely used for the evalu-
 ation for pedestrian trajectory prediction which contain only
 data of pedestrians with rich human-human interactions. The
 raw data is extracted and annotated at 2.5Hz. We follow the
 leave-one-out strategy as presented in previous works [4], [7]
 for evaluation.
-
 The first two datasets are more representative of scenarios
 that AVs can face in urban environments, especially in shared
 spaces than the classic ETH/UCY dataset. The background
@@ -469,9 +177,7 @@ ries of the pedestrian VRU class while utilizing the effects of
 the other VRU classes on these pedestrians. Another rationale
 for utilizing similar datasets is to investigate our model’s
 robustness to different scenes and vantages.
-
 B. Experimental Setup
-
 For each of the datasets chosen and all their corresponding
 scenes, we perform trajectory preprocessing as provided by
 OpenTraj tools [42]. All VRU trajectories are sampled at
@@ -485,106 +191,34 @@ h of 12 timesteps thus implying a medium term trajectory
 prediction window of 4.8s after an observation window of
 3.2s, consistent with the baselines (IV-C) chosen to compare
 against our work.
-
 For each trajectory, a distance of 15m (or equivalent) is
 chosen as an effective threshold for neighbour interactions
 while a crop patch of 10m (or equivalent) is chosen for
 map interaction for social embeddings. Parentheses imply an
 estimation from pixel space to Cartesian space where direct
 measurements are unavailable in the dataset.
-
 The model is set up to be trained on a single NVIDIA
-
 RTX A6000 GPU with 48 GB VRAM.
-
 C. Baselines and Metrics
-
 a) Baselines: We compare our model’s effectiveness
 with different baselines for each of the datasets described
 in Section IV-A since each dataset has its own merits and
 drawbacks. However, we explain some choices of baselines
 as below:
-
 Social GAN [7]: One of the earliest generative architec-
 tures that focus on multi-modal trajectory prediction. They
 apply a an LSTM Encoder-Decoder architecture connected
 by a social pooling module which used to aggregate the
 social interactions between actors in the scene.
-
 ST-GAT [6]: ST-GAT is a classic work on human trajec-
 tory prediction which uses graph attention network to model
 human interactions. LSTM is applied to model the temporal
 feature of the pedestrians.
-
 Y-Net [11]: This multi-modal trajectory generation model
 uses goals, waypoints and segmented maps to predict pedes-
 trian motion. However, it does not explicitly model any VRU
-
 Method
-Social-GAN [7]
-ST-GAT [6]
-Y-Net [11]
-NSP-SFM [25]
-GSGFormer(Ours)
-
-ETH
-0.81/1.52
-0.65/1.12
-0.28/0.33
-0.25/0.24
-0.56/0.99
-
-Evaluation Metrics (minADE20 / minFDE20 )
-ZARA1
-0.34/0.69
-0.34/0.69
-0.17/0.27
-0.16/0.27
-0.21/0.35
-
-UNIV
-0.60/1.26
-0.52/1.10
-0.24/0.41
-0.21/0.38
-0.32/0.56
-
-HOTEL
-0.72/1.61
-0.35/0.66
-0.10/0.14
-0.09/0.13
-0.18/0.31
-
-ZARA2
-0.42/0.84
-0.29/0.60
-0.13/0.22
-0.12/0.20
-0.16/0.28
-
-AVERAGE
-0.58/1.18
-0.43/0.83
-0.18/0.27
-0.17/0.24
-0.29/0.50
-
-TABLE I: minADE20 and minFDE20 evaluated on ETH/UCY dataset in meters.
-
-interaction, thus acting as the perfect foil to compare our
-model against, especially in proving that social interactions
-form the backbone of any prediction model.
-
-b) Metrics: We use the Average Displacement Error
-(ADE) and Final Displacement Error (FDE) as metrics for
-measuring the efficacy of our prediction task. As we measure
-the output of a multi-modal generative model, we adopt a
-minADEK and minFDEK reporting strategy over a set of K
-trajectories similar to prior approaches [7].
-
 D. Implementation details
-
 All input states - ego state, neighbour states, goal states -
 are embedded in a space of dmodel = 128. We use a map
 patch centered on the ego agent parsed through a pretrained
@@ -600,19 +234,15 @@ decoder and GMM consists of two hidden layers of size
 the latent variable is 16 for the goal and 32 for the waypoint.
 The number of mixture components is set as 4 for goal and
 20 for waypoint.
-
 The semantic segmentation network for the map encoder
 is a single model trained on both the drone datasets, with
 manual annotations in 6 classes where unavailable as pre-
 sented in Sec. III-B.2.
-
 The model is trained using the Adam optimizer with a
 learning rate starting at 0.001 and decaying by a factor of
 0.5 every 10 epochs for a total of 50 epochs with a batch
 size of 512.
-
 E. Quantitative Results
-
 We organise our results by dataset, with the reported
 minADE and minFDE for 20 samples each. Clearly, for all
 datasets, lower scores are better for both metrics with the
@@ -620,45 +250,14 @@ best result shown in bold. Table II compares metrics for the
 baselines with ours. As observed, our model beats the state
 of the art in one metric while performing at the state of the
 art in the other.
-
 Table III shows the compared metrics for two different
 splits for SDD - overlapping trajectories for the entire dataset
 at the top with the Trajnet split at the bottom. It can be
 seen that our model performs better than the state of the art
 when trained on the entire dataset compared to the Trajnet
-
-Method
-Social-GAN [7]
-ST-GAT [6]
-AC-VRNN [40]
-Y-net* [11]
-Goal-SAR [21]
-GSGFormer (Ours)
-
-minADE20 minFDE20
-
-0.48
-0.48
-0.42
-0.34
-0.31
-0.30
-
-0.99
-1.00
-0.80
-0.56
-0.54
-0.55
-
-TABLE II: minADE20 and minFDE20 evaluated on the inD dataset
-with result presented in meters. * indicates the Y-Net [11] result is
-trained by [21].
-
 split. We conjecture that this is due to the Trajnet split not
 containing sufficient social interaction information among its
 trajectories.
-
 Table I compares metrics of the baselines with our ap-
 proach, however as can be seen, our model does not perform
 as well on this dataset as the others. This is because of the
@@ -666,48 +265,7 @@ relative simplicity of ETH/UCY scenes and the inability of
 the Map Encoder module of our approach to reach its full
 potential, proving our model performs best on large scale
 datasets with environmental diversity.
-
-Method
-Social-GAN [7]
-DESIRE [8]
-SimAug [43]
-P2T [28]
-GSGFormer (Ours)
-PECNet [23]
-P2T [28]
-Y-Net [11]
-NSP-SFM [25]
-GSGFormer (Ours)
-
-minADE20 minFDE20
-
-27.25
-19.25
-10.27
-10.97
-10.27
-9.96
-8.76
-7.34
-6.52
-9.62
-
-41.44
-34.05
-19.71
-18.40
-16.67
-15.88
-14.08
-11.53
-10.61
-15.29
-
-TABLE III: minADE20 and minFDE20 evaluated on the entire SDD
-dataset (above) and the TrajNet split (below), reported in pixels.
-
 F. Qualitative Results
-
 Fig. 3 presents the qualitative results of our model, de-
 picted here for the inD and SDD datasets. In all presented
 cases, we see that our model predicts trajectories accurately
@@ -716,32 +274,12 @@ a turn in the trajectory is captured and predicted as one of the
 samples. In contrast, fig. 3f shows a case of another turning
 trajectory with a less confident goal sampling, leading to a
 chaotic trajectory and thus, risk map, prediction.
-
 (a) Best of 20 result (inD)
-
 (e) Turning trajectory (inD)
-
 (b) Risk map (inD)
-
 (c) Best of 20 result (SDD)
-
 (d) Risk map (SDD)
-
 (f) Chaotic prediction (inD)
-
-Fig. 3: Predicted trajectories and risk maps for SDD and inD datasets. Red trajectories are the ground truth, yellow trajectories the
-prediction and magenta trajectories the partial trajectory used for prediction. The risk map is generated as a function of the scene, with
-the involvement of all VRUs. Scatter points are sampled goals and trajectories. Best viewed in colour and zoomed in.
-
-and trajectory generation module using a CVAE-Residual-
-GMM architecture. We demonstrated the robustness and the
-generalization capabilities of our model by validating it using
-three publicly available datasets, in which we beat the state
-of the art in two, using the same hyperparameters. Future
-work will focus on the making the model work from the
-perspective of a moving car and evaluating the performance
-in real-world scenarios.
-
 A second conclusion we would like to draw from this work
 is how small the changes in the state of the art has become.
 We would like to draw attention to Table II where the average
@@ -750,17 +288,12 @@ while we have beaten the state of the art here, there is a
 plateauing of scores with changes only in the second decimal.
 It is our conclusion that we as a community have reached
 the limits of resolution for prediction in certain situations.
-
 ACKNOWLEDGMENT
-
 These
-
 researches have been conducted within the
 AI4CCAM project, financed by the EU Project AI4CCAM
 with grant number 101076911.
-
 G. Ablation Study
-
 We performed an ablation study, module-by-module, of
 our proposed model and verified on the inD dataset for its
 effectiveness in prediction tasks with results shown in Table
@@ -773,30 +306,3 @@ consistent decline of ADE and FDE with the addition of
 each component module thereby showcasing the importance
 of each of the four enumerated components in our module
 as well as in pedestrian prediction tasks in general.
-
-RG G N S minADE20 minFDE20
-
-✓
-✓ ✓
-✓ ✓ ✓
-✓ ✓ ✓ ✓
-
-0.58
-0.35
-0.31
-0.31
-0.30
-
-1.31
-0.65
-0.57
-0.56
-0.55
-
-TABLE IV: Ablation studies of our model on the inD dataset.
-We use a minADE20 and minFDE20 metric for evaluation, with
-the result reported in meters. Each column represents a component
-module of the architecture with RG = Residual GMM, G = Goal
-Module, N = Neighbour Embedding module, S = Map module
-
-V. 

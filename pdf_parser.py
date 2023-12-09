@@ -1,15 +1,15 @@
 import os
 import re
 from pdfminer.high_level import extract_text
-#pip install pdfminer-six
+# pip install pdfminer-six
 
-#papers from https://arxiv.org/list/cs.AI/recent
+# papers from https://arxiv.org/list/cs.AI/recent
 
 # Define the input and output folders
-pdf_folder = 'data/pdfs'
-entire_paper_folder = 'data/entire_paper'
-abstract_folder = 'data/reference'
-main_paper_folder = 'data/main_paper'
+pdf_folder = 'data/short/pdfs'
+entire_paper_folder = 'data/short/entire_paper'
+abstract_folder = 'data/short/abstracts'
+main_paper_folder = 'data/short/main_paper'
 
 # Ensure the output folder exists, create it if not
 if not os.path.exists(entire_paper_folder):
@@ -52,6 +52,22 @@ for root, _, files in os.walk(pdf_folder):
 
                 # Create the "rest_of_paper" starting with "introduction"
                 rest_of_paper_text = text[introduction_match.start():]
+
+                # stop at conclusion
+                conclusion_pattern = re.compile(
+                    r'\b[C][Oo][Nn][Cc][Ll][Uu][Ss][Ii][Oo][Nn]\b')
+                references_pattern = re.compile(
+                    r'\b[R][Ee][Ff][Ee][Rr][Ee][Nn][Cc][Ee][Ss]\b')
+                conclusion_match = conclusion_pattern.search(
+                    rest_of_paper_text)
+                references_match = references_pattern.search(
+                    rest_of_paper_text)
+                if conclusion_match:
+                    rest_of_paper_text = rest_of_paper_text[:conclusion_match.start(
+                    )]
+                elif references_match:
+                    rest_of_paper_text = rest_of_paper_text[:references_match.start(
+                    )]
                 # Create a corresponding "rest_of_paper" text file in the output folder
                 rest_of_paper_file_path = os.path.join(
                     main_paper_folder, os.path.splitext(file)[0] + '.txt')
@@ -66,9 +82,6 @@ for root, _, files in os.walk(pdf_folder):
 
             # Increment the counter for converted PDFs
             converted_count += 1
-
-# Print the total number of converted PDFs
-print(f"PDF to text conversion complete. {converted_count} PDFs converted.")
 
 # Print the total number of converted PDFs
 print(f"PDF to text conversion complete. {converted_count} PDFs converted.")

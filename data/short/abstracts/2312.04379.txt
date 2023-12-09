@@ -1,0 +1,23 @@
+Abstract
+
+There is an increasing consensus about the effectiveness of
+user-centred approaches in the explainable artificial intelli-
+gence (XAI) field. Indeed, the number and complexity of per-
+sonalised and user-centred approaches to XAI have rapidly
+grown in recent years. Often, these works have a two-fold ob-
+jective: (1) proposing novel XAI techniques able to consider
+the users and (2) assessing the goodness of such techniques
+with respect to others. From these new works, it emerged
+that user-centred approaches to XAI positively affect the in-
+teraction between users and systems. However, so far, the
+goodness of XAI systems has been measured through indi-
+rect measures, such as performance. In this paper, we propose
+an assessment task to objectively and quantitatively measure
+the goodness of XAI systems in terms of their information
+power, which we intended as the amount of information the
+system provides to the users during the interaction. Moreover,
+we plan to use our task to objectively compare two XAI tech-
+niques in a human-robot decision-making task to understand
+deeper whether user-centred approaches are more informative
+than classical ones.
+

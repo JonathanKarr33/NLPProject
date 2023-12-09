@@ -1,0 +1,34 @@
+Abstract—Predicting stock market is vital for investors and
+policymakers, acting as a barometer of the economic health. We
+leverage social media data, a potent source of public sentiment, in
+tandem with macroeconomic indicators as government-compiled
+statistics, to refine stock market predictions. However, prior
+research using tweet data for stock market prediction faces
+three challenges. First, the quality of tweets varies widely. While
+many are filled with noise and irrelevant details, only a few
+genuinely mirror the actual market scenario. Second, solely
+focusing on the historical data of a particular stock without
+considering its sector can lead to oversight. Stocks within the
+same industry often exhibit correlated price behaviors. Lastly,
+simply forecasting the direction of price movement without
+assessing its magnitude is of limited value, as the extent of the rise
+or fall truly determines profitability. In this paper, diverging from
+the conventional methods, we pioneer an ECON (A Framework
+Leveraging Tweets, Macroeconomic Indicators, and Historical
+Prices to Predict Stock Movement and Volatility). The framework
+has following advantages: First, ECON has an adept tweets filter
+that efficiently extracts and decodes the vast array of tweet
+data. Second, ECON discerns multi-level relationships among
+stocks, sectors, and macroeconomic factors through a self-aware
+mechanism in semantic space. Third, ECON offers enhanced
+accuracy in predicting substantial stock price fluctuations by
+capitalizing on stock price movement. We showcase the state-
+of-the-art performance of our proposed model using a dataset,
+specifically curated by us, for predicting stock market movements
+and volatility.
+
+Index Terms—stock market prediction, tweets extraction, time
+
+series forecasting, sentiment analysis, macroeconomic factors
+
+I. 

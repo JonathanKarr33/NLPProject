@@ -1,0 +1,21 @@
+Abstract— Pedestrian trajectory prediction, vital for self-
+driving cars and socially-aware robots, is complicated due to
+intricate interactions between pedestrians, their environment,
+and other Vulnerable Road Users. This paper presents GS-
+GFormer, an innovative generative model adept at predicting
+pedestrian trajectories by considering these complex interac-
+tions and offering a plethora of potential modal behaviors. We
+incorporate a heterogeneous graph neural network to capture
+interactions between pedestrians, semantic maps, and potential
+destinations. The Transformer module extracts temporal fea-
+tures, while our novel CVAE-Residual-GMM module promotes
+diverse behavioral modality generation. Through evaluations
+on multiple public datasets, GSGFormer not only outperforms
+leading methods with ample data but also remains competitive
+when data is limited.
+
+Index Terms— Situational Awareness, Pedestrian Behaviour,
+
+Autonomous Vehicles.
+
+I. 

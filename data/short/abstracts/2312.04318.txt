@@ -1,0 +1,30 @@
+Abstract—Human intelligence and human consciousness
+emerge gradually during the process of cognitive development.
+Understanding this development is an essential aspect of un-
+derstanding the human mind and may facilitate the construc-
+tion of artificial minds with similar properties. Importantly,
+human cognitive development relies on embodied interactions
+with the physical and social environment, which is perceived via
+complementary sensory modalities. These interactions allow the
+developing mind to probe the causal structure of the world. This
+is in stark contrast to common machine learning approaches, e.g.,
+for large language models, which are merely passively “digesting”
+large amounts of training data, but are not in control of their
+sensory inputs. However, computational modeling of the kind
+of self-determined embodied interactions that lead to human
+intelligence and consciousness is a formidable challenge. Here
+we present MIMo, an open-source multi-modal infant model for
+studying early cognitive development through computer simula-
+tions. MIMo’s body is modeled after an 18-month-old child with
+detailed five-fingered hands. MIMo perceives its surroundings via
+binocular vision, a vestibular system, proprioception, and touch
+perception through a full-body virtual skin, while two different
+actuation models allow control of his body. We describe the design
+and interfaces of MIMo and provide examples illustrating its use.
+All code is available at https://github.com/trieschlab/MIMo.
+
+Index Terms—cognitive development, developmental AI, infant
+
+model, multimodal perception, physics simulation
+
+I. 

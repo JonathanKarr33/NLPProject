@@ -1,8 +1,8 @@
 import json
 
-# okay to only select 100 smallest from test since that is 6440 files
+# okay to only select 100 smallest from test since that is 6440 files and the train is too llong 13GB
 file_path = 'short_pdfs/arxiv-dataset/test.txt'
-output_file_path = 'data/smallest_arxiv_100.txt'
+output_file_path = 'data/smallest_100/smallest_arxiv_600_700.txt'
 
 # Function to read lines from the file and convert them to dictionaries
 
@@ -29,13 +29,13 @@ sorted_result = sorted(result, key=lambda x: len(
 
 # Print the sorted result and the size of the "article_text" for the first 100 entries
 print("Sorted Result:")
-for i, data in enumerate(sorted_result[:100], start=1):
+for i, data in enumerate(sorted_result[600:700], start=1):
     article_text_size = len(json.dumps(data.get("article_text", [])))
     print(f"Entry {i}: Size={article_text_size}")
 
 # Write the first 100 entries to a new file
 with open(output_file_path, 'w') as output_file:
-    for data in sorted_result[:100]:
+    for data in sorted_result[600:700]:
         json.dump(data, output_file)
         output_file.write('\n')
 

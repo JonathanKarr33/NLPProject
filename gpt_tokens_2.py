@@ -39,7 +39,7 @@ def read_file(file_path):
 # Main program
 if __name__ == "__main__":
     # Example usage
-    input_file_path = 'data/smallest_100/smallest_arxiv_100.txt'
+    input_file_path = 'data/smallest_100/smallest_arxiv_600_700.txt'
 
     # Read all lines as dictionaries
     result = read_file(input_file_path)

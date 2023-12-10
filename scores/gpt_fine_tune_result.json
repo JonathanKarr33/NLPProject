@@ -1,0 +1,42 @@
+[
+  {
+    "article_id": "astro-ph9710065",
+    "word2vec_score": "0.74446213"
+  },
+  {
+    "article_id": "1702.04923",
+    "word2vec_score": "0.80847406"
+  },
+  {
+    "article_id": "astro-ph0410068",
+    "word2vec_score": "0.96834534"
+  },
+  {
+    "article_id": "astro-ph0509143",
+    "word2vec_score": "0.7781985"
+  },
+  {
+    "article_id": "1101.1128",
+    "word2vec_score": "0.7164989"
+  },
+  {
+    "article_id": "astro-ph0002059",
+    "word2vec_score": "0.64378935"
+  },
+  {
+    "article_id": "1312.3483",
+    "word2vec_score": "0.8412488"
+  },
+  {
+    "article_id": "hep-ph0511214",
+    "word2vec_score": "0.64054644"
+  },
+  {
+    "article_id": "cond-mat0111237",
+    "word2vec_score": "0.7574394"
+  },
+  {
+    "article_id": "astro-ph0108385",
+    "word2vec_score": "0.6761515"
+  }
+]

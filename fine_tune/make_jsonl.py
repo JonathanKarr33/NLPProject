@@ -1,3 +1,5 @@
+##### This file might be defunt
+
 import os
 import json
 folder_path1 = "../data/short/shrink_paper"

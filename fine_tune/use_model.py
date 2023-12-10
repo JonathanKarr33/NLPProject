@@ -8,9 +8,9 @@ client = OpenAI()
 
 def summarize_text(input_text):
     # Set the model and token limit
-    model = "" #! need to change this to the current finetuned model
+    model = "ft:gpt-3.5-turbo-1106:personal::8UJ8Or8k" #! need to change this to the current finetuned model
     max_tokens = 4000
-    text_to_gpt = f"Summarize this paper: {input_text}"
+    text_to_gpt = f"Make an abstract for the following paper: \n{input_text}"
     text_to_gpt = truncate_text(text_to_gpt, max_tokens)
     # Call the OpenAI API to generate text
     response = client.chat.completions.create(model=model,
@@ -37,7 +37,7 @@ def truncate_text(text, max_tokens):
 
 
 # Define the file paths
-input_directory = '../data/short/main_paper'
+input_directory = '../data/short/shrink_paper'
 output_directory = '../data/short/fine_results'
 
 # Create the output directory if it doesn't exist
@@ -58,7 +58,7 @@ for file_name in input_files:
     summary = summarize_text(text)
 
     # Save the summary in the output directory with the same filename
-    with open(output_file_path, 'w') as output_file:
+    with open(output_file_path, 'w', errors="ignore") as output_file:
         output_file.write(summary)
 
     gpt_files += 1

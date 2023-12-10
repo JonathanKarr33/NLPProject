@@ -21,6 +21,10 @@ def read_file(file_path):
 if __name__ == "__main__":
     # Example usage
     input_file_path = 'data/smallest_100/smallest_arxiv_100.txt'
+    output_directory = "data/smallest_100"
+    output_file_path = f"{output_directory}/parsed_data.json"
+
+# Ensure the output directory exists
 
     # Read all lines as dictionaries
     result_list = []
@@ -34,18 +38,17 @@ if __name__ == "__main__":
         for sublist in article["abstract_text"]:
             abstract_text += sublist + "\n"
         result_dict = {"article_id": article["article_id"],
-                       "abstract_text": abstract_text, "article_text": article["article_text"]}
+                       "abstract_text": abstract_text, "article_text": article_text}
         result_list.append(result_dict)
 
     output_directory = "data/smallest_100"
-    output_file_path = f"{output_directory}/parsed_data.txt"
+    output_file_path = f"{output_directory}/parsed_data.json"
 
     # Ensure the output directory exists
     os.makedirs(output_directory, exist_ok=True)
 
     # Write each line to the file
     with open(output_file_path, 'w') as file:
-        for line in result_list:
-            file.write(f"{line}\n")
+        json.dump(result_list, file, indent=2)
 
     print(f"Data has been written to {output_file_path}")

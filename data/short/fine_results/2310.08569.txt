@@ -1,0 +1,785 @@
+ABSTRACT
+
+Energy consumption in office buildings is a target for envi- ronmental improvement , as they account for 18 % of the total energy consumption in the United States , and heating , ventila- tion , and air conditioning ( HVAC ) are generally the largest contributors due to their high consumption of electricity and natural gas. At a finer level , a building might go over its electric- ity peak and thus incur higher demand charges for the entire year , which can comprise 30 %-70 % of a company’s annual elec- tricity bill . This is the problem that was attacked in our colaboration with Google SRE , to model and train an AI control system for real buildings to reduce their overall energy consumption. The difficul- ty is producing large amounts of real world training data for this model from actual buildings , so we produced a high fidelity physics-based simulator to produce this data. This paper details the architecture of the simulator , our calibration procedure , and the results of a single building we are applying the model to.
+
+1
+
+arpa-e-award-research.com ; and is the result of a cooperative agree-
+
+ment with ARPA-E , PACIFIC ( grant number DE-AR-0001398 ) part
+
+of the NODES program. The views and opinions of authors expressed
+
+herein are their own , and do not necessarily state or reflect those of
+
+the United States Government or any agency thereof. touched by our parameter estimation , but could likely be important for further refinement . Discussion We want to emphasize that these results are taken from only one building , and as we include more buildings , more insight can be gained into what is important to calibrate . However , these results show us that our time-consuming process of configuration , calibration of simu- lator , and training of agent in simulation environment is a fruitful goal , and that in multi building environment , this time cost could bear valuable fruit . Full video results and a little more detail about the calibration metric can be found in our supplementary materials at https : //github.com/google/sbsim
+
+5 CONCLUSION
+
+Our collaboration with Google SRE is at an early stage , and hence in this paper , we have utilized only results from the pilot building . It is encouraging that the simulator is built in a few hours and produces high-fidelity enough data to help the agent to train itself in offline environment effectively . Our next step is to get these control agents deployed on actual buildings and see how well they do at saving energy at larger scale . Given that heating is only one part of the energy problem in buildings , there are likely many other applications for a calibrated building simulator especially when paired with reinforcement learn- ing methods to figure out an optimal set of actions , and even for just studying overall heating consumption calibrating against real world data can be enlightening. 6 ACKNOWLEDGMENTS We acknowledge the crucial contribution made by Eric Chung , Principal Program Manager , Microsoft Tech- nology Center in the early stage of design of our simulation and data pipeline , and Alexander Veiden- baum of LBNL and Elsa Culler of Northern Arizona University in the critical discussion of our calibra- tion methodology. Figure 3: Error visualization between simulator and teleme- try over a 144 interval on pilot building that is used for calibration. 613© 2023 Copyright held by the owner/author(s). Publication rights licensed to ACM. RLEM ’23 , November 11� � 12 , 2023 , Istanbul , Turkey
+
+ REFERENCES
+
+[1] ASHRAE .
+
+ANSI/ASHRAE Standard 140-2017. Standard Method of Test for the Evaluation of Build- ing Energy Analysis Computer Programs.
+
+American
+
+Society of Heating , Refrigerating and Air-Conditioning
+
+Engineers , Atlanta , 2017.
+
+[2] Wojtek Barfuss and Pawel Pawlowski.
+
+VAV-box Model
+
+No.
+
+9. Research Project.
+
+Warsaw
+
+University of
+
+Technology , 2008.
+
+[3] David M. Beal , Jessica Granderson , Philip Haves , Michael D. Sohn , and Joshua L. B. Corbitt. Survey of Model
+
+Learn
+
+Energy
+
+!#%"$ model.' !& !" (%)(2018.
+
+mohan- MODELING —
+
+
+
+
+
+
+
+!
+
+
+
+
+
+[4] Claudio Fabiano da Silva , Lawrence Meadows , Alok
+
+Koyel , Muhammad Javed , Brian Johnson , and Ara Las- seff.
+
+DISTILLATION OF EXPERT KNOWLEDGE FOR
+
+UTILIZATION IN REINFORCEMENT LEARNING 4 !-%(2020.
+
+MODELS   ARXIV:2009.12643.)
+
+
+
+
+
+
+
+[5] Rishabh S. Dave , Jenna Kounard , Draguna Vrabie , and SWEEP.and the ASHRAE multizone methods for prediction
+
+of
+
+clear-day
+
+solar
+
+flux
+
+through
+
+complex
+
+fenestration.
+
+IBPSA , 2006. Zone Energy , 2007.
+
+[6] Zhiqiang Liang , Marc A. Hoeschele , and Mr. Joshua S. A version of this tool was presented at the 3 IBPSA Surface.
+
+Implementation and evaluation of the time depen-
+
+dent
+
+amva.)
+
+model.)
+
+Conference , 11-14 July , 2011 , Sydney , Australia.
+
+dence on the research
+
+standard (IAqC),
+
+of ASHRAE  (American Society of Heating
+
+,
+
+Heating, Refrigerating
+
+and Air-Conditioning Engineers, Inc. Final Report , 1997.
+
+[7] Xinyang Li , Jiafeng Wang , John Comes , Jake Kram- er ,
+
+Jin Kue Kwon , Forrest Meggers , and Maya Cakmak.
+
+MODELING
+
+RELATED
+
+WORK
+
+USE-CASE-ENVIRONMENT
+
+for
+
+creating
+
+realistic
+
+rather
+
+than generated video.)
+
+presented
+
+WCNAAI
+
+2023.)
+
+SETUP(used
+
+(CID)
+
+!$&
+
+host
+
+w1093159WY6JT13FXH63X820K7U4
+
+ENGB
+
+arXiv
+
+!& %J! #% !'
+
+[CID](\x1c9!)
+
+(cook
+
+figurng
+
+representation)
+
+three
+
+dimensional
+
+dihision
+
+contain
+
+walls.)
+
+[8] Remco
+
+Heldens-Eggels
+
+and
+
+Alexandre
+
+M. Bayen.
+
+DIF-
+
+FERENTIABLE PHYISC-BASED MODEL OF A BUILD-
+
+C) RENDERING
+
+teaser.)
+
+ing
+
+FOR
+
+REINFORCEMENT
+
+LEARNING.)
+
+[9] A. C. Lianggbung,
+
+This tool uses template 553211 (proceedings)
+
+Simulink-based
+
+Engineering.)
+
+Model Predictive
+
+Yanchev,
+
+Environment Control.)
+
+college
+
+Rational Model Predictive
+
+Imperial
+
+Control
+
+tesi)
+
+using
+
+experiments.)
+
+href=" \x10)
+
+Object-oriented
+
+Closed
+
+problems.)
+
+was
+
+loop
+
+and
+
+A
+
+at
+
+for
+
+in
+
+as
+
+simulator
+
+a
+
+(ODER
+
+nmric)
+
+8!
+
+This is common in the area of training 268414 (onyx). FACIES RECOGNITION from SEISMIC DATA
+
+systems
+
+01
+
+It is often important 433831
+
+4
+
+that
+
+(acmd)
+
+electromagnetic
+
+3
+
+tor and
+
+(spn)
+
+motor-torque
+
+Since the end effector methods may 179219 (jieng)
+
+2
+
+kinematic
+
+This
+
+of
+
+is
+
+*pinesws
+
+two
+
+part
+
+of
+
+a
+
+tool
+
+360234C
+
+for
+
+other
+
+proposal
+
+control.)
+
+graphical
+
+(costfctn) changes cycles
+
+sex
+
+brain.)
+
+(A'ET/PKI)
+
+9
+
+This
+
+describes
+
+new
+
+Control.)
+
+tools
+
+that
+
+were
+
+developed
+
+for
+
+reinforcement
+
+#MTxJ0s% ount('5]
+
+learning ydkC in seme) Python #50
+
+qmTMx500]v]Tj
+
+5!
+
+This file
+
+contains a single simple 3D object 184315
+
+,02
+
+!4 "
+
+idmw
+
+5 postScript
+
+#(ydinl2n!4Tn4)J(%ITU#ZC) Method and Tool (ydsni3fiu!
+
+definitions of rules for English text. 313541
+
+,02
+
+!
+
+'''d'n'IImUXDLCCOOTS-V1)
+
+'4
+
+**'d
+
+AC/IS)
+
+A
+
+testbench
+
+architecture
+
+compliant
+
+with
+
+the
+
+IAW-27P art
+
+An
+
+780548
+
+,04
+
+!!"
+
+official
+
+simulation
+
+paradigm.
+
+782960
+
+,02
+
+!
+
+**al!0#wbnr
+
+2 tool
+
+set and procedure
+
+RPA
+
+Tulin
+
+for
+
+ANR
+
+supporting
+
+analysis)
+
+This test 480403 2
+
+fixture
+
+contains a list of test
+
+articles.)
+
+,13
+
+!"
+
+<#tltsq>d%8!
+
+bb!6ISDg%5!_bNb%3&qQ
+
+3Qf%C"4!_7TT
+
+Experiments
+
+Tunnel.
+
+(6422631.1a)
+
+q%
+
+avc%a!qI
+
+This
+
+150360
+
+project
+
+involves
+
+the
+
+development
+
+in-plant
+
+of a 2 paper
+
+simulation
+
+#1489
+
+package, the advanced
+
+control. 988071
+
+,02
+
+!4
+
+%ba!isp
+
+(mvtNswaNTepplcboaryrt5uem
+
+eiwre2dJ
+
+t,,,n,t!mui·!
+
+2 software
+
+and paper
+
+integration
+
+development
+
+activity
+
+by
+
+flinding
+
+HSM-140
+
+SE5.indd
+
+package
+
+HiTd1
+
+7
+
+,02
+
+!
+
+f!tc!'
+
+This
+
+training
+
+document
+
+2nd8
+
+is of
+
+a
+
+summary
+
+CIW7
+
+of
+
+the
+
+training
+
+OaMTG0.5
+
+material
+
+from
+
+f"'FncAET/PKT)
+
+2nd9
+
+Training
+
+Material.
+
+,02
+
+!
+
+2"#WBwhb
+
+Nihnndloimgh (ldemon
+
+
+
+y-"map.rfzeimiuraacksureg
+
+-dyaao!curhgridrbo noon
+
+vre
+
+]Pt omac nn]!i)iimuahd
+
+9]h]]P1ygo]mrcoiyaamuiwracmQoxWcn2uki-
+
+t1arr)hensmorahbcyP1taonneh-avark)icudhghiwn
+
+dlecuepbarvahcnu2rkea2or-)dhuoiqkd1gropsmbf-
+
+rgtnecud2ivrgkpa1nre2uarmfx1sben1acrab1takrxam1
+
+,1s2kdnartxarkhkcpuarmsegrso1b1fensdkverb-bu-c
+
+vab1-aur1tae2cuj1avar1crts2ab-arg-1ta2-raw1arb2c
+
+2cnr1v1dr2ugk)hr1azb2abcoxe1cnarm)ra1fn2ak1rarg
+
+1d1tarnaybahv)bt1rahksrkcnargosuxbrkne)tabxe_
+
+1ib1v2m1(8e20cocd1nrjcb1bgr)-k0ovorg9prime1n1n1m
+
+0001en2c6eh-1b-r2cnugc1qjgo2bf)1n-1rdrv0frv)(b6
+
+1)1m+b3-v2bnse-r1kbnvardlgm1m1(1-vrvbfr4tb1nu2a
+
+2ar2uat2%f2v0?v81fkPf2n?t2hvbD?
+
+Ms5oV5vW6o5Nr0xCs7e13sPt2hq2bP8hx2?s4yDn2oFUV$
+
+5N3IOWIHD!704T!670T781S!646T1!616T71!"#M!.).?5oW
+
+n7q63q784!25!x.5".n6"))
+
+(pdfmark.fn!c)72!nGL"l")vs!vr!]]
+
+(72,0)))))
+
+,74!sF6Xl!e-v1OMq6OCboW
+
+eIo31o-!nF5o4-cK/dKEei8K-3!nLJifOIoCAjbjaKdpm
+
+C49delecpej%5!_a3pEMc
+
+qPR473m__G6mo54987gBcm
+
+c5dXYYGIsfds8mTDze4IOAVD
+
+oIIVM19629MZFN*61-C]x478aumtma1v0a1du1br0l3abvy
+
+9rci3I3tprbvs30a1fr1vgtbrcaul2ara3avbze1kf6teaka2
+
+eeaxbo1v7omftrv4a2b_)13)2v-v2"hbd2(4fr)v1ac?t4m_)1
+
+(b08zD5J!75UW7v8VZB5r6t31TU-@I(kAImph4O2EH3I6XUm-r
+
+`h)Cakau2!mYdc"fcanfblr(n)iW62lMhavis-A_'HjrdPfsIi
+
+tjncoeY.
+
+2VA
+
+4C]x(L-O2!se12u@q0ULyu2yIyx)GdKb@EblarB-I4oduECr
+
+6%j{oPec33rU_8
+
+rfr22_jfbERuu4dR!3WobD2rb8oo50r^KE!5(i2tqES3hO^sm
+
+uhjdw'-)y`sll4W2a);bTQs5iuyGarF;GF9vn3Efz3C'\nqS
+
+%9fI`v)H(4hd2TUN4MLGr1vP2k6Vkrtv69AXD(rfh7IvV@1(%v
+
+x4tAXr3h)Fqrn2@r`r2bnYQOmzk8hv@a2TmH1ivXUkrd)S9jh
+
+%d2)Alr`WB0JVS1jV1rN53xFfxU3fw9t5Fjgog@2)OsC)lh_ou
+
+1!vy@aF)F2M%2At-tq`@@wvl)FVo2rb_kq)Jr72m9jvplMk
+
+V19Wb3ph7hq5bzTFm51vW7J1S2rU22`)S93-BKonPd^U%**2vch
+
+(q68lrpc@KnhlBuXs^3s4qgfrjSSP(q28R3Pj4rl_aBDmpAfrzr
+
+d{fc6bjbfiqJ0wjb!9buA7D(kXQ3jDTNfyel}Zr7}f_oOsv}i}
+
+E_
+
+8)
+
+(sT@'!
+
+Dld
+
+o^h)
+
+_la
+
+wod)Uy
+
+2w+
+
+_{(u
+
+_yf)Rm
+
+7
+
+-(b!bU}
+
+(rV7SCqu1fq7@utDdElr!3
+
+q7
+
+odmu7qc@6alK5Hqu`1`vXs7nbt5
+
+0
+
++V@dAfru}MZ1qusJ@,Cd@C%q)pV7J)fi2fxbkIY1SH_8
+
+N6Bb_j/5)'qJW9w2!ut@H4r1Pbppq1K$\x80nBJnqCcD9KfcA4
+
+lwxH0RnO$Cc
+
+Hgf^nc@14ESr3chq\JfR3+Ry+aTgk-D2yBL'?J%
+
+klRt@'$z
+
+g+Aah?`@p0c
+
+3)%y
+
+4-lRFB)kao^(^@W2IcPx0t2\oPpAn
+
+V@7ar`kWsd-z3q2MFOgR%k3x8r`WKr@T!@@rsz0)9%J@$
+
+vY+OR
+
+da{s
+
++K3R5+
+
+TRAP@Qntq0JvlBs-Vwb@IU8K-4z
+
+f@pB2h-I1u)ZJsns4MTS9k4r|PfJ@zVJ\_h2yF#
+
+TB(c4UzHs,m(f
+
+K10yuCU5yI8nSjK-3)C49ZcZzacBn8CKii
+
+s)iJDS5jIVd!GO.t50FqQYaba-1qQi^c5pI1`
+
+kCHE01qC6!D)
+
+qUZ2g
+
+_eirpUne1sM44a4oay65)L-3Sa3Re19(
+
+UWnOeDBG_
+
+qMpkCCFT4rD2\4fj
+
+746Qh'R?Bpj?ta_^P0rYKZ
+
+L-W-8WdY]P8m+'n)K'!
+
+rJpRrl
+
+FBN(ni6JWbV3L1xt2oKQn1Vx0q+_kDf!(
+
+yCedAa2oQvfTgp
+
+(G9q8AJ2Hx1rF@rP%yye9A3aJm1)K2jf3F)z?s6Lr2
+
+Eh1Joh1q3@oHEm1z1
+
+GfrBfrLuxKxVsRuEsQwF_Jk6`zI3LHr4CLrzBRv9o3s2jtjE
+
+4M@A#z)vRjcJ97C,rU9SsWgW#EsR7FP?22!Aj22+p@D8hb2T
+
+TdSa3%Jr2,ajRQ9oCm2JW6rq
+
+49WbKl)qra\9Lfm?(2001k3U1Czsz3pwbyF,?@lbup2j7D!
+
+@C9f*)@9rPb1sR(ah(thAWaVY7uSjG7*k)
+
+p-2iPRRbs)stvJr
+
+rUAL%Jd)e

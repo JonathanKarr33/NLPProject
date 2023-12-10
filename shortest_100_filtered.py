@@ -35,6 +35,8 @@ if __name__ == "__main__":
         for sublist in article["article_text"]:
             article_text += sublist + "\n"
         abstract_text = ""
+        abstract_text = abstract_text.replace("<S>", "").replace(
+            "</S>", "").replace("\n", "")
         for sublist in article["abstract_text"]:
             abstract_text += sublist + "\n"
         result_dict = {"article_id": article["article_id"],

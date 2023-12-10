@@ -1,0 +1,202 @@
+INTRODUCTION
+In this work, we aim to model pedestrian behaviour in
+urban areas so as to create a risk map of the environment
+that can then be used by other parts of the AV system to
+navigate through such an area.
+We do this by modelling the
+social forces around the car in the environment, identifying
+the different possible goals for each pedestrian in the scene
+and utilising the map information around each detected
+pedestrian at each time step in their trajectory.
+In summary, our contributions presented in this work are
+as follows: (1) we propose a novel model architecture that
+captures social and environmental interactions to accurately
+model spatio-temporal pedestrian trajectories over a short
+to medium term horizon (2) this architecture incorporates
+a novel goal identification module that generates multiple
+likely end points for each observed pedestrian partial trajec-
+tory.
+(3) A generative model that beats the state of the art
+on two drone datasets proving that the model can generalise
+to similar environmental scenarios.
+In our work, we take ideas from each of these systems such
+as using Transformers to capture temporal trajectories, Graph
+Networks to capture varied and heterogeneous interactions
+and CVAEs to model the multi-modality of human behaviour.
+Starting with a
+bird’s eye view (BEV) scene of an environment captured in
+RGB, semantically segmented into different classes, denoted
+by M contains a history of positions of each pedestrian in
+this scene.
+For each scene, there exist a finite number of
+goals that can be reached by a pedestrian denoted by G.
+Each pedestrian also interacts with every other agent in the
+scene, denoted by E.
+Given this information, the model aims to predict the
+distribution of pedestrian’s trajectory for H timesteps in the
+B.
+The three main components are the
+Graph Attention Encoder (GAE), the Temporal Transfmer
+Encoder-Decoder (TT) and the generative CVAE model for
+the ultimate output of multi-modal trajectories.
+Our model uses
+the understanding of the interplay of social forces between different
+VRUs and the environment in which the motion is captured.
+A
+map encoder captures the influence of the environment on the VRU
+under consideration while the other encoders - for encoding the ego
+motion of the VRU, identifying the different goals of this VRU and
+those of its neighbours - are fed into a Graph Attention Network
+Encoder to capture a “Social Embedding� within the environment.
+Social Embeddings for each time step are then passed on to the
+Generative Phase of the model, where different contexts from the
+Transformer Decoder and the CVAE Encoder are concatenated
+along the last dimension of the tensor and passed to the Residual
+GMM generator.
+Finally, positions for a time interval h from current
+time t are predicted by integrating these velocities over the time
+interval dt.
+Then the embedding is stacked over the time di-
+mension, resulting in a tensor of shape (n×dmodel).
+The map embedding is
+concatenated to the output of the goal encoder and passed
+to a linear layer.
+The vector then serves as the input condition for
+the CVAE-Residual-GMM module detailed further in III-B.6,
+facilitating the generation of a range of potential goals.
+4) Social Graph Attention Neural Network: To model the
+social force acting on the ego agent, we introduce a hetero-
+geneous graph representation.
+Physically, we only consider the effect of these
+embeddings unidirectionally on the ego agent at time step t.
+Then a heterogeneous graph attention network[35] performs
+both node-level and semantic-level attention aggregating the
+social information to the ego agent node.
+This embedding is then
+element-wise combined with the state embedding of the ego
+agent, producing the social embedding at time step t.
+5) Temporal Transformer Model: Once the social infor-
+mation are encoded from the social graph of the ego agent
+at each time step, it is necessary to build the dependencies
+between graphs across different time steps.
+The history sequence of social embedding are fed into
+the Transformer encoder as the source sequence with a fixed
+length n. Since the primary operation in Transformer is the
+attention mechanism which is not sensitive to the relative or
+the absolute position of the elements in the sequence, we add
+the �positional encodings� with the same dimension to each
+social embedding in the sequence.
+We compute positional
+encodings through sine and cosine functions, as described
+in [12], which allows the model to easily learn to attend by
+relative positions.
+the training phase, given that
+Different from the vanilla CVAE, the generated Y is the
+sum of two parts: the output ˆY from CVAE decoder decoding
+the concatenated (X, Z) and the residual ∆Y, which adheres
+to a GMM distribution.
+Notably, every waypoint within a single
+trajectory utilizes a consistent Z for each sampling iteration.
+Training and test sets are
+split based on previous work done [40] such that scenes 1
+and 2 of the dataset are considered as training data, scene 3
+to be the validation set and scene 4 as the test set.
+The first two datasets are more representative of scenarios
+that AVs can face in urban environments, especially in shared
+spaces than the classic ETH/UCY dataset.
+The background
+RGB frames in these datasets act as the maps for our model.
+In each dataset, we only concentrate on predicting trajecto-
+ries of the pedestrian VRU class while utilizing the effects of
+the other VRU classes on these pedestrians.
+All VRU trajectories are sampled at
+2.5Hz and velocities for these trajectories are calculated as
+/∆t where X represents the sampled position at
+time t and ∆t is the sampling interval.
+Each observed partial
+trajectory lasts for 8 timesteps with a prediction horizon
+h of 12 timesteps thus implying a medium term trajectory
+prediction window of 4.8s after an observation window of
+3.2s, consistent with the baselines (IV-C) chosen to compare
+against our work.
+For each trajectory, a distance of 15m (or equivalent) is
+chosen as an effective threshold for neighbour interactions
+while a crop patch of 10m (or equivalent) is chosen for
+map interaction for social embeddings.
+Parentheses imply an
+estimation from pixel space to Cartesian space where direct
+measurements are unavailable in the dataset.
+C. Baselines and Metrics
+a) Baselines: We compare our model’s effectiveness
+with different baselines for each of the datasets described
+in Section IV-A since each dataset has its own merits and
+drawbacks.
+However, we explain some choices of baselines
+Social GAN [7]: One of the earliest generative architec-
+tures that focus on multi-modal trajectory prediction.
+Y-Net [11]: This multi-modal trajectory generation model
+uses goals, waypoints and segmented maps to predict pedes-
+trian motion.
+However, it does not explicitly model any VRU
+D. Implementation details
+All input states - ego state, neighbour states, goal states -
+are embedded in a space of dmodel = 128.
+We use a map
+patch centered on the ego agent parsed through a pretrained
+UNet architecture to extract semantic segments from the
+patch and subsequently embed it in a space of 128.
+The
+Graph Attention Network is composed of two input layers
+of size 128 in mean aggregation mode with 4 attention heads
+for each layer.
+The single layer Transformer encoder decoder
+module has a feed forward dimension set to 256 with 4 heads
+of multi-head attention.
+The semantic segmentation network for the map encoder
+is a single model trained on both the drone datasets, with
+manual annotations in 6 classes where unavailable as pre-
+sented in Sec.
+E. Quantitative Results
+We organise our results by dataset, with the reported
+minADE and minFDE for 20 samples each.
+As observed, our model beats the state
+of the art in one metric while performing at the state of the
+art in the other.
+Table III shows the compared metrics for two different
+splits for SDD - overlapping trajectories for the entire dataset
+at the top with the Trajnet split at the bottom.
+It can be
+seen that our model performs better than the state of the art
+when trained on the entire dataset compared to the Trajnet
+split.
+Table I compares metrics of the baselines with our ap-
+proach, however as can be seen, our model does not perform
+as well on this dataset as the others.
+This is because of the
+relative simplicity of ETH/UCY scenes and the inability of
+the Map Encoder module of our approach to reach its full
+potential, proving our model performs best on large scale
+datasets with environmental diversity.
+3e where
+a turn in the trajectory is captured and predicted as one of the
+samples.
+We would like to draw attention to Table II where the average
+prediction is smaller than the average stride of a human and
+while we have beaten the state of the art here, there is a
+plateauing of scores with changes only in the second decimal.
+G. Ablation Study
+We performed an ablation study, module-by-module, of
+our proposed model and verified on the inD dataset for its
+effectiveness in prediction tasks with results shown in Table
+IV.
+Beginning by removing all component modules except
+a single CVAE layer, trained by the l2 loss, produces an
+FDE and ADE as seen.
+Continuing, we add modules one
+after another and compare against the minimum baseline
+produced by the single CVAE layer.
+As seen,we notice a
+consistent decline of ADE and FDE with the addition of
+each component module thereby showcasing the importance
+of each of the four enumerated components in our module
+as well as in pedestrian prediction tasks in general.

@@ -1,0 +1,240 @@
+Here, we present PCoQA, an innovative and exten-
+sive Persian Conversational Question Answering
+dataset tailored explicitly for Question Answering
+1https://github.com/HamedHematian/PCoQA
+in Context, drawing inspiration from two influen-
+tial predecessors, CoQA (Reddy et al., 2019) and
+QuAC (Choi et al., 2018).
+To this end,
+like CoQA, both questioner and responder have ac-
+cess to the document in order to control the rate of
+unanswerable questions.
+Since questioner’s acces-
+sibility to documents increases the odds of string
+matching and paraphrasing questions (Choi et al.,
+2018), two further measures are taken to diminish
+the phenomena.
+First, the questioner is informed to
+ask questions that do not contain lexical matching,
+and second, in the post-processing stage, questions
+that contain a high level of lexical overlap with the
+sentence containing the answer, are paraphrased to
+ensure the quality of the dataset.
+This characteristic is fur-
+ther compounded by the inclusion of abstract
+topics (since we don’t value pages containing
+high number of entities over other pages) in our
+dataset, where documents often lack entities or
+noun phrases, and answers tend to be explanatory
+and lengthy.
+Finally, we provide various bench-
+marks for the dataset, including baseline meth-
+ods.
+Given that our dataset is approximately ×10
+smaller than larger datasets like CoQA and QuAC,
+and data scarcity poses a challenge, we also explore
+the potential of enhancing model performance by
+pre-training it on other question-answering datasets.
+(2019a) pro-
+poses marking history answers in the embedding
+layer, and Qu et al.
+Another line
+of research utilizes question rewriting (Vakulenko
+et al., 2021) to address the problem.
+(2021) employs consistency training to mitigate the
+error propagation problem in rewritten questions,
+while Chen et al.
+Despite these signif-
+icant efforts, a notable issue in most of the men-
+tioned research is the use of ground truth answers as
+part of the modeling process.
+A dialog sample of the dataset
+is depicted in Figure A1 whose title is Pride &
+3.1 Document Collection
+The documents in our dataset are based on
+Wikipedia articles.
+In line with previous question-
+answering datasets in Persian (Darvishi et al., 2023;
+Ayoubi, 2021), we have chosen Wikipedia as the
+primary source for obtaining documents.
+To build
+our documents, we have taken a different approach
+compared to CoQA, which selects the initial por-
+tion of each article as the final document (Reddy
+et al., 2019).
+Wikipedia articles typically begin
+with an abstract that provides general informa-
+tion about the article’s topic, and subsequent sec-
+tions delve into specific details.
+While the abstract
+is essential for constructing final documents, the
+finer-grained information in the subsequent sec-
+tions should not be overlooked.
+To address this
+concern and ensure diversity among documents
+with consistent contexts, we have devised a unique
+process for building our final documents.
+Initially,
+we select two bounds for the minimum and maxi-
+mum document lengths, denoted as Dm and DM
+respectively.
+Dm is set to ensure that all documents
+contain a minimum context necessary for a mean-
+ingful dialog, while DM prevents excessively long
+documents that can challenge current network mod-
+eling capabilities, as transformers consist our main
+models and they receive a limited length as input.
+In
+our approach, we differentiate between the abstract
+and other sections, which we represent as A and
+Si, respectively, with i being the section number.
+The role of the
+document provider is crucial in curating documents
+that align with the dataset’s requirements and main-
+tain contextual coherence.
+(2019),
+we don’t consider any pre-condition, like a good
+number of entities, for the selected pages.
+Next, It is
+decided to whether select the document from the A
+or a random Si-s:
+• If A is selected as the beginning of the doc-
+ument: If LA + (cid:80)
+i LSi ≤ Dm, meaning
+that the length of page is below the minimum
+constraint, the document is discarded and if
+A ≥ DM , the A is tailored to ensure the max-
+imum length constraint.
+To encourage diversity, the document
+provider is allowed to append Si-s to the A
+in order to elongate the document such that
+the maximum length constraint is preserved;
+these Si-s are selected in a way so that they
+are semantically consistent with each other
+• If Sj is selected as the beginning of the docu-
+ment: the process follows a similar pattern
+as previously described.
+However, in this
+case, the document begins with Sj and is sub-
+sequently extended with potentially semanti-
+cally consistent sections, as determined by the
+document provider.
+To illustrate the process, an example involving
+the Wikipedia page for "Canada" is shown in Fig-
+ure A2.
+The final document is then com-
+posed by concatenating these three selected sec-
+It is important to emphasize the pivotal role of
+the document provider in this process.
+For instance, if
+Sj is selected as the beginning of the document
+and it contains a co-reference to a previous sec-
+tion or some of its content is vague due to lack of
+previous context, Sj should be omitted from the
+selection, and the process should proceed with the
+next suitable section.
+3.2 Dataset Annotation
+To establish dialogs, each document is assigned to
+to a questioner and a responder, both of whom hav-
+ing access to the title and text of the document.
+The questioners
+are informed that they should start the conversation
+with general information and continue it to specific
+subjects, to match the same process of human infor-
+mation seeking in real world.
+Addi-
+tionally, questioners are informed to change their
+questions if their questions exhibit a substantial
+overlap with the potential answer.
+3.3 Post-Processing
+While our dataset is designed to provide question-
+ers with access to documents, it is possible that
+string-matching questions may arise (Choi et al.,
+2018), despite our efforts to guide questioners to
+avoid such issues.
+Previous studies have indicated
+that questions exhibiting high similarity to the sen-
+tence containing the answer have a greater likeli-
+hood of being answered correctly (Sugawara et al.,
+2018).
+To ensure the dataset’s quality, we have
+identified these questions and had them rewritten to
+reduce lexical overlap between the rewritten ques-
+tion and the sentence that contains the correspond-
+ing answer.
+Each question that shares at least one
+similar word with the answer-containing sentence
+is subjected to this rewriting process.
+A question is
+rewritten in one of three ways:
+• Words were removed due to ellipsis
+• Words were replaced by their synonyms
+• Words were replaced by their co-references
+| overlap |
+We quantified the similarity using the formula
+| question words | where overlap is the
+similarity =
+set of shared words between the question and the
+sentence containing the answer.
+This is
+due to the fact that each question can have multiple
+answers; Therefore, it is indispensable to obtain
+accurate and unbiased scores for evaluation.
+In line with previous research (Choi et al.,
+2018; Rajpurkar et al., 2016), multiple annotations
+are assigned to each question in the Dev/Test set.
+This practice is essential because a single ques-
+tion may have multiple valid answers.
+Additionally, our docu-
+ments are longer than those in CoQA and QuAC,
+necessitating the use of transformers with larger
+input sizes, as standard transformers have limited
+input capacities.
+F1 indicates the degree of overlap between the
+predicted answer and the gold answer, and HEQ-Q
+and HEQ-D are the ratio of questions and dialogs
+for which the model outperforms the human re-
+spectively (Choi et al., 2018).
+While HEQ-D is a
+stringent metric that requires the model to outper-
+form humans for every question within a dialog to
+earn a point, it may be overly strict in some cases.
+While HEQ-D is a stringent metric that requires
+the model to outperform humans for every question
+within a dialog to earn a point, it may be overly
+strict in some cases.
+To address this, we introduce
+another metric, called HEQ-M. HEQ-M quantifies
+the number of dialogs for which the model achieves
+a better overall performance compared to human
+performance on average.
+Additionally, we analyze
+the F1 score for each dialog turn to gain insights
+into the model’s performance at different turns of
+the conversation.
+Figure 1 illustrates the per-
+formance variation of the model concerning the
+inclusion of a different number of history ques-
+tions.
+Notably, excluding the history questions
+results in a sharp drop in the model’s performance.
+However, including more than
+2 history questions gradually leads to a decline in
+performance.
+This suggests that histories with dis-
+tances over 2 are irrelevant and don’t introduce new
+information on average, and their inclusion induces
+some noise in the model.
+In our implementation, each model
+takes the concatenated question and previous his-
+tory questions as the first input and the document
+as the second input, which is then fed into the trans-
+Baseline Methods ParsBERT and XLM-Roberta
+are fine-tuned on PCoQA, constituting our baseline
+Pre-Trained Methods ParSQuAD + Pars-
+BERT denotes
+pre-training ParsBERT on
+ParSQuAD (Abadani et al., 2021), a translated
+dataset of SQUAD (Rajpurkar et al., 2018) to
+Farsi, and then fine-tuning it on PCoQA using
+history concatenation.

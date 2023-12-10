@@ -1,35 +1,31 @@
 Introduction
 Elections for the AAAI Executive Council take place an-
 nually, with one-third of the positions being up for elec-
-tion each time. Artiﬁcial Intelligence research encompasses
+tion each time. Arti�cial Intelligence research encompasses
 a broad variety of topics, and it is important that the council
-has representatives from all major subﬁelds. Moreover, the
+has representatives from all major sub�elds. Moreover, the
 community is very international, and the council should rep-
 resent the interests of members around the world, so there
 is a desire for proportionate representation in terms of geo-
 graphical regions. Diversity in terms of gender and academic
 seniority is another key desideratum.
-
 There are several multiwinner voting rules that provide
 fair representation guarantees (Aziz et al. 2017; Peters and
 Skowron 2020). However, existing notions of fairness for
 multiwinner voting do not fully capture the complexity of
 our setting: it may be the case that a voter is not represented
 by any of the candidates elected in the current round, yet
-she is satisﬁed with the overall composition of the coun-
+she is satis�ed with the overall composition of the coun-
 cil because she is well-represented by some of the council
-
-Copyright © 2024, Association for the Advancement of Artiﬁcial
+Copyright © 2024, Association for the Advancement of Arti�cial
 Intelligence (www.aaai.org). All rights reserved.
-
 members elected in the previous rounds. Also, given that the
 council is renewed regularly, perhaps a group of voters that
 is too small to be assured permanent representation on the
 council can be guaranteed a spot every few rounds?
-
 In a somewhat different spirit, consider proof-of-stake
 blockchain protocols where a primary concern is the “rich
-gets richer effect” (Fanti et al. 2019; Huang et al. 2021). In
+gets richer effect� (Fanti et al. 2019; Huang et al. 2021). In
 such scenarios, lotteries for a single-shot interaction provide
 a form of fairness, as the probability of winning is propor-
 tional to the invested effort (Orda and Rottenstreich 2019;
@@ -39,7 +35,6 @@ edly over multiple rounds (Fanti et al. 2019; Grossi 2022).
 Formalizing fairness concepts and successfully designing
 mechanisms for achieving these in the repeated-interaction
 setting is therefore highly relevant to blockchain systems.
-
 There are further examples of real-world elections where
 temporal considerations play an important role, and many
 authors explored multiwinner voting with temporal ele-
@@ -47,14 +42,13 @@ ments. However, this body of work does not yet offer a
 systematic exploration of issues associated with voting over
 time, with each strand of research considering a slightly dif-
 ferent model and a different set of applications. Against this
-background, we propose a uniﬁed framework to facilitate a
+background, we propose a uni�ed framework to facilitate a
 principled study of temporal fairness in multiwinner voting,
 highlighting several key challenges, consolidating existing
 bodies of work, and identifying gaps in the existing litera-
 ture. We aim to set the groundwork for a more coherent, tar-
 geted approach to tackling conceptual and algorithmic chal-
 lenges in temporal multiwinner voting.
-
 Several elements of our framework originate from a larger
 body of work within the social choice literature and be-
 yond. This includes, in particular, works on perpetual vot-
@@ -69,13 +63,6 @@ ner, and Lackner (2022) argue that several common sequen-
 tial election mechanisms may be detrimental to welfare. An-
 other relevant strand of work is that on conference schedul-
 ing (Patro et al. 2022), slot assignment (Elkind, Kraiczy,
-
- 
- 
- 
- 
- 
- 
 and Teh 2022), and line-up elections (Boehmer et al. 2020),
 where the goal is to output a sequence of non-repeating win-
 ners, whilst maintaining fairness to voters across the entire
@@ -94,12 +81,11 @@ Munagala, and Shah 2018; Skowron and G´orecki 2022;
 Lackner, Maly, and Nardi 2023), repeated matching (Gol-
 lapudi, Kollias, and Plaut 2020; Trabelsi et al. 2023; Cara-
 giannis and Narang 2023), resource allocation over time
-(Bampis, Escofﬁer, and Mladenovic 2018; Igarashi et al.
+(Bampis, Escof�er, and Mladenovic 2018; Igarashi et al.
 2023), online committee selection (Do et al. 2022), dynamic
 social choice (Parkes and Procaccia 2013; Freeman, Za-
 hedi, and Conitzer 2017), and temporal liquid democracy
 (Markakis and Papasotiropoulos 2023).
-
 As illustrated by the many examples mentioned above,
 maintaining welfare and fairness guarantees over time is rel-
 evant to many domains. Research into temporal multiwinner
@@ -107,8 +93,7 @@ elections would thus allow us to capture many practical sce-
 narios, discover notions of representation that are appropri-
 ate for temporal settings, and offer insights into the possibil-
 ity of achieving desirable goals by society in a computation-
-ally efﬁcient manner.
-
+ally ef�cient manner.
 The remainder of the paper is structured as follows. First,
 we introduce the framework. We then proceed to look at
 each element of the model, ﬂeshing out various options
@@ -116,11 +101,9 @@ available, consolidating existing work and positioning it
 with regard to these options, and pointing out gaps or ideas
 for expansion. Finally, to set the foundations for further
 study, we formulate several research challenges and poten-
-tial directions to push this ﬁeld forward, and highlight the
+tial directions to push this �eld forward, and highlight the
 immense potential of research in this area.
-
 The Temporal Multiwinner Voting Framework
-
 The basic components of our framework are a set N =
 {1, . . . , n} of n agents, a set P = {p1, . . . , pm} of m dis-
 tinct projects, or candidates, and a set [ℓ] = {1, . . . , ℓ} of
@@ -132,46 +115,40 @@ ence. The goal is to select an outcome o = (o1, . . . , oℓ),
 which is a sequence of ℓ sets of candidates such that for
 every r ∈ [ℓ], the set of candidates or ⊆ P is chosen at
 timestep r.
-
 Next, we discuss various elements of the framework, con-
 trasting several options within each element, and positioning
 the existing work in the computational social choice litera-
 ture with respect to these options. We also outline several
 directions for future work.
-
-Outcomes
-The ﬁrst parameter we explore is what is considered a per-
+The �rst parameter we explore is what is considered a per-
 missible outcome at each timestep. In particular, we distin-
 guish between selecting one candidate at a time and choos-
 ing multiple candidates at each timestep. We also consider
 constraints that can be imposed on the outcome vector.
-
-Structure
 In a single-shot multiwinner election, the outcome is a sin-
 gle set of candidates. There are two possible generalizations
-to the temporal setting. The ﬁrst (and one that is more com-
+to the temporal setting. The �rst (and one that is more com-
 mon in the literature) is having a single winning candidate
 chosen at each timestep (i.e., or ∈ P for each r ∈ [ℓ]).
 While one can view this variant of the model as a tempo-
 ral extension of single-winner elections, the multiwinner in-
-terpretation is justiﬁed, too, as one can treat the (multi-)set
+terpretation is justi�ed, too, as one can treat the (multi-)set
 O = {or : r ∈ [ℓ]} as the winning committee and apply
 fairness concepts that originate in multiwinner voting litera-
 ture to the entire set O; e.g., Bulteau et al. (2021) and Page,
-Shapiro, and Talmon (2022) reason about justiﬁed represen-
+Shapiro, and Talmon (2022) reason about justi�ed represen-
 tation provided by O. This model is considered in numer-
 ous existing works, including scheduling problems (Elkind,
 Kraiczy, and Teh 2022; Patro et al. 2022), the perpetual vot-
 ing model (Lackner 2020; Lackner and Maly 2023), and in
 public decision-making (Conitzer, Freeman, and Shah 2017;
 Fain, Munagala, and Shah 2018). The second model as-
-sumes that the goal is to select a ﬁxed-size set of winning
+sumes that the goal is to select a �xed-size set of winning
 candidates (i.e., an entire committee) at each timestep. This
 approach is taken, e.g., by Bredereck, Kaczmarczyk, and
 Niedermeier (2020), Bredereck, Fluschnik, and Kaczmar-
 czyk (2022), and Deltl, Fluschnik, and Bredereck (2023) in
 their study of sequential committee elections.
-
 Feasibility Constraints
 In the standard multiwinner voting setting, it is typically as-
 sumed that there is a parameter k such that every subset of
@@ -194,14 +171,11 @@ Skowron and G´orecki 2022), such constraints can be inﬂu-
 enced by the suitability of a project being implemented at
 a particular timestep due to manpower or geographical con-
 straints (Lodi et al. 2022).
-
 However, it may also be the case that a decision at
 timestep r constrains the options available at timestep r′:
 e.g., in fair scheduling problems it is common to assume
-
 that each project in P can be implemented at most once, so
 if we select p ∈ P at timestep r, it is no longer available at
-r′
 6= r (Elkind, Kraiczy, and Teh 2022; Patro et al. 2022).
 More generally, for each project p ∈ P there may be a bound
 αp ∈ N, indicating the maximum number of times that p can
@@ -216,13 +190,11 @@ not been modeled in the literature: e.g., an AAAI executive
 council member, once elected, remains a member of the win-
 ning committee for three timesteps, but is then not eligible to
 participate in the next election (but can run again later on).
-
 Preferences
 Another important component of our framework is agents’
 preferences. The aspects that need to be considered include
 ballot types (e.g., approval, ranked, or cardinal), and if pref-
 erences can evolve over time (static or dynamic).
-
 Ballot Types
 The computational social choice literature typically fo-
 cuses on three ballot types: approval ballots (Aziz et al.
@@ -230,7 +202,6 @@ cuses on three ballot types: approval ballots (Aziz et al.
 iszewski et al. 2017; Elkind et al. 2017), and cardinal bal-
 lots (Conitzer, Freeman, and Shah 2017; Freeman, Zahedi,
 and Conitzer 2017; Fain, Munagala, and Shah 2018).
-
 Approval ballots Much of the recent work on proportion-
 ality in computational social choice focuses on approval
 ballots (Lackner and Skowron 2023): each agent reports
@@ -245,31 +216,25 @@ considered in the context of sequential committee elections
 ereck, Fluschnik, and Kaczmarczyk 2022; Deltl, Fluschnik,
 and Bredereck 2023) and scheduling (Bulteau et al. 2021;
 Elkind, Kraiczy, and Teh 2022).
-
 Ranked ballots Under ranked ballots, each agent reports
 a ranking over the candidates at each timestep; voting with
 ranked ballots has been extensively studied in single-shot
 multiwinner elections (Faliszewski et al. 2017), with appli-
 cations ranging from parliamentary elections to movie se-
 lection (Elkind et al. 2017).
-
 Cardinal ballots Cardinal ballots—where each voter
-explicitly speciﬁes the utility they obtain from each
+explicitly speci�es the utility they obtain from each
 candidate— offer a lot of expressivity, albeit at a higher
 cost of elicitation. Such ballots have been studied in set-
 tings such as public decision-making (Conitzer, Freeman,
 and Shah 2017; Freeman, Zahedi, and Conitzer 2017; Fain,
 Munagala, and Shah 2018), portioning (Freeman et al. 2021;
-
 Elkind, Suksompong, and Teh 2023), and line-up elections
 (Boehmer et al. 2020).
-
 Temporal Evolution
-
 Next, we consider the temporal evolution of preferences.
 Preferences are said to be static if they do not change over
 time, and are dynamic otherwise.
-
 Static preferences
 In this setting, each voter’s preferences
 remain the same across the entire time horizon, and temporal
@@ -279,7 +244,6 @@ section for a discussion). For instance, Bulteau et al. (2021)
 consider static preferences in perpetual voting, and obtain
 positive algorithmic results for achieving notions of propor-
 tionality in this setting.
-
 Dynamic preferences Dynamic preferences capture the
 idea that agents’ preferences may evolve with time. Just as
 in case of outcomes, we distinguish between non-adaptive
@@ -295,7 +259,6 @@ Shah 2018; Skowron and G´orecki 2022) and Bulteau et al.
 (2021) work on perpetual voting consider dynamic non-
 adaptive preferences, whereas Parkes and Procaccia (2013)
 consider dynamic adaptive preferences.
-
 Intertemporal constraints An important special case that
 is not captured by the static/dynamic dichotomy is intertem-
 poral restrictions on voters’ ballots: e.g., in the context of
@@ -303,8 +266,6 @@ scheduling, an agent may be asked to report her ideal sched-
 ule (Elkind, Kraiczy, and Teh 2022). This means that agents
 approve exactly one project per timestep, with no repetition
 of projects—this is equivalent to a constraint imposed across
-timesteps.
-
 We also note that, at least for approval ballots, simple
 candidate availability constraints can be incorporated into
 voters’ preferences: e.g., if candidate p is not available at
@@ -312,25 +273,21 @@ timestep r, we can simply remove p from all voters’ ballots
 at r. By doing so, one can simplify the description of the
 input instance. However, this approach is not well-suited to
 more complex feasibility constraints or ranked ballots.
-
 Observability
-
 The next element we consider is the observability of future
 timesteps. The setting is said to be online if the preferences
 of agents at future timesteps are not known in advance, and
 ofﬂine otherwise.
-
 Online settings Online scenarios are most prevalent in
 the dynamic social choice literature (Freeman, Zahedi, and
 Conitzer 2017; Freeman et al. 2018), where candidates are
-
 selected sequentially without information on agents’ prefer-
 ences at future timesteps. This is reminiscent of the secre-
-tary problem, or, more speciﬁcally, its k-winner variant (Al-
+tary problem, or, more speci�cally, its k-winner variant (Al-
 bers and Ladewig 2021); however, the key difference is that
 in the standard secretary problem the decision is made by
 a single stakeholder. Do et al. (2022) consider a multiple-
-stakeholder variant of the k-secretary problem that speciﬁ-
+stakeholder variant of the k-secretary problem that speci�-
 cally addresses the question of whether committees selected
 online can proportionally represent voters. A similar model
 is explored by Israel and Brill (2021). Another line of work
@@ -339,7 +296,6 @@ the ones that appear online (Oren and Lucier 2014; Dey, Tal-
 mon, and van Handel 2017). Other related online models in
 social choice include those in fair division (see, e.g., the sur-
 vey by Aleksandrov and Walsh (2020)).
-
 Ofﬂine settings
 In ofﬂine settings, agents’ preferences are
 fully known in advance, prior to the computation of the out-
@@ -347,13 +303,12 @@ come at each timestep. Several works on fair scheduling
 (Elkind, Kraiczy, and Teh 2022; Patro et al. 2022) consider
 an ofﬂine model where preferences are fully available at the
 onset, and the goal is to study the computational problems
-associated with ﬁnding a desirable outcome or to conduct an
+associated with �nding a desirable outcome or to conduct an
 axiomatic analysis of the mechanisms for obtaining an out-
 come. Ofﬂine models usually admit better solutions than on-
 line models; this is the case in, e.g., temporal fair allocation
-settings (Bampis, Escofﬁer, and Mladenovic 2018; Igarashi
+settings (Bampis, Escof�er, and Mladenovic 2018; Igarashi
 et al. 2023).
-
 Sequentiality
 Another element of our framework is sequentiality of the
 problem instance. This emphasizes the importance of or-
@@ -375,20 +330,17 @@ i.e., this model is fundamentally non-sequential. While non-
 sequential settings have interesting computational problems
 in their own right (Boehmer and Niedermeier 2021), sequen-
 tial settings pose additional challenges.
-
 Solution Concepts
-The ﬁnal element of our framework is the deﬁnition of suit-
+The �nal element of our framework is the de�nition of suit-
 able (temporal) solution concepts. For instance, one could
 consider the temporal extensions of popular fairness notions
 such as proportionality (Freeman et al. 2018), equitability
-(Elkind, Kraiczy, and Teh 2022), or justiﬁed representation
+(Elkind, Kraiczy, and Teh 2022), or justi�ed representation
 (Bulteau et al. 2021; Chandak, Goel, and Peters 2023). One
 may also wish to use time as a tool for allowing agents to be
-
 represented eventually (global), consistently (local), or pe-
 riodically (frequency-based). We classify these approaches
 into three (non-exhaustive) broad categories.
-
 Global solution concepts Global solution concepts eval-
 uate agents’ welfare across the entire time horizon. This
 means emphasizing the eventual outcome with respect to the
@@ -396,22 +348,20 @@ welfare goal, even if it means that within certain timesteps
 the treatment of agents can be highly unequal. An example
 of this approach is taking a global utilitarian or egalitarian
 view (Elkind, Kraiczy, and Teh 2022), or achieving a pre-
-deﬁned notion of fairness and welfare in ofﬂine models of
+de�ned notion of fairness and welfare in ofﬂine models of
 scheduling (Patro et al. 2022).
-
 Local solution concepts Local solution concepts evaluate
-agents’ welfare at speciﬁed time intervals. This means em-
+agents’ welfare at speci�ed time intervals. This means em-
 phasizing the welfare of agents either at each timestep, or for
-each pre-speciﬁed number of timesteps. For instance, in the
+each pre-speci�ed number of timesteps. For instance, in the
 perpetual voting model (Lackner 2020), decisions are made
 at each round, and welfare properties are considered for each
 agent up to and including the current round. In other models,
 such as sequential committee elections (Bredereck, Kacz-
 marczyk, and Niedermeier 2020; Bredereck, Fluschnik, and
 Kaczmarczyk 2022; Deltl, Fluschnik, and Bredereck 2023),
-the quality of a committee may be deﬁned and maintained
+the quality of a committee may be de�ned and maintained
 as a goal at each timestep.
-
 Frequency-based solution concepts Another possibility
 is to consider frequency-based properties, which can be for-
 mulated in terms of bounds on the number of timesteps (be it
@@ -422,32 +372,29 @@ that an agent has not received a utility of at least γ. This idea
 was brieﬂy mentioned by Boehmer and Niedermeier (2021)
 in a different, more abstract social choice scenario. Several
 other problems arise as well: e.g., one could ask what combi-
-nations of γ and κ can be accomplished by a speciﬁc voting
-rule (in the worst case, or on a speciﬁc instance), or by all
+nations of γ and κ can be accomplished by a speci�c voting
+rule (in the worst case, or on a speci�c instance), or by all
 rules satisfying a given set of axioms; one could also ask
-what is the minimum attainable γ for some ﬁxed κ.
-
+what is the minimum attainable γ for some �xed κ.
 Research Directions/Challenges
 We have suggested several dimensions according to which
-temporal multiwinner voting scenarios can be classiﬁed.
-Some of the “points” in the resulting multidimensional space
+temporal multiwinner voting scenarios can be classi�ed.
+Some of the “points� in the resulting multidimensional space
 have been considered already, but others remain unexplored
 and present opportunities for future work. On top of that, we
 will now highlight several interesting and challenging, yet
-fundamental directions for this ﬁeld moving forward.
-
+fundamental directions for this �eld moving forward.
 Formalism of Solution Concepts and Goals The study
 of fairness across time opens up opportunities for formulat-
-ing novel solution concepts, either ones that are speciﬁc to
+ing novel solution concepts, either ones that are speci�c to
 the temporal setting, or generalized (temporal) variants of
 concepts developed for the traditional multiwinner election
 model. For instance, popular concepts of representation in
-the multiwinner election setting (e.g., justiﬁed representa-
+the multiwinner election setting (e.g., justi�ed representa-
 tion and its variants (Aziz et al. 2017; S´anchez-Fern´andez
 et al. 2017; Peters, Pierczy´nski, and Skowron 2021)) can be
-
 extended (Bulteau et al. (2021) and Chandak, Goel, and Pe-
-ters (2023) made ﬁrst steps in this direction) and the associ-
+ters (2023) made �rst steps in this direction) and the associ-
 ated computational problems can be studied. Other welfare
 goals in multiwinner elections such as diversity (Bredereck
 et al. 2018; Relia 2022) can similarly be explored. Another
@@ -457,19 +404,18 @@ ral setting (this line of work was initiated by Lackner (2020)
 and Lackner and Maly (2023)), and investigating whether
 these rules satisfy the corresponding generalized temporal
 axioms (e.g., representation as discussed above).
-
 The Temporal Dimension In the multiwinner voting lit-
 erature, it is common to consider structural constraints on
 voters’ preferences, as a means to circumvent impossibil-
 ity and computational hardness results (Betzler, Slinko, and
 Uhlmann 2013; Elkind and Lackner 2015). The temporal
-setting may beneﬁt from this approach, too. In particular, it
+setting may bene�t from this approach, too. In particular, it
 may be of interest to investigate the impact of structural con-
-straints that are speciﬁc to the temporal setting. For instance,
+straints that are speci�c to the temporal setting. For instance,
 when considering evolving preferences, one can place addi-
 tional restrictions on how agents’ preferences may change
 over time: e.g., perhaps agents’ approval sets can only ex-
-pand (as they learn about beneﬁts of projects they were pre-
+pand (as they learn about bene�ts of projects they were pre-
 viously not aware of), or, alternatively, the preferences can-
 not change too drastically between two consecutive time pe-
 riods; similarly, the set of available candidates may evolve
@@ -479,28 +425,24 @@ on candidates’ availabilities and agents’ temporal prefer-
 ences can be viewed as a novel structured preference do-
 main (Elkind, Lackner, and Peters 2022), and can therefore
 offer a pathway towards positive algorithmic and axiomatic
-results.
-
 Furthermore, we can consider settings where agents as-
 sign different importance to different timesteps (on top of
 preferences over candidates): e.g., in case of public projects,
-an agent may plan to be overseas during a speciﬁc time pe-
+an agent may plan to be overseas during a speci�c time pe-
 riod and is therefore less interested in projects implemented
 during that period. Allowing more expressive ballots will al-
 low solutions that provide better welfare guarantees, but is
 likely to introduce a whole new set of computational chal-
 lenges that must be dealt with.
-
 Moreover, it is interesting to explore extensions of nor-
 mative analysis into the temporal realm. One could con-
 sider fairness criteria evaluated according to the worst-case,
 average-case or best-case with respect to timesteps, pos-
-sibly with a discount factor. More broadly, when deﬁn-
+sibly with a discount factor. More broadly, when de�n-
 ing temporal extensions of notions of representation, rather
 than considering a simple additive variant across timesteps,
-one could deﬁne novel concepts that take into account the
-timesteps themselves in the deﬁnition.
-
+one could de�ne novel concepts that take into account the
+timesteps themselves in the de�nition.
 Does Time Hurt or Heal? Another important question is
 to understand the effect of time in comparison to traditional
 single-shot multiwinner election models. Apart from the im-
@@ -508,20 +450,18 @@ pact (positive or negative) that it can have on agents’ welfare
 (as discussed in previous sections), one can approach this
 question from a computational perspective: does time make
 computing certain solution concepts easier (i.e., more algo-
-
-rithmically efﬁcient), or does it add a computational hurdle?
+rithmically ef�cient), or does it add a computational hurdle?
 For instance, in single-shot elections, the property of pro-
-portional justiﬁed representation (S´anchez-Fern´andez et al.
+portional justi�ed representation (S´anchez-Fern´andez et al.
 2017) can only be accomplished by fairly sophisticated algo-
 rithms (Brill et al. 2017), whereas in perpetual voting with
 static preferences it is provided by a simple greedy algo-
 rithm (Bulteau et al. 2021). It would be interesting to explore
 whether similar results can be obtained for other proportion-
 ality and fairness concepts.
-
 Beyond Multiwinner Voting: Participatory Budgeting
 Throughout the paper, we focused on the setting where the
-number of candidates to be selected is speciﬁed as part of the
+number of candidates to be selected is speci�ed as part of the
 input. One can also consider a more general setting of par-
 ticipatory budgeting, where candidates (projects) may have
 distinct costs, and there is a budget, so that the total cost of
@@ -532,4 +472,3 @@ siders this more expressive setting (Lackner, Maly, and Rey
 multiwinner scenario; it would be interesting to see to what
 extent the existing positive results carry over to the richer
 participatory budgeting domain.
-

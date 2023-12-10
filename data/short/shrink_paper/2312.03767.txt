@@ -1,0 +1,239 @@
+Introduction
+The domain gap manifests when a model, trained on a
+source domain with annotated samples, is deployed in a
+target domain that has a distribution shift compared to the
+source domain.
+Unsupervised domain adaptation (UDA)
+considers a target domain with unlabeled data and aims to
+mitigate the domain gap by aligning the source and target
+domain distributions using the knowledge learned from the
+source domain.
+Most of the current UDA methods conduct
+domain adaptation by either minimizing the source-target
+distribution discrepancy [39, 47], or by adversarially align-
+ing the feature spaces of the source and target data [7, 9].
+However, such models need access to the source data dur-
+ing adaptation, and therefore cannot be applied to cases
+where the source domain is not available or when the source
+data is sensitive or confidential.
+To address these concerns,
+source-free domain adaptation (SFDA) [20, 45] was pro-
+posed, where domain adaptation to the target distribution
+takes place with a source-pretrained model using only the
+unlabelled target data.
+While the vast majority of existing UDA literature deals
+with closed-set domain adaptation, where the target do-
+main and source domain share the same classes, a more
+realistic scenario is open-set domain adaptation (OSDA)
+[22, 30] where the target domain contains samples belong-
+ing to novel classes that are absent in the source domain.
+In the OSDA setting, closed-set UDA solutions would en-
+force alignment of the source and target feature spaces un-
+der the unknown category mismatch, leading to negative
+transfer [6] and deteriorating performance.
+The majority of
+the existing OSDA methods [22, 30] utilize domain adver-
+sarial learning techniques to align the source domain with
+only the known classes in the target domain, leaving out
+the target-unknown classes.
+Such methods fail to properly
+learn the features for the unknown classes, and hence no
+clear decision boundary between the known classes and the
+unknown class in the target domain is realized.
+UDA methods de-
+signed to work in both closed and open-set settings [15, 31],
+have attempted to conduct self-supervised learning (SSL)
+to discover latent target domain features without explicit
+distribution matching.
+In this work, we introduce Unknown Sample Discovery
+(USD) as a source-free OSDA (SF-OSDA) method that uti-
+lizes an ensemble-based pseudolabeling strategy for the tar-
+get data, and generates known and unknown target sub-
+sets based on Jensen-Shannon distance (JSD) between the
+pseudolabels and the predictions from a teacher model.
+USD uses 2-component Gaussian Mixture Model (GMM)
+to model the target domain JSD, where the distribution with
+the lower mean JSD is considered to be of the known class
+samples and that with the greater mean JSD is taken as that
+consisting of unknown class samples.
+The adapted target model infers new target sam-
+ples in one one of the known classes or the unknown class,
+without operating on the entire target dataset first to iden-
+tify known and unknown samples.
+• USD utilizes curriculum adaptation to progressively learn
+the known class feature space first, and the unknown class
+feature space later, thus enabling robust alignment of the
+entire target space with the source domain.
+Unsupervised domain adaptation
+Domain gap originates from the distribution shift between
+the source domain where a deep network model is trained,
+and the target domain where the model is deployed [39].
+Distant supervision for SFDA [19] iteratively
+assigned pseudo-labels to the target data and used them to
+learn a domain invariant feature space and obtain the tar-
+get class centroids.
+[20] introduced SHOT
+which adapts the source-pretrained feature encoder to the
+target domain via self-training with information maximiza-
+tion [13, 34] and self-supervised clustering for pseudola-
+beling, while transferring the source hypothesis (classifier
+model) to the target.
+Open set domain adaptation
+In addition to aligning the source and target subspaces, a
+critical step in OSDA is detecting target samples from novel
+or unknown categories that are absent in the source do-
+main.
+[30] adversarially aligned the source domain and
+known target subdomain, where the unknown target sam-
+ples were identified based on a preset threshold.
+[20] and [46] are SF-
+UDA methods that also conduct SF-OSDA by separating
+the known and unknown samples based on clustering the
+sample entropies into two clusters, and taking the cluster
+with lower mean entropy as the known subset.
+The source model is trained by minimizing the standard
+Figure 1.
+The stu-
+dent model receives pseudolabels for the target samples (see Fig-
+ure 1) and is optimized using a combination of triplet, weak-strong
+consistency, information maximization (IM) and cross-entropy
+losses.
+To account for the
+novel class samples in the target domain, the source classi-
+fier hs is expanded in the student and teacher models to in-
+clude an additional trainable output node for the unknown
+class.
+The known class nodes in the target classifiers hS
+t , for the student and teacher respectively, are ini-
+tialized with hs, and remain frozen during adaptation.
+The
+unknown class nodes in hS
+t and the feature extractors
+t are adapted using only the unlabeled target samples.
+Known-unknown sample separation
+The first step for target adaptation is to reliably separate the
+known class samples and the novel class samples in the tar-
+get data.
+is taken from the student model f S
+t = arg max
+The index corresponding to the maximum averaged soft-
+max output is taken as the hard pseudolabel ˆyi
+t for each tar-
+get sample xi
+t. These pseudolabels are however only over
+the Cs known classes, and therefore the samples need to be
+split into known class subset X K
+and unknown class sub-
+t .
+Entropies for all samples are calculated at the
+beginning of each epoch and then normalized in the range
+of [0, 1] by dividing the each sample entropy by log Cs.
+The cluster with the higher mean entropy or un-
+certainty is considered to be the one containing unknown
+samples, while the other cluster with lower mean entropy is
+taken as containing known class samples.
+where, KL(a, b) is the Kullback-Leibler divergence be-
+tween a and b, and pi
+t)) is the output soft-
+max probability for target sample xi
+t from the target teacher
+We consider the unknown class samples in the target do-
+main as noisy samples when predictions are made over only
+the known Cs classes.
+In comparison to entropy or cross-
+entropy loss, JSD is symmetric by design and ranges be-
+tween 0 and 1.As shown in Figure 1, when plotted against
+the number of samples, JSD produces a bimodal histogram.
+We consider the samples belonging
+to the distribution with the lower-mean Gaussian as samples
+from one of the known classes, and consider those samples
+on the higher-mean Gaussian as coming from the unknown
+target class.
+The remaining target samples are in-
+cluded in the unknown subset X U
+updated accordingly, where the known subset retain their
+earlier assigned pseudolabel from among the Cs classes,
+and the unknown subset of target samples get the new un-
+known class pseudolabel |Ct|.
+Teacher-student co-training and regularization
+USD simultaneously adapts the student and teacher tar-
+get models, such that the student model parameters θS
+updated based on the minibatch gradient descent, and the
+teacher network parameters θT
+t are updated as temporally
+ensembled version of the student network [36] at the end of
+each epoch as follows.
+The output zia
+)]a of the teacher model
+on an weakly augmented known class sample is taken as the
+anchor, and the corresponding output zi+
+the strongly augmented version of the same sample from the
+student model is taken as the positive instance.
+When loss
+tK on the known sample subset increases, γ marginally
+decreases to accommodate further adaptation on the known
+samples in the subsequent iterations.
+But if Lce
+tK decreases
+by a large margin, γ decreases accordingly to progressively
+adapt to the unknown samples in the following iterations.
+To encourage individually precise and globally diverse
+predictions, USD further minimizes the information maxi-
+mization (IM) [20] loss as formulated in [37, 38].
+Algorithm 1: Pseudocode for USD
+Input: Source trained model fs and nt unlabled
+target data samples xi
+Output: Target adapted student model f S
+Initialization: Teacher target model f T
+t and student
+t , are both initialized
+target model f S
+with parameters θs from fs
+1 for epoch = 1 to E do
+Conduct M = 6 weak-strong augmentations
+and assign ensemble averaged pseudolabels ˆyi
+using eq.
+The threshold
+δt for known-unknown sample separation is set at 0.8, and
+the momentum parameter m for temporal ensembling is set
+according to schedule in [44] with a maximum at 0.9995.
+Evaluation metrics
+The mean-per-class accuracy OS over all known classes
+and the unified unknown class for all the target data may
+be considered as a metric for evaluating OSDA.
+A better metric is therefore to calculate the
+mean-per-class accuracy OS* over only the known classes,
+and the accuracy UNK for the unknown class, and then take
+the harmonic mean HOS of the two for fair evaluation over
+the known and the unknown classes.
+Similar
+to Office-31, SHOT adapts better to the known classes, but
+fails to competently identify unknown samples, while AaD
+performs worse on the known classes and better on the un-
+known samples.
+SHOT severely suffers from negative transfer
+in the unknown class, while AaD fails to learn the target-
+known feature space.
+Nonetheless, if the
+threshold is set too high (such as 0.9), too few samples may
+be denoted as known samples, and this could lead to inferior
+performance.
+contributes to the adaptation, and leav-
+ing out any one of them hurts performance.
+We observe that
+curriculum guidance considerably benefits adaptation and
+the final average HOS increases by > 1.5% (from 64.2%
+to 65.9%) when such guidance is included.
+Both the
+weakly and strongly augmented samples are fed through the
+student network, and losses Ltrip
+are calculated over
+the student model outputs between the weak and strong aug-
+mentations.
+As
+seen in Figure 4, in the absence of co-training, the student
+model adapts faster, but its performance drops from its peak
+during the course of adaptation due to error accumulation.
+We see that such clustering is not better than tak-
+ing the hard predictions from the student model as pseudola-
+bels.

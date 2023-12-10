@@ -1,10 +1,10 @@
 import os
 import json
-folder_path1 = "../data/short/main_paper"
+folder_path1 = "../data/short/shrink_paper"
 folder_path2 = "../data/short/abstracts"
 files1 = sorted(os.listdir(folder_path1))
 files2 = sorted(os.listdir(folder_path2))
-total_files = 15
+total_files = 20
 train_files = 10
 val_file = open('val.jsonl', 'w')
 with open('train.jsonl', 'w') as jsonl_file:

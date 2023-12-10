@@ -1,5 +1,4 @@
 INTRODUCTION
-
 As the field of autonomous vehicles has grown, the ma-
 jority of research has been directed towards common driving
 situations. However, to enhance safety and performance, it is
@@ -16,11 +15,9 @@ fastest lap times and overtake each other at speeds exceeding
 navigate racecars at extreme speeds and dynamic limits, a feat
 easily handled by skilled human racers but challenging for
 current low-speed optimized autonomous driving systems.
-
 An essential aspect of autonomous racing is the precise
 modeling of a vehicle’s dynamic behavior. This encompasses
 using linearized or nonlinear differential equations to capture
-motion,
 tire dynamics, aerodynamics, suspension, steering,
 and drivetrain physics. While kinematic models focus on
 vehicle geometry, dynamic models delve deeper, estimating the
@@ -29,7 +26,6 @@ racing’s nonlinear regions characterized by rapid vehicle state
 changes and elevated dynamic loads. Obtaining precise coef-
 ficient values for modeling components like tires, suspension
 systems, and drivetrains is crucial, but extremely challenging.
-
 Determining tire coefficients (e.g. Pajecka coefficients [5]) in-
 volves extensive testing with specialized equipment (tire rigs)
 and significant time [6]. Additionally, calculating a racecar’s
@@ -41,7 +37,6 @@ ing vehicle setups, track conditions, and tire wear, adding
 complexity to vehicle dynamics modeling, which is further
 complicated by the common omission of drivetrain dynamics,
 leading to incomplete models and suboptimal performance.
-
 Deep neural networks (DNNs) have proven adept at captur-
 ing complex nonlinear dynamical effects [7], offering a simpler
 alternative to physics-based models as they obviate the need
@@ -61,39 +56,26 @@ its kind suited for vehicle dynamics modeling in autonomous
 racing - a domain distinctly marked by high accelerations
 and high speeds. This paper makes the following research
 contributions:
-
 1) We introduce Deep Dynamics - A PINN that can estimate
 the Pajecka tire coefficients, drivetrain coefficients, and
 moment of inertia that capture the complex and varying
 dynamics of an autonomous racecar.
-
 2) We introduce the Physics Guard layer designed to ensure
 that the model coefficients consistently remain within
 their physically meaningful ranges. This layer aligns the
 predictions of the PINN to adhere to the underlying
 physics governing vehicle dynamics.
-
 3) We examine both open-loop and closed-loop perfor-
 mance, utilizing a blend of simulation data and real-world
 data gathered from a full-scale autonomous racing car
 competing in the Indy Autonomous Challenge.
-
 Our findings affirm that Deep Dynamics can effectively
 integrate with model-predictive control-based (MPC) trajec-
 tory following methods, all while leveraging the advantages
 of data-driven vehicle modeling without the complications
 associated with physics-based modeling.
-
- 
- 
- 
- 
- 
- 
 II. RELATED WORK
-
 Vehicle dynamics modeling is a thoroughly investigated
-subject
 for both passenger autonomous driving and au-
 tonomous racing. Physics-based vehicle dynamics models can
 vary greatly in complexity, ranging from simple point-mass to
@@ -119,12 +101,8 @@ observed states. [17] addresses the same problem using a
 DNN. These approaches can capture time-variant dynamics but
 lack interpretability and provide no guarantees that corrected
 predictions will make physical sense.
-
 like in [18] and [19],
-
 Purely data-driven models,
-
-learn
 vehicle dynamics using historical observations of the vehicle’s
 state and control inputs to train a DNN. [20] proposed the
 use of a recurrent neural network with a Gated Recurrent
@@ -140,7 +118,6 @@ data-driven models are great at learning complex non-linear
 patterns in the data, they are not designed to be consistent
 with the laws of physics and can produce state predictions
 that the vehicle cannot physically realize.
-
 Recently, Physics-Informed Neural Networks (PINNs) for
 vehicle dynamics have been gaining traction as they adeptly
 merge the strengths of both physics-based and data-driven
@@ -155,7 +132,6 @@ the DPM bears inherent limitations that make it unsuitable
 for use in autonomous racing applications. Our research aims
 to address these limitations, introducing a new PINN model
 suitable for implementation in a real autonomous racecar.
-
 State Variable
 Horizontal Position (m)
 Vertical Position (m)
@@ -168,20 +144,6 @@ Steering Angle (rad)
 Input Variable
 Throttle Change (%)
 Steering Change (rad)
-
-Notation
-x
-y
-θ
-vx
-vy
-ω
-T
-δ
-Notation
-∆T
-∆δ
-
 State Equation
 xt+1 = xt + (vxt cos θt − vyt sin θt)Ts
 yt+1 = yt + (vxt sin θt + vyt cos θt)Ts
@@ -189,62 +151,35 @@ yt+1 = yt + (vxt sin θt + vyt cos θt)Ts
 vxt+1 = vxt + 1
 vyt+1 = vyt + 1
 ωt+1 = ωt + 1
-Iz
 Tt+1 = Tt + ∆T
 δt+1 = δt + ∆δ
-
 m (Frx − Ff y sin δt + mvytωt)Ts
 m (Fry + Ff y cos δt − mvxtωt)Ts
 (Ff ylf cos δt − Frylr)Ts
-
 Pacejka Tire Model
-
 αf = δ − arctan ωlf +vy
-
-+ Gf
-
 αr = arctan ωlr−vy
-
-+ Gr
-
-vx
-
-vx
-
 Ff y = Kf + Df (sin (Cf arctan (Bf αf − Ef (Bf αf − arctan (Bf αf )))))
 Fry = Kr + Dr (sin (Cr arctan (Brαr − Er (Brαr − arctan (Brαr)))))
 Drivetrain Model
 Frx = (Cm1 − Cm2vx)T − Cr0 − Cdvx
-
-2
-
 Pacejka Coefficients
 Bf /r, Cf /r, Df /r, Ef /r, Gf /r, Kf /r
-
 Drivetrain Coefficients
 Cm1, Cm2, Cr0, Cd
-
 Vehicle Geometry
 Iz, lf , lr, m
-
-TABLE I
 DYNAMIC SINGLE-TRACK VEHICLE MODEL
-
 III. PROBLEM STATEMENT
-
 We begin with a brief overview of vehicle dynamics fol-
-
 lowed by the problem formulation.
-
 A. Dynamic Single-Track Vehicle Model
-
 We model the autonomous racecar using a dynamic single-
 track vehicle model [10], with the state variables, discrete-
 time state equations, and notations listed in Table I. The
 accompanying free-body diagram for this model is shown
 in Figure 1. At time t, the states of the system are St =
 [xt, yt, θt, vxt, vyt, ωt, Tt, δt] ∈ R8, and the control
-inputs
 Ut consist of changes to the vehicle’s throttle and steering
 i.e. Ut = [∆Tt, ∆δt] ∈ R2. The single-track model (also
 known as the bicycle model) makes the assumption that the
@@ -255,7 +190,6 @@ the rear wheels, Frx, using drivetrain coefficients, Cm1 and
 Cm2, the rolling resistance Cr, and the drag coefficient Cd.
 The Pacejka Magic Formula tire model [5] estimates the
 tire forces on the front and rear wheels, Ff y and
-lateral
 Fry, inflicted by the vehicle’s movement and steering. The
 Pacejka model first calculates the sideslip angles for the front
 and rear wheels, αf and αr, using state St and the distance
@@ -277,13 +211,10 @@ of the racetrack. 2) We assume that there is no significant
 actuation delay for the control inputs ∆T , and ∆δ. Actuation
 delays can be accounted for in the model, therefore this is
 just a simplifying assumption. 3) We assume that three of
-
 Fig. 1. The dynamic single-track vehicle model.
-
 Fig. 2. The Deep Dynamics Model uses a DNN to indirectly learn a
 vehicle’s Pacejka coefficients, drivetrain coefficients, and moment of inertia
 using historical state and control inputs.
-
 the model coefficients within Φ are directly measurable and
 belong to the set of known coefficients, Φk. These include
 the mass, m, and geometric properties, lr and lf , which can
@@ -296,16 +227,9 @@ Gf /r, Kf /r, Cm1, Cm2, Cr0, Cd, Iz}. Although the precise
 values of Φu are unknown, we posit that each parameter
 is bounded within a known, physically meaningful nominal
 range, denoted as Φ
-
 ¯ u ≤ Φu ≤ ¯Φu.
-
 B. Vehicle Dynamics Identification Problem
-
-it
-
 Consistent with the definitions in [8], [20],
-
-is well
 the evolution of the model states St =
 established that
 [xt, yt, θt, vxt, vyt, ωt, Tt, δt] can be completely described by
@@ -321,11 +245,7 @@ identification and Dtest is used for model verification. Our goal
 is to construct a predictive model f that, given the current state
 Xt, input Ut, known coefficients Φk, and estimated unknown
 coefficients ˆΦut, forecasts the subsequent state:
-
 ˆXt+1 = f (Xt, Ut, Φk, ˆΦut)
-
-(1)
-
 The unknown coefficients ˆΦut represent our current estimates
 of the unknown parameters Φu. We know that f can be
 realized through the state equations in Table I, therefore the
@@ -334,39 +254,18 @@ output ˆXt+1 and the observed Xt+1 from D is governed
 by the precision of the unknown coefficient estimates ˆΦut.
 Given the nominal ranges for the unknown model coefficients
 ¯ u ≤ Φu ≤ ¯Φu, model f , training data Dtrain with N train
-Φ
 samples, the formal problem can be stated as:
-
-arg min
-ˆΦut
-
-1
-N train
-
-N train
-(cid:88)
-
-i=1
-
 (Xi − ˆXi)2 s.t. Φ
-
 ¯ u ≤ ˆΦu ≤ ¯Φu
-
-(2)
-
 We approach the estimation of ˆΦut through a PINN that is
-
 intrinsically informed by the nominal ranges of Φu.
-
 IV. DEEP DYNAMICS
 Physics-informed neural networks have emerged as an effec-
 tive approach for modeling non-linear dynamic behaviors. The
 Deep Pacejka Model (DPM) [8] uses PINNs for autonomous
 driving, yet its limitations are pronounced when applied to the
 context of autonomous racing.
-
 A. Limitations of the Deep Pacejka Model
-
 The DPM uses a neural network to only estimate the Pacejka
 coefficients {Bf /r, Cf /r, Df /r, Ef /r} ⊂ Φu, and rather than
 using a physics-based drivetrain model, directly estimates the
@@ -377,12 +276,10 @@ equations to predict the vehicle’s subsequent observed state,
 Xt+1. Backpropagating results in a network that learns Pacejka
 coefficients and a purely data-driven drivetrain model that
 capture the vehicle’s dynamics.
-
 The DPM suffers from several limitations. First, the DPM
 solves an unconstrained version of the problem in Equation
 2, i.e. there are no bounds on ˆΦu. This can cause DPM to
 produce coefficients outside of the nominal ranges Φ
-¯ u and
 ¯Φu, which could result
 in non-sensical predictions of the
 vehicle’s state. Second, the DPM assumes precise knowledge
@@ -396,9 +293,7 @@ track Vdes set by sampling-based MPC rather than directly
 controlling T . More importantly, the Deep Pacejka Model was
 designed for low-speed autonomous driving and not for a high-
 speed racing environment.
-
 B. Deep Dynamics
-
 We propose the Deep Dynamics Model (DDM), a PINN
 capable of estimating the unknown coefficients for a single-
 track dynamical model (Section III-A) that are guaranteed to
@@ -411,40 +306,14 @@ fed through the hidden layers of a DNN. We have introduced
 a Physics Guard layer which applies a Sigmoid activation
 function to the output, z, of the last hidden layer and scales the
 result to produce ˆΦut between the bounds Φ
-¯ u using
-(3)
-
 ˆΦu = σ(z) · ( ¯Φu − Φ
-
 ¯ u and Φ
-
-¯ u) + Φ
-¯ u
-
 A Sigmoid function was used for simplicity, but this mecha-
 nism could be implemented using any activation function with
 finite boundaries. The estimated coefficients and single-track
 model state equations are then used to predict ˆXt+1, and the
 backpropagated loss function is computed using
-
-L( ˆX) =
-
-1
-3
-
-3
-(cid:88)
-
-(X (i)
-
 t+1 − ˆX (i)
-
-t+1)2
-
-i=1
-
-(4)
-
 across the state variables [vx, vy, ω]. The states T and δ
 were not used in the loss function as the change in these
 states is determined by the control inputs ∆T and ∆δ. In
@@ -454,83 +323,34 @@ of a physics-based drivetrain model. Additionally, the DDM
 does not assume prior knowledge of the vehicle’s moment of
 inertia, Iz. Finally, the Physics Guard prevents the DDM from
 estimating non-sensical single-track model coefficients.
-
 C. Model-Predictive Control with Deep Dynamics
-
 For closed-loop testing, we use MPC to control the vehicle’s
 steering and throttle. An optimal raceline, W ∈ Rn×2, contain-
 ing a sequence of n reference points wi = [xref,i, yref,i] ∈ R2 is
 tracked using MPC by solving for the optimal control inputs,
 U0, ..., UH−1, that minimize the cost function
-
-arg min
 U0,...,UH−1
-
-H
-(cid:88)
-
-h=1
-
-(cid:13)
-(cid:13)
-(cid:13)
-(cid:13)
-
 xh − xref,h
 yh − yref,h
-
-(cid:13)
-(cid:13)
-(cid:13)
-(cid:13)Q
-
-+
-
-H−1
-(cid:88)
-
-h=0
-
-(cid:13)
-(cid:13)
-(cid:13)
-(cid:13)
-
-∆Th
-∆δh
-
-(cid:13)
-(cid:13)
-(cid:13)
-(cid:13)R
-
-(5)
-
 across the forward prediction horizon H. The first term, the
 tracking cost, penalizes deviations from the optimal raceline
 using the cost matrix Q ∈ R2×2. The second term,
-the
 actuation cost, penalizes rapid steering and throttle changes
 using the cost matrix R ∈ R2×2. Once the optimal series of
 control inputs U0, ..., UH−1 have been derived, the controller
 can enact U0 and repeat this procedure.
-
 At time t, Deep Dynamics is used to predict the vehicle’s
 trajectory over the forward horizon, H, by first estimating
 model coefficients ˆΦut using the observed states and control
 inputs from times t − τ to t. These coefficients are held
 constant and used by MPC to propagate the predicted state
 of the vehicle from time t to t + H. Holding ˆΦut constant
-
 throughout H allows an MPC solver to compute steering and
 throttle commands that minimize Equation 5 without having
 to differentiate through the DDM’s hidden layers, making it
 feasible to run in real-time.
-
 V. EXPERIMENTS & RESULTS
-
 A. Training and Testing Datasets
-
 The open-loop performance of the Deep Dynamics Model
 and Deep Pacejka Model was evaluated on two both real and
 simulated data (shown in Figure 3). Real world data Dreal was
@@ -550,15 +370,10 @@ truth coefficient values Φ are known. Data was collected from
 two different track configurations (Figure 3 Bottom) at 50 Hz
 using a pure-pursuit controller to drive the vehicle along a
 raceline. Track 1 was used to create the training dataset, Dtrain
-sim
 and Track 2 was used to create the testing dataset, Dtest
-sim, with
 both consisting of 1,000 samples.
-
 B. Nominal Model Coefficient Ranges
-
 The Physics Guard layer requires bounds Φ
-
 ¯ u and ¯Φu for
 each of the model coefficients Φu estimated by Deep Dynam-
 ics. For the simulator, the ground truth is known and therefore,
@@ -576,132 +391,22 @@ and 0.1 − 1.4 N, respectively, based on values estimated in
 and the coefficient range for Cm2 was set to 0.0 − 1.0 kg s−1
 to ensure force lost to engine friction would remain relatively
 small to the force generated.
-
 C. Evaluation Metrics
-
 The root-mean-square error (RMSE) and maximum error
 (ϵmax) for the predicted longitudinal velocity, vx,
-lateral
 velocity, vy, and yaw rate, ω, were measured to compare each
 model’s one step prediction performance. In addition, we also
 generate horizon predictions using the estimated coefficients
 of each model and compute the average displacement error
 (ADE) and final displacement error (FDE) [26]. A time
 horizon of 300ms was used for generating trajectories on Dtest
-sim
 and a horizon of 600ms was used for Dtest
-real.
-
 Fig. 3. A real-world, full-scale autonomous racecar was used to collect data at
 the Putnam Park Road Course and Las Vegas Motor Speedway. In simulation,
 laps were driven on Track 1 and Track 2.
-
-Sim
-Data
-
-Real
-Data
-
-DPM (GT)
-DPM (+20%)
-DPM (-20%)
-DDM (ours)
-DPM (GT)
-DPM (+20%)
-DPM (-20%)
-DDM (ours)
-
-vx (m/s)
-
-vy (m/s)
-
-RMSE
-0.0343
-0.0270
-0.0331
-1.506e-5
-0.0371
-0.0339
-0.0347
-0.0312
-
-ϵmax
-0.2017
-0.2030
-0.2012
-1.051e-4
-1.0390
-1.0346
-1.0259
-0.7976
-
-RMSE
-0.1252
-0.0889
-0.1202
-1.839e-4
-0.1360
-0.1306
-0.1342
-0.0730
-
-ϵmax
-0.6762
-0.5625
-0.6814
-0.0013
-0.3123
-0.3178
-0.3323
-0.1837
-
-ω (rad/s)
-ϵmax
-30.606
-23.930
-35.892
-0.0549
-0.1795
-0.0889
-0.1397
-0.0788
-
-RMSE
-4.306
-2.747
-3.578
-0.0096
-0.0534
-0.0322
-0.0471
-0.0187
-
 Displacement (m)
-ADE
-0.0302
-0.0263
-0.0467
-3.77e-5
-0.2428
-0.2400
-0.2384
-0.1827
-
-FDE
-0.0942
-0.0764
-0.1280
-1.15e-4
-0.5644
-0.5575
-0.5543
-0.3840
-
-TABLE II
 OPEN-LOOP MODEL PERFORMANCE
-
 D. Open-Loop Testing
-
 To highlight the inadequacy of presuming precise knowl-
 edge of the ground truth moment of inertia, Iz, we trained
 three distinct iterations of the DPM: one given the ground
@@ -714,8 +419,6 @@ While the choice of a 20% deviation is arbitrary, it serves to
 emulate real-world scenarios where the exact value of the mo-
 ment of inertia is unknown. Table II shows the RMSE, ϵmax,
 ADE, and FDE for the DDM and DPM variants on Dtest
-sim and
-Dtest
 real. In simulation, our Deep Dynamics Model outperforms
 all variants of the DPM by over 4 orders of magnitude in terms
 of both RMSE and ϵmax on vx and 2 orders of magnitude for
@@ -730,129 +433,25 @@ exhibited ADE and FDE nearly 2 orders of magnitude worse
 for both metrics. The highest performing DPM on the real data
 performed worse than the DDM as well, with 26% higher ADE
 and 36% higher FDE.
-
 The models were also compared (shown in Table III)
 by examining their average Pacejka coefficient estimates to
 evaluate generalization and alignment with physics i.e. coef-
 ficients close to the true values indicate a model’s superior
 dynamic representation and predictive performance on new
 data. Known simulation coefficients provided a benchmark
-
 Fig. 4. Timestamped trajectories for MPC run using estimated coefficients
 from DPM (GT, +20, -20) and DDM in the vehicle dynamics simulator.
-
-Sim
-Data
-
-Real
-Data
-
-Actual
-DPM (GT)
-DPM (+20%)
-DPM (-20%)
-DDM (ours)
-Range
-DPM (GT)
-DPM (+20%)
-DPM (-20%)
-DDM (ours)
-
-Ef
--0.083
-1.554
-2.335
-5.329
--0.081
--2-0
-
-Df
-Cf
-Bf
-0.192
-1.200
-5.579
-0.499
--0.616
--4.010
--0.646
-0.654
--1.455
--0.662
-0.614
--1.156
-0.192
-1.203
-5.566
-100-10000
-5-30
-0.5-2
 12.845 12.356
 2033.892 23.873
 5.763 -28.338 -1249.052 27.035
 1109.978 49.836
 11.739 12.335
-3451.427
-1.047
-6.630
-
-Cr
-Br
-5.385
-1.269
 -1.897 -0.790
--0.792
-1.283
-0.695
--1.175
-1.237
-5.505
 0.5-2 100-10000
-5-30
 7.892 -1327.340
-8.377
-863.780
-9.587
-0.095
--703.947
-3.056
-4.823
-5335.260
 -1.051 15.426 0.777
-
-Dr
-0.173
-0.763
--0.763
--0.725
-0.174
-
-Iz
-2.78e-5
-NA
-NA
-NA
-2.78e-5
-500-2000
-NA
-NA
-NA
-
-Er
--0.019
-8.542
-5.920
-9.823
--0.070
--2-0
-4.291
-12.189
-28.165
 -0.733 1938.432
-
-TABLE III
 COMPARISON OF ESTIMATED MODEL COEFFICIENTS
-
 for the simulation data, while nominal coefficient ranges
 informed the assessment for the real data. The DPM’s esti-
 mated Pacejka coefficients for both simulation and real data
@@ -864,10 +463,7 @@ rately gauging the vehicle’s moment of inertia Iz. Furthermore,
 the Physics Guard layer ensured that the coefficients derived
 real generalize to different track conditions in Dtest
 from the Dtrain
-real.
-
 E. Closed-Loop Testing
-
 Closed-loop testing and comparison with DPM was per-
 formed using the MPC implementation described in Sec-
 tion IV-C. For DPM, a PID controller was used for throttle
@@ -877,162 +473,99 @@ model. Racing-relevant metrics such as lap time (s), average
 speed, and track boundary violations are reported in Table IV
 for a single lap with an initial vx of 0.1m s−1. DDM results
 in the fastest lap time of 5.38s while incurring 0 boundary
-
-Model
-DPM (GT)
-DPM (+20)
-DPM (-20)
-DDM (ours)
-
 Lap Time (s) Average Speed (m/s) Track Violations
-
-6.16
-6.00
-5.94
-5.38
-
-1.721
-1.732
-1.728
-2.010
-
-2
-3
-3
-0
-
-TABLE IV
 CLOSED-LOOP RACING ANALYSIS
-
 REFERENCES
-
 [1] Johannes Betz et al. Autonomous vehicles on the edge: A survey
 IEEE Open Journal of Intelligent
-
 on autonomous vehicle racing.
 Transportation Systems, 3:458–488, 2022.
-
 [2] Alexander Wischnewski et al. Indy autonomous challenge – autonomous
-
 race cars at the handling limits, 2022.
-
 [3] Matthew O’Kelly et al. F1/10: An open-source autonomous cyber-
-
 physical platform. arXiv preprint arXiv:1901.08567, 2019.
-
 [4] Juraj Kabzan, Lukas Hewing, Alexander Liniger, and Melanie N
 Zeilinger. Learning-based model predictive control for autonomous
 racing. IEEE Robotics and Automation Letters, 4(4):3363–3370, 2019.
 [5] Hans B. Pacejka and Egbert Bakker. The magic formula tyre model.
-
 Vehicle System Dynamics, 21(sup001):1–18, 1992.
-
 [6] W. J. Langer and G. R. Potts. Development of a flat surface tire testing
-
 machine. SAE Transactions, 89:1111–1117, 1980.
-
 [7] Trent Weiss and Madhur Behl. Deepracing: A framework for au-
-in Europe
-
 tonomous racing.
 conference & exhibition (DATE), pages 1163–1168. IEEE, 2020.
-
 In 2020 Design, automation & test
-
 [8] Taekyung Kim, Hojin Lee, and Wonsuk Lee.
-
 Physics embedded
 neural network vehicle model and applications in risk-aware autonomous
 driving using latent features, 2022.
-
 [9] Matthias Althoff, Markus Koschi, and Stefanie Manzinger. Common-
 road: Composable benchmarks for motion planning on roads. In 2017
 IEEE Intelligent Vehicles Symposium (IV), pages 719–726, 2017.
 [10] Chang Mook Kang, Seung-Hi Lee, and Chung Choo Chung. Compara-
 tive evaluation of dynamic and kinematic vehicle models. In 53rd IEEE
 Conference on Decision and Control, pages 648–653, 2014.
-
 [11] Bernardo A. Hernandez Vicente, Sebastian S. James, and Sean R.
 Anderson. Linear system identification versus physical modeling of
 IEEE Transactions on Control
 lateral–longitudinal vehicle dynamics.
 Systems Technology, 29(3):1380–1387, 2021.
-
 [12] Jullierme Emiliano Alves Dias, Guilherme Augusto Silva Pereira, and
 Reinaldo Martinez Palhares. Longitudinal model
 identification and
 velocity control of an autonomous car. IEEE Transactions on Intelligent
 Transportation Systems, 16(2):776–786, 2015.
-
 [13] Chandrika Vyasarayani, Thomas Uchida, Ashwin Carvalho, and John
 McPhee. Parameter identification in dynamic systems using the homo-
 topy optimization approach. Lecture Notes in Control and Information
 Sciences, 418:129–145, 01 2012.
-
 [14] Achin Jain, Matthew O’Kelly, Pratik Chaudhari, and Manfred Morari.
 BayesRace: Learning to race autonomously using prior experience. In
 Proceedings of the 4th Conference on Robot Learning (CoRL), 2020.
-
 [15] Juraj Kabzan, Lukas Hewing, Alexander Liniger, and Melanie N.
 Zeilinger. Learning-based model predictive control for autonomous
 racing. IEEE Robotics and Automation Letters, 4(4):3363–3370, 2019.
 [16] Jingyun Ning and Madhur Behl. Scalable deep kernel gaussian process
 for vehicle dynamics in autonomous racing. In 7th Annual Conference
 on Robot Learning, 2023.
-
 [17] Gabriel Costa, Jo˜ao Pinho, Miguel Ayala Botto, and Pedro U. Lima. On-
 line learning of mpc for autonomous racing. Robotics and Autonomous
 Systems, 167:104469, 2023.
-
 [18] Nathan A. Spielberg et al. Neural network vehicle models for high-
 performance automated driving. Science Robotics, 4(28), 2019.
-
 [19] Grady Williams et al.
 reinforcement learning.
 Robotics and Automation (ICRA), pages 1714–1721, 2017.
-
 Information theoretic mpc for model-based
 In 2017 IEEE International Conference on
-
 [20] Leonhard Hermansdorfer, Rainer Trauth, Johannes Betz, and Markus
 Lienkamp. End-to-end neural network for vehicle dynamics modeling.
 In 2020 6th IEEE Congress on Information Science and Technology
 (CiSt), pages 407–412, 2020.
-
 [21] Alexandra Baier, Zeyd Boukhers, and Steffen Staab. Hybrid physics and
 deep learning model for interpretable vehicle state prediction. CoRR,
 abs/2103.06727, 2021.
-
 [22] Peng-Fei Xu et al. A physics-informed neural network for the prediction
 of unmanned surface vehicle dynamics. Journal of Marine Science and
 Engineering, 10(2), 2022.
-
 [23] Amar Kulkarni, John Chrosniak, et al. Racecar–the dataset for high-
-
 speed autonomous racing. arXiv:2306.03252, 2023.
-
 [24] Jose Luis Olazagoitia, Jesus Perez, and Francisco Badea Romero.
 Identification of tire model parameters with artificial neural networks.
 Applied Sciences, 10:9110, 12 2020.
-
 [25] B. Beckman. Physics of Racing Series. Stuttgart West, 1998.
 [26] Alexandre Alahi et al. Social lstm: Human trajectory prediction in
 In 2016 IEEE Conference on Computer Vision and
-
 crowded spaces.
 Pattern Recognition (CVPR), pages 961–971, 2016.
-
 Fig. 5. A visualization of the trials run during hyperparameter tuning, with
 the best DDM highlighted in yellow and the best DPM in orange.
-
 violations, and achieving the highest average speed of over
 2m s−1 (naively extrapolated to 311 km h−1 as this is a 1:43
 scale simulation). The inference time for DDM measured on
 a GeForce RTX 2080 Ti was approximately 700Hz, making
 it suitable for real-time implementation.
-
 F. Hyperparameter Tuning
-
 To ensure a fair comparison, rigorous hyperparameter tuning
 was conducted for both the DDM and DPM (shown in Figure
 5). The learning rate, batch size, number of hidden layers,
@@ -1046,5 +579,3 @@ created using 20% of the training set chosen randomly, and
 the DDM and DPM with the lowest validation loss were used
 to generate our results. This procedure was repeated for both
 real and simulation datasets.
-
-VI. 

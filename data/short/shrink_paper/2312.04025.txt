@@ -1,0 +1,193 @@
+As an example, the state-of-the-art language model
+Megatron-Turing NLG with 530 billion parameters achieves
+an accuracy score of 87.15% in the task of LAMBADA next
+word prediction [3].
+Owing to the discrepancies of model and device config-
+urations, device placement poses a huge solution search space
+when the number of operators or devices increases.
+Unfortunately, learning-
+based approaches requires a training process that takes several
+hours or even several days to deliver a placement solution
+for a single DNN [9].
+The placement solution has to be searched all over again, if
+the DNN is deployed to a different cluster [11].
+Upon analyzing and experimenting the released imple-
+mentations of existing algorithmic approaches, we observed
+that the above methods inherently suffer from the following
+drawbacks: (1) Solution optimality: Given model and device
+configurations, heuristic-based algorithms quickly yield the
+placement plan.
+However, the placement result is sub-optimal,
+leaving ample room for reducing the makespan.
+Nevertheless, current algorithmic solutions fail to leverage
+runtime optimization of a computation graph when coarsening
+the graph to reduce the solution search space.
+(3) Device
+heterogeneity & Constraints: Studies revolving around ex-
+act algorithms either attempt to produce near-optimal device
+placement decisions on a small number of homogeneous
+devices [4], [12] or do not sufficiently consider the device
+computation and communication constraints.
+To address the aforementioned limitations, we propose
+MOIRAI, an algorithmic solution that considers DNN graph
+optimization and caters an optimal solution over heterogeneous
+devices.
+Unlike the aforesaid
+approaches, in which the device heterogeneity is ignored, we
+craft the MILP to outline computational differences, memory
+constraints, and communication capability of the devices.
+MOIRAI outperforms the heuristic-based solution up
+to 1.87× in placement optimality in terms of the reduction
+of the makespan.
+Compared to the learning-based solution
+counterparts, MOIRAI reduces the solution generation time
+from hours to minutes while reducing the makespan up to
+4.28×.
+1 depicts the taxonomy of distributed deep learning
+concepts.
+[6] propose to search the placement policy
+for a DNN with reinforcement learning method.
+It adjusts the scheduling
+strategy towards the objective of reducing the per-step training
+time of a DNN until convergence, which requires 17-27 hours
+of 80 to 160 4-GPU servers to produce the near-optimal place-
+ment.
+In the face of the cues that all previous methods
+can only generate a near-optimal placement for a DNN over
+a set of computing devices, Placeto [9] encodes computation
+graphs with graph embeddings and offers a policy network to
+disentangle the placement of a family of computation graphs
+with reinforcement learning.
+Inspired by
+the traditional parallel job scheduling, Baechi [11] utilizes
+three heuristics to portray the task precedence, communication
+overhead, and memory constraints of the placement policy,
+which generally requires less than 3 minutes to find a place-
+ment strategy.
+GETF [33] represents the DNN as a DAG and
+extends the conventional Earliest Time First (ETF) algorithm
+to incorporate related machines.
+Secondly, the memory capacity of each
+device is non-uniform, suggesting that the number of DNN
+operators that can be hosted by each device varies.
+Network attachments may reside at or
+above the data link layer and can have various types of
+interfaces, such as WiFi, Bluetooth, or even application defined
+interfaces.
+B. Graph Coarsening
+We profile operator processing time of four widely em-
+ployed DNNs on four devices and show their processing time
+distribution in Fig.
+We note that modern DNNs typically
+consist of a number of operators with short computation
+time, increasing the difficulty to address the device placement
+problem.
+The memory access latency is often orders of mag-
+nitude greater than the computation time, and thus operator
+fusion extensively speeds up the DNN inference.
+A fusion rule contains a sequence of
+ordered operator types, each of which is a string.
+Typically, the connections of DNN operators can be
+categorized into three types in a computation graph, which are
+illustrated in Fig.
+Although the first add, relu vertex
+pair is certified to conforming partial r3 rule via the function
+is sub rule(), the operator connection denoted by the edge
+between add and relu vertex is essentially part of the multi-
+output connection of the operator add, which is examined by
+function is valid conn().
+The function then moves forward
+and binds the other two add, relu vertex pair on the upper
+branch, generating two new vertices with the bound tag and
+the add ◦ relu type.
+Next,
+GCOF() merges the operator conv2 ◦ bn and operator add ◦
+relu at the end of the upper branch in accordance with rule
+r3 and multi-inputs connection.
+C. Input Profiling
+Our method takes compute time of each operator, transmis-
+sion time of data flow, precedence relation among operators,
+and configurations of devices as its inputs.
+The operator
+dependency is manifested by the computation graph and
+the configurations of devices can be acquired by querying
+operating system interfaces, whereas the operator processing
+and the data transmission time requires proper analysis.
+Scrutinizing the existing research on
+measuring DNN operator processing time, we notice that
+there are fundamentally three commonly employed methods
+to profile the operator processing time, that is manual testing,
+operational intensity, and prediction model.
+Though manual
+testing reveals the actual operator execution time, it is labor
+intensive to approach the data.
+D. Problem Modeling
+Up to this point, we have presented how to obtain a coars-
+ened graph to reduce the solution search space and prepared
+the necessary inputs for our algorithm.
+Subsequently, the weight of
+the link is directly applied to the new node corresponding to
+it.
+Presented with the DNN computation graph termed
+as G = (N, L), the device placement for operators in the DNN
+is achieved by solving the following MILP.
+The data flow
+of a DNN, defined by the input and output of its operators,
+naturally establishes the execution precedence relationships
+of the operators.
+We ensure that each operator is
+assigned to only one device by equation (4c).
+Conventionally,
+the cumulative
+memory footprint of the operators allocated to a device should
+not surpasses the memory size of the device, known as
+memory constraints.
+For each device,
+we obtain the memory footprint of each operator through the
+APIs (e.g., torch.profiler) and constrain the total memory
+of the operators placed on a device not to exceed the memory
+capacity of the device.
+Naturally, when two adja-
+cent operators are placed on two distinct devices, a commu-
+nication overhead is incurred by the data flow between the
+operators.
+Lastly, we address the contention
+of data transmission, when there are multiple outputs waiting
+to be transferred on the same communication channel.
+The result
+shows that MOIRAI reduces the end-to-end inference latency
+up to 2.98×, 1.77×, 1.33× compared to Placeto, m-SCT, and
+GETF respectively.
+Next, we are interested in evaluating the impact of the
+graph coarsening method of MOIRAI on reducing the end-
+to-end inference latency.
+In the inter-server
+setting, MOIRAI outperforms Placeto, m-SCT, and GETF
+up to 3.15×, 1.9×, and 1.25× respectively in reduction of
+the end-to-end latency.
+In the intra-server setting, MOIRAI
+surpasses Placeto, m-SCT, and GETF up to 4.28×, 1.74×,
+1.34× respectively in reduction of the end-to-end latency.
+Considering the vast search space and limitations of the Gurobi
+optimizer, both GETF and our algorithm need minutes to
+generate placement.
+However, since this process is offline, and
+the optimal placement solutions of MOIRAI are superior to
+those of the m-SCT, we believe that our approach still holds an
+advantage in the placement generation.
+10, compared to using the
+original computation graph to generate placement results, the
+graph coarsening method has reduced the end-to-end inference
+latency by up to 5.7% in the inter-server setting and up to 3.8%
+in the intra-server setting.
+From TABLE V, we observe that the
+graph coarsening method has a significant effect on reducing
+the placement generation time, with an average time reduction
+to 71.87% of the placement generation time with the original
+computation graphs.
+Interestingly, a point that
+attracts our attention is: we observe that as DNN models be-
+come larger, although the computation resource demand rises,
+large models provide greater search space, which increases
+the parallelism of the model, making full use of computation
+resources, and achieving a better inference acceleration with

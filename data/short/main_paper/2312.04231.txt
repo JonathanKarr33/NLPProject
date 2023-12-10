@@ -21,20 +21,14 @@ tion Model, and Vision-Language Representation. (Long
 et al. 2022; Du et al. 2022; Fields and Kennington 2023)
 surveys VLPMs based on their architecture, pre-training
 tasks and objectives, and downstream tasks, showcasing that
-
 Copyright © 2024, Association for the Advancement of Artificial
 Intelligence (www.aaai.org). All rights reserved.
-
-Figure 1: An example of vision-language model pre-trained
-using Cross-Modal Vision-Language Modeling and fine-
-tuned for Visual Question Answering.
-
 VLPMs continue to grow not only in terms of accuracy but
 size as well, as the newer models have parameters in bil-
 lions and can perform several tasks with human-like accu-
 racy. As shown in Figure 2, compared to 2018, there has
 been a big surge in articles about “vision-language trans-
-former” in 2022, nearly 9.5 times more, and an even larger
+former� in 2022, nearly 9.5 times more, and an even larger
 increase, nearly 12.5 times more, in 2021. A similar trend
 is seen with the term ‘vision transformer,’ with roughly 15
 times more articles in 2022 compared to 2018 and an as-
@@ -42,7 +36,6 @@ tounding approximately 21 times more in 2021. Many of
 these models are trained on heavy open-web datasets and
 are finetuned for different tasks ranging from classification-
 based to generative-based.
-
 (Ross, Katz, and Barbu 2021; Birhane, Prabhu, and Ka-
 hembwe 2021; Srinivasan and Bisk 2022) have shown that
 these heavy and high-performing models suffer from differ-
@@ -55,17 +48,7 @@ can be made for robustness and interpretability, iterating a
 need for a proper study of transformer models. Efforts have
 been made to study transformers in this light for vision and
 language-based models individually, but collectively, there
-
 Text Input: What is lying on the grass?VLPMTTTTTVVVVVText TokensVision TokensText Input: A [MASK] frisbee on the grass.Pre-training Token : greenCross-Modal Masked Vision and Language Modeling Classification Head : frisbeeText InputVisual Question Answering 
- 
- 
- 
- 
- 
-Figure 2: Keyword Analysis for research papers pertaining
-to two keywords, ‘vision-language transformer’ (red) and
-‘vision transformer’ (blue) from 2018 to 2022.
-
 are only a few studies so far. Hence, we present an exten-
 sive survey of these VLPMs from a dependability and trust
 point-of-view by curating different practices, methods, and
@@ -75,14 +58,12 @@ we also discuss open challenges in the field. With this study,
 we hope to present the current state of VLPMs regarding
 reliability and highlight some research gaps that can help al-
 leviate the overall state of VLPMs.
-
 An Overview of VLPMs
 In VLPMs, both single and dual architecture models have
 emerged as powerful
 tools. Here, we present a brief
 overview of these architectures and various pre-training and
 downstream tasks.
-
 Single and Dual Architectures: While VLPMs have their
 own different architectures, they can be broadly categorized
 into two types of architectures (Figure 3). Single-stream
@@ -98,7 +79,6 @@ tures, usually pulled from object detectors, used by models
 like ViLBERT (Lu et al. 2019), grid features used by mod-
 els like Pixel-BERT (Huang et al. 2020), or patch projection
 used by models like ViLT (Kim, Son, and Kim 2021).
-
 Pre-training Tasks: Pre-training has been found to be
 very beneficial for transformers and, by extension, for
 VLPMs. The models are pre-trained on large datasets to
@@ -108,12 +88,6 @@ pairs for pre-training using paired as well as unpaired open
 web datasets, depending on the pre-training task. One of the
 most common tasks used for pre-training in the language
 models is Cross-Modal Masked Language Modeling, and
-
-Figure 3: Generic single and dual-stream architecture for
-pre-trained vision-language transformer Models, The tokens
-represented in the figure are after including the positional
-embeddings.
-
 it can be easily mapped for cross-modality in the vision-
 language domain as well. The task is generally used in a
 self-supervised setting where some tokens are masked ran-
@@ -129,7 +103,6 @@ and non-matched pairs are pushed apart using contrastive
 loss. The large datasets used for pre-training have been con-
 sidered to be a cause of bias (Park and Choi 2022; Radford
 et al. 2021).
-
 Downstream Tasks: Once VLPMs are pre-trained, they
 are finetuned to perform specific downstream tasks such as
 Image Captioning, Visual Question Answering, Image Text
@@ -142,9 +115,7 @@ downstream task. VLPMs have shown impressive accuracy
 with these tasks. The learned representation helps finetune
 the model for specified tasks quickly, especially with the rich
 information flowing between the two modalities.
-
 We can draw two important observations from this
-
 overview of VLPMs:
 • The architecture of VLPMs differs significantly from
 CNNs. Consequently, it’s crucial to develop methods
@@ -152,17 +123,12 @@ specifically tailored to the VLPM architecture rather
 than merely extending approaches originally designed
 for CNNs. This ensures a more accurate and equitable
 evaluation of their performance.
-
 • Most recent VLPMs undergo training on datasets derived
 from the open web, which is a combination of various
 sources. This amalgamation raises concerns about the po-
 tential incorporation of biases present in the content from
 the open web into the models themselves (Mittal et al.
-2023).
-
 Number of PapersYear2018201920202021202201000200030004000VisVis-LangPre-trained Transformer EncoderTask-sepecific MLP headPre-trained Language EncoderPre-trained VisionEncoderTask-sepecific MLP headQKVVKQCo-attentionText TokensVision TokensVision TokensText TokensTable 1: Summarizing research studies that have proposed different bias metrics.
-
-Bias Study
 Social Bias (Gender and Race)
 (Ross, Katz, and Barbu 2021)
 Gender Bias (Srinivasan and Bisk 2021)
@@ -173,43 +139,27 @@ Stereotypical Bias (Gender, Profession, Race,
 and Religion) (Zhou, Lai, and Jiang 2022)
 Quantifying bias before and after
 finetuning (Ranjit et al. 2023)
-
 Emotional and Racial Bias (Bakr et al. 2023)
-
 Models Under Review
-
 Bias Metric
-
 ViLBERT, VisualBERT
-
 Grounded SEAT and WEAT
-
-VLBERT
 NIC, SAT, Att2In, UpDn,
 Transformer, Oscar, NIC+
 ALBEF, TCL, ViLT
 VisualBERT, LXMERT, ViLT,
 CLIP, ALBEF, FLAVA
-
 Association Scores
-
 Leakage in Image Captioning (LIC)
-
 CounterBias
 vision-language relevance score and
 vision-language bias score
-
 ResNet, BiT, CLIP, MoCo, SimCLR Bias Transfer Score (BTS)
-
 NIC, SAT, Att2In, UpDn,
 Transformer, Oscar, NIC+
-
 ImageCaptioner2
-
 Bias and Fairness
-
 Bias Estimation and Mitigation
-
 Fairness in AI systems has been primarily viewed as protect-
 ing sensitive attributes in a way that no group faces disad-
 vantage or biased decision. Biases like gender or racial bias
@@ -222,9 +172,7 @@ modality. Literature has shown that VLPMs are heavily in-
 fluenced by language modality and can sometimes be harm-
 ful. (Kervadec et al. 2021) showed this with reference to the
 Visual Question Answering (VQA) task.
-
 Data and Bias
-
 Data has been considered the primary source of bias as it
 is a representation of the world that the model is trying
 to learn. With VLPMs, this can be an even bigger issue
@@ -248,7 +196,6 @@ cia et al. 2023) focuses on datasets crawled from the Internet
 without much oversight from a demographic point-of-view
 while also showcasing how societal bias is an issue on vari-
 ous tasks and datasets.
-
 (Sudhakar et al. 2021) studies biases present in vision trans-
 formers by visualizing self-attention modules, noting en-
 coded bias in the query matrix. To study and mitigate these
@@ -279,7 +226,6 @@ stages can not only help dissect the effectiveness of different
 modalities but can also allow examination of how VLPMs
 can evolve after the modalities integrate, giving a new per-
 spective on merging the multiple modalities effectively.
-
 (Hirota, Nakashima, and Garcia 2022b) introduced a new
 metric, Leakage for Image Captioning (LIC), to measure
 bias towards a particular attribute for the task of image cap-
@@ -290,7 +236,6 @@ measured stereotypical biases in VLPMs using probing tasks
 by testing their tendency to recognize stereotypical state-
 ments for anti-stereotypical images. The stereotype is based
 on four categories: gender, profession, race, and religion,
-
 making the VLPMs select the statements as captions. They
 also proposed two metrics called vision-language relevance
 score and vision-language bias score, using which they con-
@@ -311,8 +256,6 @@ modal models so far. In Table 1, we have tried to summarize
 some of these studies, detailing the metrics they used and
 the models they examined for bias. VLPMs can encode bias
 with more opportunities to do so than unimodal models.
-
-Robustness
 While accuracy focuses on correctness, robustness focuses
 on security by assessing the model for vulnerabilities in
 adversarial settings (Singh et al. 2020). Like CNNs, trans-
@@ -323,9 +266,7 @@ bust than CNNs, but we believe that architectural differences
 were not considered by the adversarial methods used for
 these studies. We discuss the robustness of VLPMs exclu-
 sively in a separate subsection.
-
 Transformers vs CNNs
-
 Several transformer architectures have performed better than
 CNNs, but are they more robust? (Bhojanapalli et al. 2021)
 measures the robustness of ViT architectures to answer this
@@ -347,11 +288,9 @@ that VITs have spurious correlations and are less sensitive
 to high-frequency perturbations. Adding tokens for learning
 high-frequency patterns in ViTs improves classification ac-
 curacy but reduces the robustness of the architecture.
-
 Hybrid architectures combining ViTs and CNNs can re-
 duce the robustness gap between the two architectures. Most
 of the studies focus on transfer attacks in lieu of specific
-
 attacks for transformers. (Bai et al. 2021; Pinto, Torr, and
 Dokania 2022) studies the robustness between transformers
 and CNNs questioning previous studies (Bhojanapalli et al.
@@ -382,8 +321,6 @@ parison between CNNs and transformers is drawn from ex-
 isting attacks proposed originally for CNNs, but it is impor-
 tant to devise attacks that exploit vulnerabilities of the latter,
 keeping in mind the critical architecture difference between
-the two.
-
 VLPMs and their Robustness
 VLPMs are studied under the robustness lens but not as ex-
 tensively as unimodal transformers. (Li, Gan, and Liu 2020)
@@ -411,7 +348,6 @@ and attention module by skipping some attention gradients.
 Other than attacks, (Ma et al. 2022) investigated how
 VLPMs perform under data with missing or incomplete
 modalities (examining only one modality at a time) in terms
-
 of accuracy and were improved using different fusion strate-
 gies. They concluded that transformers are not only sensitive
 to missing modalities but also that there is no optimal fusion
@@ -437,7 +373,6 @@ nents, or optimizing training strategies. However, a proper
 and common framework can better help compare the vari-
 ous VLPMs. The architectural difference alone makes this a
 difficult but essential task that needs to be looked at.
-
 Interpretability and Explainability
 Irrespective of the architecture, it is imperative that we
 can interpret as well as explain the decisions made by the
@@ -452,10 +387,7 @@ intra-modality interactions to visually explain the decisions,
 probing tasks are specifically designed to explain a particu-
 lar aspect or component of the models and can be restrictive.
 Finally, we discuss attention and how reliable it is as an ex-
-planation.
-
 Gradient-based and Visualization-based Methods
-
 Among several explanation methods proposed in the litera-
 ture, many have been extended to transformer-based mod-
 els. We first present the different gradient and visualization-
@@ -471,7 +403,6 @@ CAM (Chefer, Gur, and Wolf 2021) uses the self-attention
 and co-attention modules considering classification tokens
 appended during downstream tasks and associated values
 to generate a relevancy map tracking interactions between
-
 different modalities and backpropagating relevancies. The
 method applies to both unimodal and multimodal models.
 Apart from these methods, VL-InterpreT (Aflalo et al. 2022)
@@ -489,7 +420,6 @@ ied the CLIP (Radford et al. 2021) model specifically to un-
 derstand large multimodal models. Using gScoreCAM, ob-
 jects can be visualized as seen by the model by linearly com-
 bining the highest gradients as attention.
-
 (Pan et al. 2021) proposes interpretability-aware redun-
 dancy reduction (IA − RED2) to make transformer cost-
 efficient while using human-understandable architecture.
@@ -517,7 +447,6 @@ these methods is exploiting attention weights and gradients
 to make the information flow more targeted. Another theme
 is to extend available metrics by making them computation-
 ally effective.
-
 Probing Tasks
 Most of the explanation methods for VLPMs are based on
 probing tasks. These tasks are designed to study a partic-
@@ -532,7 +461,6 @@ ture; (ii) there is a set of attention heads that capture cross-
 modal interactions; and (iii) plotting attention can depict in-
 terpretable visual relations as was corroborated in the pre-
 vious section as well, among others. (Dahlgren Lindstr¨om
-
 et al. 2020) further proposes three probing tasks for visual-
 semantic space, which are relevant for image-caption pairs
 and train separate classifiers for probing. The tasks are (i) a
@@ -553,7 +481,6 @@ to particular problems, they have to be carefully crafted for
 relevant results and are very specific. At times, extra models
 or classifiers are required for probing, making the probing
 tasks applicable to selected models only.
-
 Dissecting Attention
 As can be seen in this section so far, attention is heavily used
 in the methods proposed to explain and interpret VLPMs. In
@@ -572,7 +499,6 @@ the final decision for several NLP tasks and concluded that
 attention weights often do not relate to gradient-based meth-
 ods for computing feature importance; hence, they do not
 provide helpful or meaningful explanations.
-
 While these methods concluded that attention is not re-
 liable as a justification tool, the studies have been limited
 to language-based tasks and need a proper in-depth analysis
@@ -593,7 +519,6 @@ evaluated as an interpretability metric for more vision and
 vision-language tasks. Combining the module with other es-
 tablished methods, like attribution-based methods, or exam-
 ining the methods on controlled benchmarks can help.
-
 Open Challenges and Opportunities
 The previous sections discuss several methods and tech-
 niques to make VLPMs fair, robust, explainable, and inter-
@@ -627,7 +552,6 @@ tor in ensuring the trustworthiness of transformer models.
 Therefore, we should examine attention from three differ-
 ent angles: its impact on model performance, its role in ex-
 plaining decisions, and its role in understanding the model’s
-reasoning.
 Probing the Vision Modality: The literature has time and
 again iterated that for VLPMs, decisions have a stronger in-
 fluence from the language modality than the visual modality.
@@ -653,7 +577,6 @@ hybrid architectures, such methods can help create a better
 comparison framework, providing effective baselines for fu-
 ture studies. Some studies (Gui et al. 2022; Tang et al. 2023)
 have used one modality to guide the other while training or
-
 used one modality to train the multimodal models, which
 can allow correcting for bias or adversarial vulnerabilities.
 Cross-modality and Universal Weights: Transformer
@@ -699,9 +622,6 @@ role of Responsible Machine Learning Datasets (Mittal et al.
 machine unlearning concepts should be explored to ensure
 these systems can adapt and comply with evolving regula-
 tory norms.
-
-Discussion
-
 Despite the remarkable human-like performance demon-
 strated by Vision-Language Pre-trained Models (VLPMs)
 and Vision Transformers, it is of paramount importance not
@@ -713,7 +633,6 @@ ing three essential dimensions: bias/fairness, robustness, and
 explainability/interpretability. Firstly, we scrutinize biases
 within VLPMs, recognizing that while datasets often serve
 as the primary source of bias, biases can also seep into the
-
 models and algorithms themselves. Addressing this issue re-
 quires a thorough evaluation and mitigation study, a chal-
 lenge further complicated by VLPMs’ multidimensional na-
@@ -732,9 +651,7 @@ the open challenges confronting VLPMs. We hope that this
 study serves as a foundation for researchers to identify gaps
 and work towards enhancing both the performance and trust-
 worthiness of these models.
-
 Acknowledgement
 The work is partially supported through the grant from Tech-
 nology Innovation Hub (TIH) at IIT Jodhpur. M. Vatsa is
 partially supported through the Swarnajayanti Fellowship.
-

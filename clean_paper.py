@@ -43,7 +43,12 @@ def process_paper(file_path):
     # Return the processed content
     content = remove_figures(content)
     content = re.sub(r'\n+', '\n', content)
-    return content
+    sentences = content.split("\n")
+    result = ""
+    for sentence in sentences:
+        if len(sentence) > 10:
+            result += sentence + "\n"
+    return result
 
 folder_path = "data/short/main_paper/"
 for filename in os.listdir(folder_path):
@@ -54,5 +59,5 @@ for filename in os.listdir(folder_path):
 
             with open(file_path, 'w') as file:
                 file.write(processed_content)
-            print(f"Modified file: {filename}")
+            print(f"Cleaned file: {filename}")
 

@@ -6,9 +6,9 @@ from openai import OpenAI
 # Replace 'YOUR_API_KEY' with your actual OpenAI API key
 # Not pushing my key to GitHub for privacy reasons
 # Use gpt3.5 turbo -- see pricing here https://openai.com/pricing#language-models
-api_key = 'API_KEY'
+#api_key = 'API_KEY'
 
-client = OpenAI(api_key=api_key)
+client = OpenAI()
 
 
 def summarize_text(input_text):
@@ -43,7 +43,7 @@ def truncate_text(text, max_tokens):
 
 
 # Define the file paths
-input_directory = 'data/short/main_paper'
+input_directory = 'data/short/shrink_paper'
 output_directory = 'data/short/gpt_results'
 
 # Create the output directory if it doesn't exist
@@ -69,7 +69,7 @@ for file_name in input_files:
 
     # Don't waste money
     gpt_files += 1
-    if gpt_files >= 1:
+    if gpt_files >= 1: #may change
         break
 
 print(f"Summarized and saved {gpt_files} files to {output_file_path}")

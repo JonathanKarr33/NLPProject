@@ -1,5 +1,4 @@
 Introduction
-
 In the realm of Question Answering (QA) sys-
 tems, traditional approaches have largely focused
 on single-question scenarios, overlooking the dy-
@@ -13,11 +12,7 @@ ing datasets have been introduced (Reddy et al.,
 Here, we present PCoQA, an innovative and exten-
 sive Persian Conversational Question Answering
 dataset tailored explicitly for Question Answering
-
 1https://github.com/HamedHematian/PCoQA
-
-1
-
 in Context, drawing inspiration from two influen-
 tial predecessors, CoQA (Reddy et al., 2019) and
 QuAC (Choi et al., 2018). Our dataset contains 870
@@ -37,11 +32,9 @@ and second, in the post-processing stage, questions
 that contain a high level of lexical overlap with the
 sentence containing the answer, are paraphrased to
 ensure the quality of the dataset.
-
 Our dataset incorporates various linguistic phe-
 nomena related to conversations, including co-
 references to previous dialog turns, anaphora, and
-ellipsis.
 It introduces new challenges due to a
 higher presence of non-factual questions, result-
 ing in longer answers. This characteristic is fur-
@@ -59,25 +52,15 @@ the potential of enhancing model performance by
 pre-training it on other question-answering datasets.
 Our experiments exhibit the effectiveness of pre-
 training on boosting the performances.
-
 The rest of the paper is structured as follows. We
 first describe the previous datasets and methods in
-
- 
- 
- 
- 
- 
- 
 Section 2. Subsequently, we provide the details of
 building the dataset in Section 3, comprising doc-
 ument selection, data annotation, post-processing,
 dataset validation, dataset analysis, and splitting.
 Lastly, in Section 4, our tested models, experiments,
 and results are reported.
-
 2 Related Works
-
 Multiple datasets have been introduced for the
 task of question answering (Rajpurkar et al.,
 2016; Trischler et al., 2017; Dunn et al., 2017;
@@ -113,16 +96,11 @@ without utilizing the gold answers of history and re-
 ports significantly lower performance. Otegi et al.
 (2020) adopts pre-training on other resources to
 alleviate the impact of low-resource data.
-
 3 Dataset Construction
-
 This section describes the process of constructing
 PCoQA dataset. A dialog sample of the dataset
 is depicted in Figure A1 whose title is Pride &
-Prejudice.
-
 3.1 Document Collection
-
 The documents in our dataset are based on
 Wikipedia articles. In line with previous question-
 answering datasets in Persian (Darvishi et al., 2023;
@@ -170,14 +148,10 @@ regarding individuals and geographical locations
 contain significant amount of entities. Next, It is
 decided to whether select the document from the A
 or a random Si-s:
-
 • If A is selected as the beginning of the doc-
 ument: If LA + (cid:80)
 i LSi ≤ Dm, meaning
 that the length of page is below the minimum
-
-2
-
 constraint, the document is discarded and if
 A ≥ DM , the A is tailored to ensure the max-
 imum length constraint. If A is chosen and
@@ -188,8 +162,6 @@ in order to elongate the document such that
 the maximum length constraint is preserved;
 these Si-s are selected in a way so that they
 are semantically consistent with each other
-and A.
-
 • If Sj is selected as the beginning of the docu-
 ment: the process follows a similar pattern
 as previously described. However, in this
@@ -197,7 +169,6 @@ case, the document begins with Sj and is sub-
 sequently extended with potentially semanti-
 cally consistent sections, as determined by the
 document provider.
-
 To illustrate the process, an example involving
 the Wikipedia page for "Canada" is shown in Fig-
 ure A2. We begin by selecting S11, which corre-
@@ -209,8 +180,6 @@ namely "Economy" and "Culture" These sections
 are semantically consistent with the subject of "Ed-
 ucation System". The final document is then com-
 posed by concatenating these three selected sec-
-tions.
-
 It is important to emphasize the pivotal role of
 the document provider in this process. The docu-
 ment provider must carefully oversee the content
@@ -221,9 +190,7 @@ tion or some of its content is vague due to lack of
 previous context, Sj should be omitted from the
 selection, and the process should proceed with the
 next suitable section.
-
 3.2 Dataset Annotation
-
 To establish dialogs, each document is assigned to
 to a questioner and a responder, both of whom hav-
 ing access to the title and text of the document. At
@@ -232,7 +199,6 @@ the responder returns ak, a span of the document
 as the answer. The dialog is continued until the
 questioner stops the conversation. The questioners
 are informed that they should start the conversation
-
 with general information and continue it to specific
 subjects, to match the same process of human infor-
 mation seeking in real world. To be specific, they’re
@@ -242,9 +208,7 @@ about that concept in previous dialog turns. Addi-
 tionally, questioners are informed to change their
 questions if their questions exhibit a substantial
 overlap with the potential answer.
-
 3.3 Post-Processing
-
 While our dataset is designed to provide question-
 ers with access to documents, it is possible that
 string-matching questions may arise (Choi et al.,
@@ -261,15 +225,10 @@ ing answer. Each question that shares at least one
 similar word with the answer-containing sentence
 is subjected to this rewriting process. A question is
 rewritten in one of three ways:
-
 • Words were removed due to ellipsis
-
 • Words were replaced by their synonyms
-
 • Words were replaced by their co-references
-
 | overlap |
-
 We quantified the similarity using the formula
 | question words | where overlap is the
 similarity =
@@ -277,10 +236,7 @@ set of shared words between the question and the
 sentence containing the answer. Before the rewrit-
 ing process, the similarity was measured at 14.2,
 and after rewriting, the similarity was reduced to
-11.8.
-
 3.4 Dataset Validation
-
 Following previous research Choi et al. (2018);
 Rajpurkar et al. (2016), multiple annotations are
 provided for each question in Dev/Test set. This is
@@ -291,9 +247,6 @@ annotations are tagged by annotators other than re-
 sponders. In line with previous research (Choi et al.,
 2018; Rajpurkar et al., 2016), multiple annotations
 are assigned to each question in the Dev/Test set.
-
-3
-
 This practice is essential because a single ques-
 tion may have multiple valid answers. It ensures
 the acquisition of accurate and unbiased scores for
@@ -301,9 +254,7 @@ evaluation purposes. Notably, these annotations are
 provided by annotators who are distinct from the
 responders. We report the scores of the responders’
 answers in Table 2.
-
 3.5 Dataset Analysis
-
 Key statistics for the PCoQA dataset are presented
 in Table 1, along with a comparison to similar
 datasets such as CoQA and QuAC. In the table,
@@ -318,58 +269,20 @@ input capacities. Furthermore, our dataset features
 a higher number of questions per dialog compared
 to QuAC, underscoring the importance of effective
 history representation.
-
-documents
-questions
 tokens, words / document
 tokens, words / question
 tokens, words / answer
 questions / dialog
 unanswerable rate
-
-PCoQA CoQA
-
-QuAC
-
-870
-9,026
-505.4
-7.0
-18.6
-10.4
-15.7
-
-8,399
-127,000
-271.0
-5.5
-2.7
-15.2
-1.3
-
-11,568
-86,568
-401.0
-6.5
-14.6
-7.2
-20.2
-
 Table 1: Statistics of the PCoQA Dataset
-
 3.6 Splitting
-
 The dataset is randomly divided into Train, Dev,
 and Test sets with the ratio of 70/15/15.
-
 4 Experiments
-
 In this section, we describe the adopted evaluation
 metrics, methods, and the results of applying these
 methods to the PCoQA dataset.
-
 4.1 Evaluation Metrics
-
 Exact Matching (EM) is the ratio of questions for
 which the model has answered correctly. Follow-
 ing Choi et al. (2018), three additional metrics of
@@ -377,7 +290,6 @@ F1, HEQ-Q, and HEQ-D are considered in this pa-
 per. F1 indicates the degree of overlap between the
 predicted answer and the gold answer, and HEQ-Q
 and HEQ-D are the ratio of questions and dialogs
-
 for which the model outperforms the human re-
 spectively (Choi et al., 2018). While HEQ-D is a
 stringent metric that requires the model to outper-
@@ -394,11 +306,7 @@ performance on average. Additionally, we analyze
 the F1 score for each dialog turn to gain insights
 into the model’s performance at different turns of
 the conversation.
-
-4.2
-
 Importance of History
-
 In this section, we explore the impact of history
 on model performance. Figure 1 illustrates the per-
 formance variation of the model concerning the
@@ -413,96 +321,13 @@ tances over 2 are irrelevant and don’t introduce new
 information on average, and their inclusion induces
 some noise in the model. Thus, we perform the rest
 of our experiments with 2 history turns.
-
-Figure 1: Effect of history number on performance
-
-4.3 Methods
-
-Our experimented methods can be categorized into
-two main groups: baseline methods and methods
-based on pre-training. Our experimental frame-
-
-4
-
-Model
-
-EM
-
-F1
-
-HEQ-Q HEQ-M HEQ-D
-
-ParsBERT
-XLM-Roberta
-
-ParSQuAD + ParsBERT
-QuAC + XLM-Roberta
-ParSQuAD + XLM-Roberta
-
-21.82
-30.47
-
-21.74
-32.81
-35.93
-
-37.06
-47.78
-
-40.48
-51.66
-53.75
-
-30.70
-39.51
-
-31.95
-43.10
-46.21
-
-Human
-
-85.50
-
-86.97
-
--
-
-0.0
-2.45
-
-0.8
-3.27
-1.63
-
--
-
-0.0
-1.63
-
-0.0
-1.63
-0.8
-
--
-
-Table 2: Results of different models across metrics
-
-work is built upon two base transformer model
-(Vaswani et al., 2017): ParsBERT (Farahani et al.,
-2021), a Persian equivalent of BERT (Devlin et al.,
-2019), and XLM-Roberta (Conneau et al., 2020).
 These base models serve as the foundation for our
 methodology. In our implementation, each model
 takes the concatenated question and previous his-
 tory questions as the first input and the document
 as the second input, which is then fed into the trans-
-former.
-
 Baseline Methods ParsBERT and XLM-Roberta
 are fine-tuned on PCoQA, constituting our baseline
-methods.
-
 Pre-Trained Methods ParSQuAD + Pars-
 BERT denotes
 pre-training ParsBERT on
@@ -516,65 +341,3 @@ using history concatenation. Lastly, QuAC + XLM-
 Roberta represents pre-training XLM-Roberta on
 QuAC and subsequently fine-tuning it on PCoQA
 using history concatenation.
-
-4.4 Results
-
-The results of our experiments are presented in Ta-
-ble 2, where we evaluate the performance across
-all metrics. It’s evident that XLM-Roberta outper-
-forms ParsBERT, highlighting the superior capabil-
-ities of XLM-Roberta. Moreover, our experiments
-demonstrate the effectiveness of pre-training tech-
-niques. The highest scores are achieved by XLM-
-Roberta when pre-trained on ParSQuAD. However,
-even with this strong performance, there remains
-a substantial gap between our models’ scores and
-those of human responders. Notably, this gap is
-especially pronounced in the EM score. We ob-
-
-serve that humans tend to provide complete an-
-swers when they know the answer, as evidenced
-by the nearly equal F1 and EM scores. In contrast,
-our models exhibit a significant disparity between
-F1 and EM scores, suggesting that they may strug-
-gle to provide complete answers, even when they
-partially address the questions.
-
-4.5 Pre-Training Effect
-
-We observe that when using XLM-Roberta,
-ParSQuAD gives better results compared to QuAC.
-This observation is notable because QuAC, in con-
-trast to ParSQuAD, is a conversational dataset. It
-suggests that XLM-Roberta may encounter chal-
-lenges when jointly modeling English and Per-
-sian. Consequently, pre-training on ParSQuAD,
-which is in Persian like PCoQA, outperforms
-pre-training on QuAC. Furthermore, we find that
-pre-training on QuAC improves performance on
-metrics like HEQ-M and HEQ-D, indicating that
-it imparts valuable conversational information,
-specifically the dependency among questions, to
-our model. This observation is reinforced by
-our findings in Figure 2, where we observe
-that, ar initial turns, ParSQuAD+XLM-Roberta
-outperforms other QuAC+XLM-Roberta. How-
-ever, as the conversation progresses, QuAC+XLM-
-Roberta achieves performance on par or better than
-ParSQuAD+XLM-Roberta, further underscoring
-the value of conversational pre-training. A simi-
-lar pattern can be observed when examining the
-performance of ParSQuAD+ParsBert compared to
-ParsBert, as depicted in Figure 2. Initially, the per-
-formance of ParSQuAD+ParsBert is superior, but
-as the conversation evolves, the performances of
-ParSQuAD+ParsBert and ParsBert become compa-
-rable, suggesting that pre-training on ParSQuAD
-does not effectively capture conversational infor-
-mation.
-
-5
-
-Figure 2: F1 scores of each dialog turn across different models
-
-5 

@@ -1,0 +1,88 @@
+4 Experiment
+4.1 Experimental settings
+Dataset and Protocol: We utilise the two datasets.
+The first dataset is the Neurofeedback Skull-
+Stripped (NFBS) repository [14].
+The repository provides 125 MRI images captured from normal
+people, so there are no anomalies in the MRI images.
+The second dataset contains 22 T1-weighted
+MRI scans provided by the Centre for Clinical Brain Sciences from the University of Edinburgh [15].
+.........!
+"!#!#$%!&'((!#$%|!#),(!#|!#$%)--(,#/0012GaussianNoise/345Method
+AE (Spatial) [17]
+VAE (Dense) [17]
+f-AnoGAN [18]
+Transformer [19]
+Pinaya et al.
+[10] (T = 1000)
+AnoDDPM [8] (T = 1000)
+ADDM (T = 300)
+ADDM (T = 500)
+ADDM (T = 1000)
+Precision Recall
+Table 1: Quantitative performance comparison of unsupervised AD methods based on
+generative models.
+T denotes the number of sampling steps of a diffusion model.
+The second dataset provides MRI images containing brain tumours.
+To follow an experimental
+protocol for the unsupervised AD, the training dataset has to be composed of normal samples only.
+We train the ADDM using the first dataset and conduct AD experiments using the second dataset.
+We
+refer to the experiment protocol of AnoDDPM [8].
+Implementations: The resolution of images is resized to 256 × 256.
+Adam optimiser [16] is used
+for the optimisation algorithm.
+The balancing weight λ is set by 0.05.
+The number of epochs and
+the batch size are set by 3000 and 4, respectively.
+To demonstrate the effectiveness of adversarial
+learning, we evaluate the AD performance with 300, 500, and 1000 sampling steps (T ).
+The learning
+rate is initialised by 0.0001, and it is decayed by multiplying 0.999 for every 200 epoch.
+4.2 Experimental results
+Effectivenss of LAdv: We train the ADDM with 300, 500, and 1000 sampling steps.
+Table 1
+contains the quantitative performances of the ADDM depending on T .
+The ADDM obtains the
+best performance with 1000 sampling steps.
+It produces 0.403 Dice and 0.917 AUC.
+The overall
+performance of the ADDM with 1000 sampling steps is better than the other two ADDMs trained with
+300 and 500 sampling steps.
+However, the ADDMs trained with 300 and 500 sampling steps produce
+competitive performance compared with other DDPM-based models [8, 10].
+In particular, the ADDM
+trained with 500 sampling steps outperforms the Pinaya et al.
+[10], which is structurally equivalent to
+the DDPM with 1000 sampling steps.
+The experimental results justify that the adversarial learning
+on the ADDM improves the robustness of the diffusion models with respect to the sampling step.
+Comparison with SOTA methods: We compare the proposed method with various generative
+model-based AD methods [8, 17–19].
+Table 1 shows the quantitative results on the dataset.
+Listed
+methods have been chosen for performance comparison: Autoencoder (AE), Variational AE, [17],
+f-AnoGAN [18], Transformer [19], Pinaya et al.
+[10], and AnoDDPM [8].
+In particular, Pinaya et
+al.
+[10] and AnoDDPM [8] are built based on DDPM [13], so their baseline methods are similar
+to the ADDM.
+Both approaches compile reconstruction-based AD methods for MRI images using
+diffusion models.
+Interestingly, the architectural details of Pinaya et al.
+[10] are almost identical to
+the DDPM [13].
+AnoDDPM [8] is built based on the DDPM and uses a new noising approach called
+Simplex Noise.
+The quantitative results in Table 1 show that the ADDM outperforms other methods.
+The ADDM
+(T =1000) produces 0.917 AUC, which is 6.2% higher performance than the second-ranked method
+(AnoDDPM).
+Moreover, the proposed ADDM trained with 500 sampling steps also achieves com-
+petitive performance with the AnoDDPM that requires 1000 sampling steps.
+This result shows that
+the proposed ADDM is more cost-efficient than AnoDDPM.
+Overall, the experimental results show
+that the proposed adversarial loss improves AD performances and outperforms existing SOTA AD
+detection methods on MRI images.

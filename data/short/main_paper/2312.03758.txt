@@ -11,7 +11,6 @@ change [10], but overlook the significance of the magnitude of
 such changes. In reality, the extent of these changes constitutes
 an important part of stock behavior.
 In this paper,
-to address
 the aforementioned limita-
 3GICS is a method for assigning companies to a specific economic sector
 and industry group that best defines its business operations.
@@ -94,7 +93,6 @@ positive sentiments, the day is classified as “positive�.
 m of stock s. The measure ys
 Tweets extracting. In addition to textual information, we
 gathered metrics on likes, retweets, and impressions for each
-tweet.
 V 0.0394 0.0643 0.0747 0.0816 0.0833 0.0877 0.0872 0.0853 ... 0.0917
 C. Text preprocessing
 In natural language processing (NLP), text preprocessing
@@ -161,7 +159,6 @@ pertinence of each tweet to the specific target sector c. Then,
 we employ a linear layer to project wct onto all possible
 companies S:
 gst = W1(wct) + b1,
-(10)
 where W1 ∈ Rn×2k, b1 ∈ Rn. As a result of the attention
 function of Equation (10), gst ∈ Rn represent that summarizes
 all tweets at day t considering the relevance to sector c. Our
@@ -226,7 +223,6 @@ correlations and combines the contexts of all target stocks.
 between tweets and stocks through self-supervised learning.
 To test whether our Twitter filter can still accurately capture
 market sentiment even with a significantly reduced Twitter
-input:
 • AGRUD-A concatenated the sentiment score of all 7.7
 million tweets with stock prices and macroeconomic data,
 keeping the structure of main predictor AGRUD unchanged.
@@ -263,17 +259,12 @@ and negative samples. It primarily focuses on how the model
 distinguishes between positive and negative samples. AUC is
 the area under the ROC curve, which falls in the range [0,1].
 AUC is calculated as follows:
-AU C =
-(cid:90) 1
-0
 T P R(F P R) dF P R,
-(20)
 where T P R(F P R) represents the True Positive Rate as a
 function of the False Positive Rate. The T P R gives the
 proportion of actual positives that are correctly identified.
 F P R is the False Positive Rate, indicating the proportion of
 negative samples that are mistakenly identified as positive.
-B. Results
 The performances of our ECON and the established base-
 lines are detailed in Table III. ECON is observed to be the
 superior baseline model in terms of accuracy and MCC for

@@ -1,0 +1,221 @@
+INTRODUCTION
+As the field of autonomous vehicles has grown, the ma-
+jority of research has been directed towards common driving
+situations.
+The control software for autonomous racing must
+navigate racecars at extreme speeds and dynamic limits, a feat
+easily handled by skilled human racers but challenging for
+current low-speed optimized autonomous driving systems.
+An essential aspect of autonomous racing is the precise
+modeling of a vehicle’s dynamic behavior.
+Additionally, calculating a racecar’s
+moment of inertia is a laborious task necessitating vehicle
+disassembly, precise component weighing and positioning, and
+the use of CAD software or multi-body physics simulations.
+Frequent recalculations are necessary to accommodate vary-
+ing vehicle setups, track conditions, and tire wear, adding
+complexity to vehicle dynamics modeling, which is further
+complicated by the common omission of drivetrain dynamics,
+leading to incomplete models and suboptimal performance.
+Deep neural networks (DNNs) have proven adept at captur-
+ing complex nonlinear dynamical effects [7], offering a simpler
+alternative to physics-based models as they obviate the need
+for extra testing equipment.
+We present Deep Dynamics, a PINN-
+based approach that to our best knowledge is the first model of
+its kind suited for vehicle dynamics modeling in autonomous
+racing - a domain distinctly marked by high accelerations
+and high speeds.
+This paper makes the following research
+contributions:
+1) We introduce Deep Dynamics - A PINN that can estimate
+the Pajecka tire coefficients, drivetrain coefficients, and
+moment of inertia that capture the complex and varying
+dynamics of an autonomous racecar.
+2) We introduce the Physics Guard layer designed to ensure
+that the model coefficients consistently remain within
+their physically meaningful ranges.
+Such methods of-
+ten make a simplifying assumption that the model coefficients
+are time-invariant, which does not hold true in autonomous
+racing where coefficients may vary due to changes in racecar
+setups or tire wear throughout a race.
+Additionally, while purely
+data-driven models are great at learning complex non-linear
+patterns in the data, they are not designed to be consistent
+with the laws of physics and can produce state predictions
+that the vehicle cannot physically realize.
+Recently, Physics-Informed Neural Networks (PINNs) for
+vehicle dynamics have been gaining traction as they adeptly
+merge the strengths of both physics-based and data-driven
+models.
+The closest related work to ours is the Deep
+Pacejka Model (DPM) introduced in [8], which estimates tire
+model coefficients for autonomous vehicles based on historical
+states and control inputs.
+However, as detailed in Section IV-A,
+the DPM bears inherent limitations that make it unsuitable
+for use in autonomous racing applications.
+Our research aims
+to address these limitations, introducing a new PINN model
+suitable for implementation in a real autonomous racecar.
+Dynamic Single-Track Vehicle Model
+We model the autonomous racecar using a dynamic single-
+track vehicle model [10], with the state variables, discrete-
+time state equations, and notations listed in Table I.
+A drivetrain model [14] estimates the longitudinal force at
+the rear wheels, Frx, using drivetrain coefficients, Cm1 and
+Cm2, the rolling resistance Cr, and the drag coefficient Cd.
+The Pacejka Magic Formula tire model [5] estimates the
+tire forces on the front and rear wheels, Ff y and
+Fry, inflicted by the vehicle’s movement and steering.
+The
+Pacejka model first calculates the sideslip angles for the front
+and rear wheels, αf and αr, using state St and the distance
+between the vehicle’s center of gravity to the front and rear
+axles, lf and lr.
+We make the following modeling
+assumptions for the dynamic single-track model used in this
+work: 1) The model assumes that the racecar drives in 2D
+space despite the banking on real-world racetracks.
+Actuation
+delays can be accounted for in the model, therefore this is
+just a simplifying assumption.
+The Deep Dynamics Model uses a DNN to indirectly learn a
+vehicle’s Pacejka coefficients, drivetrain coefficients, and moment of inertia
+using historical state and control inputs.
+These include
+the mass, m, and geometric properties, lr and lf , which can
+be measured in a typical garage with corner weight scales.
+Limitations of the Deep Pacejka Model
+The DPM uses a neural network to only estimate the Pacejka
+coefficients {Bf /r, Cf /r, Df /r, Ef /r} ⊂ Φu, and rather than
+using a physics-based drivetrain model, directly estimates the
+longitudinal force, Frx, for an autonomous vehicle given a
+history of the vehicle’s state and control inputs.
+Backpropagating results in a network that learns Pacejka
+coefficients and a purely data-driven drivetrain model that
+capture the vehicle’s dynamics.
+First, the DPM
+solves an unconstrained version of the problem in Equation
+2, i.e.
+In addition, the DPM does
+not have a drivetrain model as there is no learned relation
+between the vehicle throttle, T , and longitudinal wheel force,
+Frx, which limits the DPM to using PID throttle control to
+track Vdes set by sampling-based MPC rather than directly
+controlling T .
+More importantly, the Deep Pacejka Model was
+designed for low-speed autonomous driving and not for a high-
+speed racing environment.
+The estimated coefficients and single-track
+model state equations are then used to predict ˆXt+1, and the
+backpropagated loss function is computed using
+t+1 − ˆX (i)
+across the state variables [vx, vy, ω].
+In
+contrast to the DPM, the architecture of the DDM allows for
+longitudinal control using an MPC solver due to the inclusion
+of a physics-based drivetrain model.
+An optimal raceline, W ∈ Rn×2, contain-
+ing a sequence of n reference points wi = [xref,i, yref,i] ∈ R2 is
+tracked using MPC by solving for the optimal control inputs,
+U0, ..., UH−1, that minimize the cost function
+U0,...,UH−1
+xh − xref,h
+yh − yref,h
+across the forward prediction horizon H. The first term, the
+tracking cost, penalizes deviations from the optimal raceline
+using the cost matrix Q ∈ R2×2.
+The second term,
+actuation cost, penalizes rapid steering and throttle changes
+using the cost matrix R ∈ R2×2.
+Once the optimal series of
+control inputs U0, ..., UH−1 have been derived, the controller
+can enact U0 and repeat this procedure.
+At time t, Deep Dynamics is used to predict the vehicle’s
+trajectory over the forward horizon, H, by first estimating
+model coefficients ˆΦut using the observed states and control
+inputs from times t − τ to t. These coefficients are held
+constant and used by MPC to propagate the predicted state
+of the vehicle from time t to t + H. Holding ˆΦut constant
+throughout H allows an MPC solver to compute steering and
+throttle commands that minimize Equation 5 without having
+to differentiate through the DDM’s hidden layers, making it
+feasible to run in real-time.
+The
+training data, Dtrain
+real consisting of 13,418 samples was collected
+at the Putnam Park road course in Indianapolis, while the
+test set, Dtest
+real, was curated from laps at the Las Vegas Motor
+Speedway and consists of 10,606 samples.
+Simulation dataset,
+Dsim, contains ground-truth vehicle state information from laps
+driven in a 1:43 scale racecar simulator [14], where the ground
+truth coefficient values Φ are known.
+B. Nominal Model Coefficient Ranges
+The Physics Guard layer requires bounds Φ
+¯ u and ¯Φu for
+each of the model coefficients Φu estimated by Deep Dynam-
+ics.
+The the drag coefficient, Cd, and rolling
+resistance, Cr0, were given ranges from 0.1 − 1.0 kg m−1
+and 0.1 − 1.4 N, respectively, based on values estimated in
+[25].
+The range for drivetrain coefficient Cm1 was set to be
+500 − 2000 N based on the engine specification for Indy cars
+and the coefficient range for Cm2 was set to 0.0 − 1.0 kg s−1
+to ensure force lost to engine friction would remain relatively
+small to the force generated.
+In addition, we also
+generate horizon predictions using the estimated coefficients
+of each model and compute the average displacement error
+(ADE) and final displacement error (FDE) [26].
+Displacement (m)
+OPEN-LOOP MODEL PERFORMANCE
+D. Open-Loop Testing
+To highlight the inadequacy of presuming precise knowl-
+edge of the ground truth moment of inertia, Iz, we trained
+three distinct iterations of the DPM: one given the ground
+truth value, termed DPM (GT); another with a value inflated by
+20%, labeled DPM (+20%); and a third with a value reduced
+by 20%, referred to as DPM (-20%).
+DDM’s
+ability to predict velocities with high accuracy translates into
+more precise future position predictions, as evidenced by its
+lowest ADE, and FDE across both simulated and real data.
+Even when given the ground-truth value of Iz, the DPM still
+exhibited ADE and FDE nearly 2 orders of magnitude worse
+for both metrics.
+The DPM’s esti-
+mated Pacejka coefficients for both simulation and real data
+diverged significantly from anticipated values, being either an
+order of magnitude different or contrary in sign.
+Furthermore,
+the Physics Guard layer ensured that the coefficients derived
+real generalize to different track conditions in Dtest
+from the Dtrain
+E. Closed-Loop Testing
+Closed-loop testing and comparison with DPM was per-
+formed using the MPC implementation described in Sec-
+tion IV-C. For DPM, a PID controller was used for throttle
+control (as opposed to a sampling-based MPC controller in the
+DPM paper).
+Figure 4 plots the time annotated traces for each
+model.
+Racing-relevant metrics such as lap time (s), average
+speed, and track boundary violations are reported in Table IV
+for a single lap with an initial vx of 0.1m s−1.
+DDM results
+in the fastest lap time of 5.38s while incurring 0 boundary
+Lap Time (s) Average Speed (m/s) Track Violations
+CLOSED-LOOP RACING ANALYSIS
+REFERENCES
+[1] Johannes Betz et al.
+Both models used the Mish activation function for the hidden
+layers and were optimized using Adam.
+A validation set was
+created using 20% of the training set chosen randomly, and
+the DDM and DPM with the lowest validation loss were used
+to generate our results.

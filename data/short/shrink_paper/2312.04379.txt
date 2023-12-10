@@ -1,0 +1,182 @@
+Hence,
+if we let only non-expert users interact with XAI systems,
+we can state that the knowledge they acquired arose from
+the interaction with the system.
+In this paper, we aim to propose an assessment task to
+objectively and quantitatively measure the goodness of XAI
+systems during human-AI decision-making tasks intended
+as how much they are informative to non-expert users.
+More-
+over, we plan to use such a task to study the effectiveness
+of user-centred XAI in HRI scenarios.
+In particular, we are
+interested in understanding whether a user-centred XAI ap-
+proach is more informative than a classical one.
+We are interested in introducing an objective and quantita-
+tive assessment task to measure the goodness of XAI sys-
+tems without relying only on indirect measures.
+Hence, we
+plan to measure the XAI systems’ information power di-
+rectly and validate the task through a user study.
+In a fixed amount of time, the users have to perform ac-
+tions and interact with the robot to discover (1) which is the
+task at hand (e.g., what is the goal of the task), as well as
+(2) the rules that the AI model uses to make its actions and,
+since the robot is an expert agent, (3) the rules that govern
+the simulated environment.
+However, the robot can
+not take the initiative in giving suggestions either, but it al-
+ways replies to users’ questions.
+Thus, only the users can
+interact with the control panel and act in the simulated envi-
+We expect the following HRI modalities.
+If the user al-
+ready knows what to do, they act on the control panel.
+If the user understands the robot’s rea-
+sons, they act on the control panel (not necessarily the sug-
+gested one).
+For this reason, we implemented a simulation
+of a nuclear power plant management task (Figure 2).
+We
+chose this kind of task because it met all the requirements
+we needed: it is challenging and captivating for non-expert
+users, simple rules govern it, an AI model can learn those
+rules and, usually, people know nothing about the function-
+ing of nuclear power plants.
+The main objectives of the task (which we hide from
+users) are to generate as much energy as possible and main-
+tain the system in an equilibrium state.
+The features of the
+environment are subject to rules and constraints, which we
+can summarise as follow:
+· Each action corresponds to an effect on the environment:
+thus, a change of its features’ value.
+· The task is divided into steps of fixed time duration (e.g.,
+10 seconds), in which the users can interact with either
+the robot or the control panel.
+Hence, the reac-
+tor’s power depends on the values of the environment’s fea-
+tures and whether nuclear fission is taking place.
+Actions to perform on the environment The actions that
+the user can perform (12 in total) go from changing the po-
+sition of the rods to adding water to the steam generator or
+skipping to the next step.
+All those actions change the value
+of 3 parameters - T , P , and L - which correspond to the
+water’s temperature in the core, the core’s pressure, and the
+water level in the steam generator, respectively.
+For example, if the safety rods are lowered
+in the reactor’s core, the nuclear fission stops; thus, T and P
+decrease until they reach their initial values, and the water in
+the steam generator remains still.
+On the other hand, if nu-
+clear fission occurs and the user lowers the regulatory rods,
+the fission accelerates.
+2019), which allowed us to
+train the DT using a reinforcement learning strategy.
+In-
+stead of extracting the DT from a more complex ML model
+(Vasilev, Mincheva, and Nikolov 2020)(Xiong, Zhang, and
+Zhu 2017), we used this learning strategy to simplify the
+translation from the AI to the XAI without losing perfor-
+mance.
+The robot uses this expert DT to choose its action: it
+can perform each of the 12 actions based on the eight envi-
+ronment’s features.
+Starting from its root node, the DT is queried on each of
+its internal nodes - which represent binary splits - to decide
+which of the two sub-trees continue the descent.
+Each inter-
+nal node regards a feature xi and a value for that feature vi:
+the left sub-tree contains instances with values of xi ≤ vi,
+while the right sub-tree contains instances with values of
+xi > vi (Buhrman and de Wolf 2002).
+2019), they are defined with an
+array containing the actions’ expected Q-values: the greater
+Q-value is associated with the most valuable action.
+To answer a what question, we only need to nav-
+igate the DT using the current values of the environment’s
+features and present the resulting action to the user.
+We can use DTs to provide explanations simply
+by using one (or more) of the feature values we encounter
+during the descent.
+For example, classical approaches use the most rel-
+evant features (in terms of the Gini index, information gain,
+or other well-established measures (Stoffel and Raileanu
+2001)).
+In particular, it justifies the robot’s
+suggestions by using the most relevant features, which are
+the first ones in the DT’s structure (see (Roth et al.
+The system tries to give always different explanations by
+taking track of the DT’s node already used and preferring
+to use the others in decreasing the level of relevance.
+During this assessment, the users aim to learn as many
+system rules as possible.
+Thus, we need to collect measures
+for each rule and combine them to obtain the model’s infor-
+mation power.
+To quantify how many rules regard each feature and de-
+fine a method for measuring the number of learned rules
+relative to each feature.
+The features’ informative weight
+is intended to describe how difficult it is to understand
+the rules regarding such features.
+To measure the model’s informative power for each user,
+obtaining a measure (and a set of secondary descriptive
+measures) for each of them.
+To average those measures obtaining the final results; the
+secondary descriptive measures could also have valuable
+Hence, if k ∈ N is the number of the model’s features,
+γj ∈ [0, 1] is the informative weight of the feature j, nr
+is the number of rules regarding the feature j, nlr(i)
+the number of rules regarding the feature j learned by the
+user i, and am is the accuracy of the AI model m, then the
+informative power of the model m for the user i is computed
+as follows:
+Apart from the number of rules regarding each feature,
+the most delicate aspect of the assessment regards the def-
+inition of the features’ information weights.
+For our task (Section ),
+we set the features’ information weight by normalising the
+number of interactions with the system that users needed to
+understand those features.
+To state about which feature the
+interaction regarded, we plan to proceed as follows: if the
+interaction stopped at the request for suggestions, then the
+interaction regards the feature on which the action suggested
+effects; otherwise, if the interaction continues with a request
+for an explanation, then the interaction regards the feature
+contained into the explanation.
+Experimental measures During our task, we plan to col-
+lect several quantitative measures to compute the model’s
+information power as defined above:
+(M1) Measures of performance, such as the users’ final score.
+(M2) Measures of rules understanding, such as the number of
+task rules learned, the number of requests and interac-
+tions users needed to learn such rules, and the number of
+correct answers to the post-experiment test.
+(M3) Measures of generalisation, such as the number of correct
+answers to what-if questions about the robot’s decisions
+in particular states of the environment.
+Another essential factor of our task is that we can easily
+generalise it.
+To generalise our task, we need the following:
+· A decision-making task with characteristics similar to the
+ones listed in Section .
+· At least one quantitative measure about users’ under-
+standing of the task: if two or more, a method to compact
+them into a single measure is also needed.
+· At least one quantitative measure about users’ ability to
+generalise to unseen scenarios: if two or more, a method
+to compact them into a single measure is also needed.
+An assessment task with those characteristics is flexible
+enough to test different AI models and XAI techniques as
+long as they allow interaction between the user and the sys-
+tem.
+Moreover, it can be used to objectively compare two
+or more HRI approaches to test whether HRI dynamics ease
+the users in understanding the robot’s suggestions and expla-
+nations.
+Indeed, in our future work, we plan to use this task
+to test whether interacting with a social robot makes users
+more receptive to learning than interacting with a non-social

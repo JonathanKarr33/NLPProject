@@ -1,0 +1,184 @@
+INTRODUCTION
+Acknowledg-
+ing the inherent unpredictability of precise stock prices [2],
+our research leverages these blue-chip stocks to forecast future
+trends in stock price movement and volatility [3], [4].
+Moreover, the existing
+models are primarily focused on predicting whether trends will
+change [10], but overlook the significance of the magnitude of
+such changes.
+In reality, the extent of these changes constitutes
+an important part of stock behavior.
+In this paper,
+the aforementioned limita-
+3GICS is a method for assigning companies to a specific economic sector
+and industry group that best defines its business operations.
+2A blue chip stock is stock issued by a large, well-established, financially-
+5Although Twitter has recently been re-branded to “X�, this article contin-
+sound company with an excellent reputation.
+By skillfully combining the strengths of both technical and
+model, we achieve state-of-the-art performance in predicting
+stock movements.
+Let S denote a set of target
+stocks for which predictions are sought.
+In addition, we identify a set ε consisting of tweets,
+each referencing at least one stock in S. These historical
+prices incorporate the opening, highest, lowest, closing prices
+and adjusted closing price7 for each stock.
+However, in order to simplify the expla-
+nation of our proposed method, we focus on a specific time
+lag for both movement and volatility prediction.
+This allows our models to learn from the genuine
+changes in a stock’s value that occur due to market conditions,
+rather than being swayed by artificial fluctuations resulting
+from corporate actions.
+ECON STRUCTURE
+We present an overview of data ingestion, text preprocess-
+ing, and model architecture, as illustrated in Figure 1.
+In our research, we consistently selected the
+top six tweets, those garnering the highest daily impressions,
+as our primary input for text preprocessing.
+In our research, we undertook a sen-
+timent analysis on a dataset comprising 7.7 million tweets.
+This optimized model can produce one of three sentiment
+outcomes for each tweet: positive, neutral, or negative.
+For
+every tweet e associated with a blue-chip stock s, we compared
+the predicted sentiment pe with the same day’s binary adjusted
+price movement ys
+m gauges the
+price fluctuation between days t − 1 and t. Same as problem
+setup, if the stock price ascends in this interval, ys
+m is labeled
+“Up�, and conversely, if it declines, it’s labeled “Down�.
+It’s
+pertinent to note that our dataset only incorporated tweets from
+the trading hours of day t. To aggregate daily sentiment, if a
+day witnesses a predominance of negative sentiments in tweets
+concerning a specific stock, we designate that day as “nega-
+tive�.
+In contrast, if the tweets are primarily characterized by
+positive sentiments, the day is classified as “positive�.
+Within this context, the embeddings of both
+sectors and tweets are crucial.
+Word tokenization, specifically, refers to the
+segmentation of text into individual words.
+In our research, we
+utilized spaCy9—an open-source natural language processing
+tool—for word tokenization of every tweet e. Moreover, a
+9https://spacy.io/
+stock ticker like “AAPL� for Apple might inadvertently be
+tokenized into “AA� and “PL�.
+To circumvent such issues,
+we established specific rules to ensure that stock tickers are
+consistently recognized as single, intact tokens.
+For the subsequent self-awareness
+portion of the model architecture, we replace all tokens in
+εs that correspond to the name of stock s with a special token
+[mask].
+Based on the sector classification rules of GISC, we
+maintained a dictionary mapping the masked companies to
+their respective sectors.
+These embeddings are high-dimensional vectors that
+capture the intrinsic semantics of each word.
+We record the
+original length of each tweet, storing this information in the
+variable l. This data proves crucial when padding comes
+into play, a technique used to append or prepend sequences
+with filler values, ensuring uniformity.
+Given the importance
+of maintaining consistent sequence lengths, especially when
+working in batches, padding ensures our dataset’s sequences
+adhere to a standardized length, adding consistency and struc-
+ture to our data processing pipeline.
+In our approach, we adopted a
+bi-directional LSTM (BiLSTM) for the predictor network to
+produce the tweet and sector embeddings.
+The first attention is to find tweets relevant to each target sector
+c. We find relevant tweets by using the embedding hc of sector
+c as the query of attention as follows:
+let εt represent
+Considering a day t,
+the collection of
+tweets.
+The vector wct ∈ R2k,
+which can be envisioned as a weighted mean of all the tweet
+embeddings for day t. This averaging is influenced by the
+pertinence of each tweet to the specific target sector c. Then,
+we employ a linear layer to project wct onto all possible
+companies S:
+gst = W1(wct) + b1,
+where W1 ∈ Rn×2k, b1 ∈ Rn.
+As a result of the attention
+function of Equation (10), gst ∈ Rn represent that summarizes
+all tweets at day t considering the relevance to sector c. Our
+second attention uses the resulting tweet vector to find the
+most relevant stocks at the moment.
+This is done by using gst
+as the query vector of attention to aggregate the stock price
+features at day t based on the stock embeddings:
+The micro trend vector ist ∈ Rn encapsulates all tweets for
+day t, integrating the information from companies associated
+with the sector.
+This vector is then combined with the stock
+price vector xt ∈ Rn×p which generates from Yahoo’s stock
+data and the macro trend vector at, serving as the input to the
+Attention GRU for forecasting stock movement and volatility.
+The model is primarily designed to ex-
+tract nuanced information from stock market, macroeconomic
+factors, and tweet data.
+Once the macro trend at and micro
+trend ist are generated, they are concatenated with the stock
+price feature xst ∈ Rp using a linear layer, producing a multi-
+level feature.
+V. EXPERIMENT
+We conduct experiments to answer the following questions
+about the performance of framework:
+Q1.
+Does using our model to extract data
+yield better results than performing sentiment analysis using
+the entire 7.7 million tweets as input?
+A. Baseline Methods
+We evaluate our model’s effectiveness by comparing it with
+technical and fundamental analysis models.
+The best is in bold, Our ECON shows the
+best performance in all evaluation metrics.
+• Long Short-Term Memory (LSTM) [34] is a type of
+recurrent neural network (RNN) architecture specifically de-
+signed to tackle the vanishing and exploding gradient problems
+encountered in traditional RNNs.
+LSTM units use gate mech-
+anisms to regulate the flow of information, making them well-
+suited for learning from long-term dependencies in sequences.
+• SLOT [9] is based on ALSTM, it captures correlations
+between tweets and stocks through self-supervised learning.
+To test whether our Twitter filter can still accurately capture
+market sentiment even with a significantly reduced Twitter
+• AGRUD-A concatenated the sentiment score of all 7.7
+million tweets with stock prices and macroeconomic data,
+keeping the structure of main predictor AGRUD unchanged.
+By retaining only the tweets with the highest impres-
+sions, the results for predicting stock price movement and
+volatility are consistent with those obtained using sentiment
+analysis on all tweets.
+For stock volatility prediction, given that data points in-
+volving stock price changes greater than 5% only constitute
+a minor portion of our dataset, using accuracy to evaluate
+ECON can be misleading due to model overfitting.
+It primarily focuses on how the model
+distinguishes between positive and negative samples.
+ECON is observed to be the
+superior baseline model in terms of accuracy and MCC for
+movement prediction.
+ECON surpasses both of these models by significant margins.
+We argue this improvement of price movement
+prediction is attributed to use of macro and micro trends
+to investigate the influence of multiple sectors on stocks.
+As shown in Table V, our
+ablation study revealed that incorporating multi-dimensional
+perception of stock market significantly enhances the pre-
+dictive capabilities of the model for stock movement and
+volatility.
+A noteworthy point is that the result of ECON(A)
+demonstrates a significant role of the macro trend in enhancing
+the accuracy of volatility prediction.

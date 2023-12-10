@@ -1,0 +1,209 @@
+VLPMs continue to grow not only in terms of accuracy but
+size as well, as the newer models have parameters in bil-
+lions and can perform several tasks with human-like accu-
+racy.
+As shown in Figure 2, compared to 2018, there has
+been a big surge in articles about “vision-language trans-
+former in 2022, nearly 9.5 times more, and an even larger
+increase, nearly 12.5 times more, in 2021.
+Cross-modal contrastive Learning is another pre-
+training task quite similar to ITM but in a contrastive manner
+in the way that matched image-text pairs are pushed together
+and non-matched pairs are pushed apart using contrastive
+loss.
+The large datasets used for pre-training have been con-
+sidered to be a cause of bias (Park and Choi 2022; Radford
+et al.
+This amalgamation raises concerns about the po-
+tential incorporation of biases present in the content from
+the open web into the models themselves (Mittal et al.
+Biases like gender or racial bias
+have proven harmful, especially when they affect humans
+in real life (Singh et al.
+Literature has shown that VLPMs are heavily in-
+fluenced by language modality and can sometimes be harm-
+ful.
+The authors not only depict gender and racial bias
+but also analyze recent captioning models to see the differ-
+ences in the performance from a lens of bias.
+Some stud-
+ies have looked at task-specific datasets as well, as (Hirota,
+Nakashima, and Garcia 2022a) analyze five Visual Question
+Answering (VQA) datasets for gender and racial bias.
+The authors tested zero-
+shot and linear probe instances of the model to mark the
+potential sources of biases and harmful markers.
+(Zhang,
+Wang, and Sang 2022) proposes the CounterBias method
+and FairVLP framework to quantify social bias in VLPMs
+in a counterfactual manner while proposing a new dataset
+to measure gender bias.
+Furthermore, VLStereoSet (Zhou, Lai, and Jiang 2022)
+measured stereotypical biases in VLPMs using probing tasks
+by testing their tendency to recognize stereotypical state-
+ments for anti-stereotypical images.
+They
+also proposed two metrics called vision-language relevance
+score and vision-language bias score, using which they con-
+cluded that state-of-the-art VLPMs under consideration not
+only encode stereotypical bias but are more complex than
+language bias and need to be studied.
+Even when look-
+ing for societal biases – gender and racial, there is a lack
+of commonality, yet none of the observations and results
+can be denied as less crucial.
+2022) proposed
+a Robust Vision Transformer (RVT) after studying the com-
+ponents affecting the robustness of the model, proposing a
+new patch-wise augmentation and a position-aware atten-
+tion scaling (PAAS) to boost the RVT other than modify-
+ing damaging elements in the architecture for better robust-
+ness.
+The noisy
+data is created using poison attacks like label flipping and
+has been compared under adversarial filtering augmentation.
+They introduced a novel robustness metric called Mean Rate
+of change of Accuracy with change in Poisoning (MRAP),
+using which they observed that the models are not robust un-
+der adversarial filtering.
+In most of these studies, the com-
+parison between CNNs and transformers is drawn from ex-
+isting attacks proposed originally for CNNs, but it is impor-
+tant to devise attacks that exploit vulnerabilities of the latter,
+keeping in mind the critical architecture difference between
+VLPMs and their Robustness
+VLPMs are studied under the robustness lens but not as ex-
+tensively as unimodal transformers.
+Since the attack framework is sensi-
+tive to the transformer architecture, the attacks consider both
+patches by perturbing only a subset of them at each iteration
+and attention module by skipping some attention gradients.
+2022) investigated how
+VLPMs perform under data with missing or incomplete
+modalities (examining only one modality at a time) in terms
+of accuracy and were improved using different fusion strate-
+gies.
+They concluded that transformers are not only sensitive
+to missing modalities but also that there is no optimal fusion
+strategy as multimodal fusion affects the robustness of these
+models and is dependent on datasets.
+2022) an-
+alyzes VLPMs to get a better insight into the multimodal re-
+lationship using probing tasks, concluding that concepts like
+position and size are difficult for the models under consid-
+eration to understand.
+(Schlar-
+mann and Hein 2023) on the other hand, studied adversar-
+ial robustness for imperceivable attacks on VQA and Im-
+age captioning tasks for well-known multimodal foundation
+models and (Mao et al.
+The authors proposed a text-guided con-
+trastive adversarial training (TeCoA) to be used along with
+finetuning to improve the zero-shot adversarial robustness.
+A few methods originally proposed
+for CNNs have been extended for transformers as well,
+like GradCAM (Selvaraju et al.
+While visualization-based methods usually use inter- and
+intra-modality interactions to visually explain the decisions,
+probing tasks are specifically designed to explain a particu-
+lar aspect or component of the models and can be restrictive.
+Modifications of these meth-
+ods have been proposed in the literature, like the Attention
+Rollout (Abnar and Zuidema 2020), which combined lay-
+ers to get averaged attention.
+Further, Relevancy Map or Hila-
+CAM (Chefer, Gur, and Wolf 2021) uses the self-attention
+and co-attention modules considering classification tokens
+appended during downstream tasks and associated values
+to generate a relevancy map tracking interactions between
+different modalities and backpropagating relevancies.
+2022)
+is more like a tool that gives an interactive interface looking
+at interactions between modalities from a bottom-up per-
+spective.
+Lower relevance is assigned to the background pixels, so
+the foreground is considered with more confidence.
+2022) proposes the AttCAT explanation method that
+uses attentive class activation tokens built on encoded fea-
+tures, gradients, and attention weights to provide the expla-
+nation.
+2023) proposes an-
+other interpretation method called Vision DiffMask, which
+identifies the relevant input part for final prediction using a
+gating mechanism.
+The authors made several important observations: (i)
+the pre-trained models attend to language more than vision,
+something that has been corroborated throughout the litera-
+ture; (ii) there is a set of attention heads that capture cross-
+modal interactions; and (iii) plotting attention can depict in-
+terpretable visual relations as was corroborated in the pre-
+vious section as well, among others.
+(Hendricks and Nematzadeh 2021)
+furthermore proposes probing tasks for verb understanding
+by collecting image-sentence pairs with 421 verbs com-
+monly found in the Conceptual Captions dataset (Sharma
+et al.
+Further, datasets are de-
+signed carefully for multimodal probing, trying to reduce de-
+pendency on bias while making predictions.
+However, recently,
+attention has been pointed out not to be a reliable parame-
+ter for explaining a model’s decision in some studies.
+For
+VLPMs, in particular, fusing the modalities can make it dif-
+ficult to interpret how the attention is distributed and how
+it should be explained.
+Further, (Jain and Wallace
+2019) studied the relationship between attention weights and
+the final decision for several NLP tasks and concluded that
+attention weights often do not relate to gradient-based meth-
+ods for computing feature importance; hence, they do not
+provide helpful or meaningful explanations.
+While these methods concluded that attention is not re-
+liable as a justification tool, the studies have been limited
+to language-based tasks and need a proper in-depth analysis
+given how heavily current methods rely on the mechanism
+to interpret the models.
+2022) studies attention under convex
+duality that can help provide interpretability for the archi-
+tecture.
+One basic need is to make these models just as trust-
+worthy to ensure that their decisions can be trusted and re-
+lied upon while staying away from harmful biases like using
+faithfulness tests for quantifying the model’s explainability.
+Therefore, we should examine attention from three differ-
+ent angles: its impact on model performance, its role in ex-
+plaining decisions, and its role in understanding the model’s
+Probing the Vision Modality: The literature has time and
+again iterated that for VLPMs, decisions have a stronger in-
+fluence from the language modality than the visual modality.
+While tasks like VQA
+have recognized language bias, VLPM as a generalized ar-
+chitecture has not been explored for this bias as extensively.
+Better pre-trained tasks aligning the vision modality along
+with cross-modality interactions can be a way forward for
+improving the generalization as well as the effect of the vi-
+sion modality on the entire model.
+2023)
+have used one modality to guide the other while training or
+used one modality to train the multimodal models, which
+can allow correcting for bias or adversarial vulnerabilities.
+A universal model that can represent both modalities
+similarly can help with performance as well as robustness,
+however, there is still a gap in getting universal pre-trained
+weights that can adapt to different modalities and require
+further research.
+Therefore, it is important to understand the crucial
+role of Responsible Machine Learning Datasets (Mittal et al.
+In addition,
+machine unlearning concepts should be explored to ensure
+these systems can adapt and comply with evolving regula-
+tory norms.
+Despite the remarkable human-like performance demon-
+strated by Vision-Language Pre-trained Models (VLPMs)
+and Vision Transformers, it is of paramount importance not
+to underestimate the crucial dimension of trustworthiness.
+Firstly, we scrutinize biases
+within VLPMs, recognizing that while datasets often serve
+as the primary source of bias, biases can also seep into the
+models and algorithms themselves.

@@ -1,0 +1,183 @@
+The
+set of individual ledgers can be viewed as a distributed ledger, denoting the
+*Corresponding Author
+G. Diamantopoulos et al.
+A consensus protocol is used to aid in validating
+and ordering the transactions and through it, a special set of nodes called block
+producers, vote on the order and validity of recent transactions, and arrange
+them in blocks.
+Despite the potential of Blockchain in many different domains, factors such
+as low scalability and high latency have limited the technology’s adoption, es-
+pecially in time-critical applications, while in general, blockchain suffers from
+the so-called trilemma trade-off that is between decentralisation, scalability, and
+security [28].
+The most notable factor affecting the performance of the blockchain, ex-
+cluding external factors we cannot control such as the system architecture, net-
+work, and workload, is the consensus protocol, with system parameters such
+as block time, and block interval getting a close second.
+The trilemma trade-
+off in combination with blockchains time-varying workloads makes the creation
+of robust, general consensus protocols extremely challenging if not impossible,
+creating a need for other solutions [8].
+Additionally, blockchain systems support and are influenced
+by dynamic changes to the system parameters (including the consensus proto-
+col) during runtime.
+Thus there is a need for dynamic management of blockchain
+Digital Twins and DDDAS have been utilised in autonomic management of
+computational infrastructures [17,21,7,2] and the last few years have witnessed
+several efforts to bring together Blockchain and Digital Twins.
+In our previous work [6], we presented a Digital Twin architecture for the
+dynamic management of blockchain systems focusing on the optimisation of the
+trilemma trade-off and we demonstrated its use to optimise a blockchain system
+for latency.
+We explore
+how DDDAS feedback loop principles can support the design of info-symbiotic
+link connecting the blockchain system with the simulation and analytic environ-
+ment to dynamically manage the trilemma.
+As part of the loop, we contribute to
+a control mechanism that uses Reinforcement Learning agent(RL) and combined
+with our existing simulation framework.
+The combination overcomes the limita-
+Dynamic Data-Driven Digital Twins for Blockchain Systems
+tions of just relying on RL while relaxing the computational overhead required
+when relying solely on simulation.
+The rest of the paper is structured as follows: Section 2 discusses the utilisa-
+tion of Digital Twins for the management of Blockchain systems and provides an
+overview of a Digital Twin framework for this purpose.
+2 Digital Twins for Blockchain Systems
+For this paper, we consider a generic permissioned blockchain system illustrated
+as ’Physical System’ in Fig.
+Specifically, when it’s the turn of a block pro-
+ducer to produce a new block, it first gathers the oldest transactions in the pool,
+verifies them and packs them into a block, signs the block with its private key
+and initiates the consensus protocol.
+The consensus protocol acts as a voting
+mechanism for nodes to vote on the new state of the system, the new block in
+this case, and as mentioned earlier, is the main factor affecting the performance
+of the blockchain.
+It is pertinent to note that producing blocks in a round robin
+fashion is simple to implement albeit inefficient due to "missed cycles" caused
+by invalid blocks or offline nodes [1].
+Other alternative implementations are pos-
+sible, such as having every block producer produce a new block or leaving the
+selection up to the digital twin.
+Although consensus protocols have been studied for many years, due to their
+use in traditional distributed systems for replication, blockchains larger scale,
+in combination with the unknown network characteristics of the nodes, make
+the vast majority of existing work incompatible.
+Recent works have focused on
+G. Diamantopoulos et al.
+adapting some of these traditional protocols for the permissioned blockchain,
+achieving good performance but so far no one has managed to create a protocol
+achieving good performance under every possible system configuration [9].
+With
+several specialized consensus protocols available, a dynamic control system is a
+natural solution for taking advantage of many specialised solutions while avoid-
+ing their shortcomings.
+The idea of trying to take advantage of many consensus protocols is not new,
+similar concepts already exist in the literature, in the form of hybrid consensus
+algorithms [13,18] which combine 2 protocols in one to get both benefits of both.
+Although fairly successful in achieving their goal of getting the benefits of two
+consensus protocols, hybrid algorithms also combine the shortcomings of the
+algorithms and are usually lacking in performance or energy consumption.
+In
+contrast, a dynamic control system allows for the exploitation of the benefits of
+the algorithms involved, with the cost of additional complexity in the form of
+the selection mechanism.
+PBFT acts as a robust protocol capable of effi-
+ciently achieving consensus when byzantine behaviour is detected in the system
+while BigFoot is a fast alternative when there are no signs of byzantine behaviour
+To achieve the above, we employed a Digital Twin (DT) coupled with a
+Simulation Module to conduct what-if analysis, based on which, an optimiser
+would compute the optimal consensus protocol for the next time step.
+Using a
+DT can overcome the shortcomings of relying on an RL agent alone since the
+simulation element and what-if analysis allow for the exploration of alternative
+future scenarios [25].
+3 The DDDAS Feedback Loop
+The system described in the previous section closely follows the DDDAS paradigm,
+with the Digital Twin containing the simulation of the physical system, the node
+feeding data to the Digital Twin acting as the sensors, and the optimiser updat-
+ing the system closing the feedback loop.
+These block producers can act as the sensors of
+the physical system tasked with periodically sending state data to the digital
+twin.
+Using the list of historical
+transactions, we can develop a model of the workload used in the simulation.
+Although using queries to request the state of block producers requires a mecha-
+nism to overcome the Byzantine node assumption, blocks contain a large amount
+Dynamic Data-Driven Digital Twins for Blockchain Systems
+Fig.
+Each new block contains an ex-
+tra data field in which the full timestamped history of the consensus process is
+stored and can be used to infer the state of the Block producers.
+Specifically,
+through blocks, we can learn the state of block producers (offline/online), based
+on whether the node participated in the consensus protocol or not, as well as
+develop a model of the block producers and their failure frequency.
+As the optimisation tasks get more complicated, with mul-
+tiple views taken into account (figure 1), smart contract simulation, harder to
+predict workloads, and especially once the decision-making process gets decen-
+tralised and replicated over many block producers, conducting what-if analysis
+becomes taxing on the hardware.
+Depending on the case i.e energy aware sys-
+tems or systems relying on low-powered/battery-powered nodes might not be
+able to justify such an expensive process or worst case, the cost of optimisation
+can start to outweigh the gains.
+3.1 Augmenting Reinforcement Learning with Simulation
+In this paper, we propose the use of a Reinforcement Learning (RL) agent in
+combination with simulation and what-if analysis to overcome the individual
+shortcomings of each respective technique.
+By using the simulation module
+to augment the training with what-if generated decisions the agent can learn
+a more complete model of the system improving the performance of the agent.
+Additionally, what-if analysis can be used when the agent encounters previously
+unseen scenarios, avoiding the risk of bad decisions.
+By splitting the DDDAS into multiple feedback loops,
+we can allow for finer control of both the data needed and the frequency of
+the updates.
+4 Experimental setup and Evaluation
+Experimental setup To illustrate the utilisation of RL-based optimisation and
+analyse the impact of using simulation to enhance the RL agent, a prototype
+ActionbcActionsimAgentStatebcStatebcBlockchainSimulatorDDDAS Feedback loopWhat-if Simulation for Data AugmentationStatesimScenario GeneratorRewardbcView: LatencyView: DecentralizationView: SecurityRewardsimDigital TwinDynamic Data-Driven Digital Twins for Blockchain Systems
+implementation of the system presented in figure 3 has been developed focusing
+on latency optimisation.
+3: An example instantiation of RL-based control: Latency View
+For the experiments, a general permissioned blockchain system like the one
+described as "Physical System" in Fig.
+Two consensus algorithms were implemented specifically,
+PBFT and BigFoot which complement each other as shown in [6].
+The scenario
+generator created instances of the above blockchain system by randomly gener-
+ating values for the following parameters: (a) Transactions Per Second (T P S)
+which denotes the number of transactions the nodes generate per second; (b) T
+which denotes the size of the transactions; (c) Node State which signifies when
+and for how long nodes go offline; and (d) Network State which denotes how
+the network state fluctuates over time.
+Additionally, following our previous ap-
+proach, we assume that the system does not change state randomly, but does
+so in time intervals of length T I.
+Finally, the digital twin updates the system in
+regular time steps of size T S.
+A Q-Learning agent has been used.
+The action space is a choice between the two
+consensus protocols and the reward function is simply the average transaction
+latency of the optimised T S as measured in the physical system.
+4: Results of the experimental evaluation with (a) showing the training per-
+formance of the agent on WL1 (b) the performance of the agent and the agent
++ simulation (denoted as agent+) for WL2
+where the state has evolved over time.
+In WL2 the agent’s
+performance is shown to decrease in comparison to that of the agent augmented
+with the simulation (agent+) (Fig.
+5 Conclusions
+Leveraging on our previous work on utilising Digital Twins for dynamically man-
+aging the trilemma trade-off in blockchain systems, in this paper we have focused
+on the DDDAS feedback loop that links the Digital twin with the blockchain sys-
+tem.
+The optimiser combines
+Re-enforcement Learning and Simulation to take advantage of the efficiency of
+the agent with the accuracy of the simulation.
+Our experimental results confirm
+that the proposed approach not only can successfully increase the performance
+of the agent but do so more efficiently, requiring less computational overhead.

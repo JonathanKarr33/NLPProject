@@ -1,0 +1,253 @@
+Articial Intelligence research encompasses
+a broad variety of topics, and it is important that the council
+has representatives from all major subelds.
+However, existing notions of fairness for
+multiwinner voting do not fully capture the complexity of
+our setting: it may be the case that a voter is not represented
+by any of the candidates elected in the current round, yet
+she is satised with the overall composition of the coun-
+cil because she is well-represented by some of the council
+Copyright © 2024, Association for the Advancement of Articial
+Intelligence (www.aaai.org).
+Also, given that the
+council is renewed regularly, perhaps a group of voters that
+is too small to be assured permanent representation on the
+council can be guaranteed a spot every few rounds?
+However, such mechanisms may fail to
+maintain fairness over time when lotteries are held repeat-
+edly over multiple rounds (Fanti et al.
+Lackner (2020) and Lackner and Maly
+(2023) conduct an axiomatic analysis of perpetual voting
+rules (temporal extensions of traditional voting rules) with
+respect to fairness across time.
+Relatedly, Harrenstein, Lack-
+ner, and Lackner (2022) argue that several common sequen-
+tial election mechanisms may be detrimental to welfare.
+An-
+other relevant strand of work is that on conference schedul-
+ing (Patro et al.
+2020),
+where the goal is to output a sequence of non-repeating win-
+ners, whilst maintaining fairness to voters across the entire
+time horizon.
+Sequential committee election models con-
+sider settings where an entire committee is elected in each
+round, and impose constraints on the extent a committee can
+change, whilst ensuring candidates continue to have support
+from the electorate (Bredereck, Kaczmarczyk, and Nieder-
+meier 2020; Bredereck, Fluschnik, and Kaczmarczyk 2022;
+Deltl, Fluschnik, and Bredereck 2023).
+Other models in the
+social choice literature that include temporal elements in-
+clude sequential decision-making (Chandak, Goel, and Pe-
+ters 2023; Kahana and Hazon 2023), public decision-making
+(Brandt et al.
+Research into temporal multiwinner
+elections would thus allow us to capture many practical sce-
+narios, discover notions of representation that are appropri-
+ate for temporal settings, and offer insights into the possibil-
+ity of achieving desirable goals by society in a computation-
+ally efcient manner.
+, oℓ),
+which is a sequence of ℓ sets of candidates such that for
+every r ∈ [ℓ], the set of candidates or ⊆ P is chosen at
+timestep r.
+Next, we discuss various elements of the framework, con-
+trasting several options within each element, and positioning
+the existing work in the computational social choice litera-
+ture with respect to these options.
+While one can view this variant of the model as a tempo-
+ral extension of single-winner elections, the multiwinner in-
+terpretation is justied, too, as one can treat the (multi-)set
+O = {or : r ∈ [ℓ]} as the winning committee and apply
+fairness concepts that originate in multiwinner voting litera-
+ture to the entire set O; e.g., Bulteau et al.
+This model is considered in numer-
+ous existing works, including scheduling problems (Elkind,
+Kraiczy, and Teh 2022; Patro et al.
+Feasibility Constraints
+In the standard multiwinner voting setting, it is typically as-
+sumed that there is a parameter k such that every subset of
+P of size k is a feasible outcome (we note, however, that
+there is also work on single-shot multiwinner voting with
+constraints on feasible committees (Yang and Wang 2018)).
+The simplest variant of this model is where the set Pr is
+given in advance and is independent of committees selected
+at steps r′ with r′ 6= r. This model is relevant if changes in
+Pr are caused by external constraints in candidate availabil-
+ity (i.e., perhaps candidate X does not want to run for the
+AAAI executive council this year due to heavy administra-
+tive load in their department, but will be happy to serve in the
+future).
+In the context of public decision-making (Conitzer,
+Freeman, and Shah 2017; Fain, Munagala, and Shah 2018;
+Skowron and G´orecki 2022), such constraints can be inﬂu-
+enced by the suitability of a project being implemented at
+a particular timestep due to manpower or geographical con-
+straints (Lodi et al.
+One can also consider more sophisticated con-
+straints, where at most (at least) a certain fraction of the win-
+ning committee needs to be replaced at each timestep; this
+approach is taken by Bredereck, Kaczmarczyk, and Nieder-
+meier (2020) and Bredereck, Fluschnik, and Kaczmarczyk
+(2022).
+There are other constraints of this form that can be
+found in practice, but, to the best of our knowledge, have
+not been modeled in the literature: e.g., an AAAI executive
+council member, once elected, remains a member of the win-
+ning committee for three timesteps, but is then not eligible to
+participate in the next election (but can run again later on).
+The aspects that need to be considered include
+ballot types (e.g., approval, ranked, or cardinal), and if pref-
+erences can evolve over time (static or dynamic).
+Approval prefer-
+ences are relatively easy to elicit and reason about (Kil-
+gour 1983; Brams and Fishburn 2005; Aragones, Gilboa,
+and Weiss 2011), yet they can capture a wide variety of
+scenarios from city budget planning to elections for board
+of trustees.
+In temporal settings, approval ballots have been
+considered in the context of sequential committee elections
+(Bredereck, Kaczmarczyk, and Niedermeier 2020; Bred-
+ereck, Fluschnik, and Kaczmarczyk 2022; Deltl, Fluschnik,
+and Bredereck 2023) and scheduling (Bulteau et al.
+2017), with appli-
+cations ranging from parliamentary elections to movie se-
+lection (Elkind et al.
+Just as
+in case of outcomes, we distinguish between non-adaptive
+preferences, which evolve due to external considerations
+(e.g., when expressing preferences over restaurants for each
+day of the week, an agent may prefer a non-meat option on
+Fridays), and adaptive preferences, which change based on
+decisions that have been made so far (e.g., an agent may
+be unwilling to eat at the same restaurant twice in a row).
+For instance, the literature on the building of public projects
+(Conitzer, Freeman, and Shah 2017; Fain, Munagala, and
+Shah 2018; Skowron and G´orecki 2022) and Bulteau et al.
+Intertemporal constraints An important special case that
+is not captured by the static/dynamic dichotomy is intertem-
+poral restrictions on voters’ ballots: e.g., in the context of
+scheduling, an agent may be asked to report her ideal sched-
+ule (Elkind, Kraiczy, and Teh 2022).
+This means that agents
+approve exactly one project per timestep, with no repetition
+of projects—this is equivalent to a constraint imposed across
+We also note that, at least for approval ballots, simple
+candidate availability constraints can be incorporated into
+voters’ preferences: e.g., if candidate p is not available at
+timestep r, we can simply remove p from all voters’ ballots
+at r. By doing so, one can simplify the description of the
+input instance.
+Online settings Online scenarios are most prevalent in
+the dynamic social choice literature (Freeman, Zahedi, and
+Conitzer 2017; Freeman et al.
+This is reminiscent of the secre-
+tary problem, or, more specically, its k-winner variant (Al-
+bers and Ladewig 2021); however, the key difference is that
+in the standard secretary problem the decision is made by
+a single stakeholder.
+Another line of work
+considers settings where voters rather than candidates are
+the ones that appear online (Oren and Lucier 2014; Dey, Tal-
+mon, and van Handel 2017).
+Other related online models in
+social choice include those in fair division (see, e.g., the sur-
+vey by Aleksandrov and Walsh (2020)).
+Several works on fair scheduling
+(Elkind, Kraiczy, and Teh 2022; Patro et al.
+2022) consider
+an ofﬂine model where preferences are fully available at the
+onset, and the goal is to study the computational problems
+associated with nding a desirable outcome or to conduct an
+axiomatic analysis of the mechanisms for obtaining an out-
+come.
+Ofﬂine models usually admit better solutions than on-
+line models; this is the case in, e.g., temporal fair allocation
+settings (Bampis, Escofer, and Mladenovic 2018; Igarashi
+et al.
+In contrast, in the
+scheduling model of Elkind, Kraiczy, and Teh (2022) or Bul-
+teau et al.
+(2021), timeslots can be rearranged arbitrarily,
+i.e., this model is fundamentally non-sequential.
+An example
+of this approach is taking a global utilitarian or egalitarian
+view (Elkind, Kraiczy, and Teh 2022), or achieving a pre-
+dened notion of fairness and welfare in ofﬂine models of
+scheduling (Patro et al.
+For instance, in the
+perpetual voting model (Lackner 2020), decisions are made
+at each round, and welfare properties are considered for each
+agent up to and including the current round.
+In other models,
+such as sequential committee elections (Bredereck, Kacz-
+marczyk, and Niedermeier 2020; Bredereck, Fluschnik, and
+Kaczmarczyk 2022; Deltl, Fluschnik, and Bredereck 2023),
+the quality of a committee may be dened and maintained
+as a goal at each timestep.
+Frequency-based solution concepts Another possibility
+is to consider frequency-based properties, which can be for-
+mulated in terms of bounds on the number of timesteps (be it
+consecutive or not) that have elapsed since the welfare of an
+agent was last addressed.
+Formalism of Solution Concepts and Goals The study
+of fairness across time opens up opportunities for formulat-
+ing novel solution concepts, either ones that are specic to
+the temporal setting, or generalized (temporal) variants of
+concepts developed for the traditional multiwinner election
+model.
+For instance, popular concepts of representation in
+the multiwinner election setting (e.g., justied representa-
+tion and its variants (Aziz et al.
+(2021) and Chandak, Goel, and Pe-
+ters (2023) made rst steps in this direction) and the associ-
+ated computational problems can be studied.
+Another
+direction that one could pursue would be considering a gen-
+eralization of existing multiwinner voting rules to the tempo-
+ral setting (this line of work was initiated by Lackner (2020)
+and Lackner and Maly (2023)), and investigating whether
+these rules satisfy the corresponding generalized temporal
+axioms (e.g., representation as discussed above).
+For instance,
+when considering evolving preferences, one can place addi-
+tional restrictions on how agents’ preferences may change
+over time: e.g., perhaps agents’ approval sets can only ex-
+pand (as they learn about benets of projects they were pre-
+viously not aware of), or, alternatively, the preferences can-
+not change too drastically between two consecutive time pe-
+riods; similarly, the set of available candidates may evolve
+in a predictable manner, i.e., perhaps each candidate is only
+present for a number of consecutive steps.
+Such constraints
+on candidates’ availabilities and agents’ temporal prefer-
+ences can be viewed as a novel structured preference do-
+main (Elkind, Lackner, and Peters 2022), and can therefore
+offer a pathway towards positive algorithmic and axiomatic
+Furthermore, we can consider settings where agents as-
+sign different importance to different timesteps (on top of
+preferences over candidates): e.g., in case of public projects,
+an agent may plan to be overseas during a specic time pe-
+riod and is therefore less interested in projects implemented
+during that period.
+Apart from the im-
+pact (positive or negative) that it can have on agents’ welfare
+(as discussed in previous sections), one can approach this
+question from a computational perspective: does time make
+computing certain solution concepts easier (i.e., more algo-
+rithmically efcient), or does it add a computational hurdle?
+2017), whereas in perpetual voting with
+static preferences it is provided by a simple greedy algo-
+rithm (Bulteau et al.
+One can also consider a more general setting of par-
+ticipatory budgeting, where candidates (projects) may have
+distinct costs, and there is a budget, so that the total cost of
+the selected projects must remain within the budget (Aziz
+and Shah 2021).
+While some of the work we discussed con-
+siders this more expressive setting (Lackner, Maly, and Rey
+2021), most of the literature focuses exclusively on the basic
+multiwinner scenario; it would be interesting to see to what
+extent the existing positive results carry over to the richer
+participatory budgeting domain.

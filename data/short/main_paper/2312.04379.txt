@@ -18,19 +18,15 @@ over, we plan to use such a task to study the effectiveness
 of user-centred XAI in HRI scenarios. In particular, we are
 interested in understanding whether a user-centred XAI ap-
 proach is more informative than a classical one.
-Methods
 We are interested in introducing an objective and quantita-
 tive assessment task to measure the goodness of XAI sys-
 tems without relying only on indirect measures. Hence, we
 plan to measure the XAI systems’ information power di-
 rectly and validate the task through a user study.
-The task
 The assessment consists of a decision-making task where
 users can interact with a control panel to perform actions
 in a simulated environment (see Section ). During the task,
 users can interact with an expert AI (in our case, with the
-2
-
 humanoid robot iCub) by asking what it would do, and its
 XAI system by asking why it would do that. Apart from the
 instructions about interacting with the control panel and the
@@ -48,7 +44,6 @@ ing users during decision-making. However, the robot can
 not take the initiative in giving suggestions either, but it al-
 ways replies to users’ questions. Thus, only the users can
 interact with the control panel and act in the simulated envi-
-ronment.
 We expect the following HRI modalities. If the user al-
 ready knows what to do, they act on the control panel. Oth-
 erwise, they ask the robot what it would do; then, the robot
@@ -99,7 +94,6 @@ The reactor power linearly decreases over time for the ef-
 fect of the de-potentiation of the fuel rods. Hence, the reac-
 tor’s power depends on the values of the environment’s fea-
 tures and whether nuclear fission is taking place. Moreover,
-3
 the energy produced at each step is computed by dividing the
 reactor’s power by 360, which is the power that a 1000MW
 reactor without power dispersion produces in 10 seconds.
@@ -181,7 +175,6 @@ their future behaviour (Rohlfing et al. 2020). Hence, the pre-
 dicted users’ actions can be used to produce counterfactual
 explanations: the fact (the outcome to explain) will be the
 robot’s suggestion; in contrast, the foil (the expected out-
-4
 come) will be the predicted users’ action. Figure 3 shows an
 example of these two approaches.
 Measuring the explanations’ goodness
@@ -191,14 +184,12 @@ self. During this assessment, the users aim to learn as many
 system rules as possible. Thus, we need to collect measures
 for each rule and combine them to obtain the model’s infor-
 mation power. The general assessment steps are the follow-
-ing:
 1. To quantify how many rules regard each feature and de-
 fine a method for measuring the number of learned rules
 relative to each feature.
 2. To quantify how much informative weight each fea-
 ture has. For the sake of simplicity, we can assume
 that they have the same informative weight (equal to 1
-k ,
 where k is the number of features). The features’ infor-
 mative weights must respect the following rule: ∀j ∈
 {1, ..., k}, (cid:80)
@@ -210,12 +201,9 @@ obtaining a measure (and a set of secondary descriptive
 measures) for each of them.
 4. To average those measures obtaining the final results; the
 secondary descriptive measures could also have valuable
-meaning.
 Hence, if k ∈ N is the number of the model’s features,
-j ∈ N
 γj ∈ [0, 1] is the informative weight of the feature j, nr
 is the number of rules regarding the feature j, nlr(i)
-∈ N is
 the number of rules regarding the feature j learned by the
 user i, and am is the accuracy of the AI model m, then the
 informative power of the model m for the user i is computed
@@ -251,7 +239,6 @@ Moreover, we collect some subjective measures:
 about the explanations and the interaction.
 (M5) Measures of robot perception, such as users’ feelings to-
 wards the robot and perception of it.
-Discussion
 The assessment task we propose satisfies properties unique
 to the XAI research field. Firstly, it focuses on the infor-
 mation power of the XAI system intended as the amount
@@ -286,7 +273,5 @@ tem. Moreover, it can be used to objectively compare two
 or more HRI approaches to test whether HRI dynamics ease
 the users in understanding the robot’s suggestions and expla-
 nations. Indeed, in our future work, we plan to use this task
-5
 to test whether interacting with a social robot makes users
 more receptive to learning than interacting with a non-social
-one.

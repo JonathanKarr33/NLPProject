@@ -1,7 +1,4 @@
 INTRODUCTION
-
-A robot
-
 is a complex machine incorporating electrical,
 mechanical, communication, and computing components to
 effectively perform specific tasks. Robotics, as a technology,
@@ -29,7 +26,6 @@ to alternative communication platforms like Zigbee, GSM
 (Global System for Mobile Communication), and General
 Packet Radio Service (GPRS), with a simple installation
 process. Research indicates that Bluetooth systems are faster
-
 than GSM systems[1]. Furthermore, the integration of a mo-
 tor driver and relay driver module with Arduino enhances
 the effectiveness of driving output
@@ -64,11 +60,7 @@ such as motor drivers, relay modules, and Arduino boards.
 Finally, the paper is concluded in Section VII, summarizing
 the key findings and implications of the study. Additionally,
 possible avenues for future work in the field are explored.
-
 II. TECHNICAL COMPONENTS
-
-A. Arduino
-
 The first essential technical component for this project is
 the Arduino Uno (Figure1), a microcontroller based on the
 Atmega328[2]. It encompasses 14 digital input/output pins,
@@ -79,32 +71,18 @@ for sensor interfacing. The inclusion of a 16 MHz ceramic
 resonator[1] and the incorporation of all necessary circuitry
 within a single module contribute to the operational simplicity
 of the Arduino Uno. This microcontroller is chosen for its
-
- 
- 
- 
- 
- 
- 
 Fig. 1: Arduino Uno ATmega328[1]
-
 Fig. 3: PCB design real-world view[1]
-
 user-friendly design and ease of operation compared to other
 microcontroller circuits.
-
 B. Bluetooth Module HC-05
-
 The Bluetooth module (HC-05) (Figure2) functions as an
 interface with an Arduino circuit to establish a communication
 platform. Primarily, this module is utilized in this project for
 the reception of serial data from an Android application. In
 practice, the module operates within a range of 50 meters[1].
-
 Fig. 4: PCB design artwork view[1]
-
 E. Ultrasonic Sensor HCSR04
-
 The interfacing mechanism between an Arduino and the
 ultrasonic sensor HCSR04 involves measuring the distance
 between a target and the real position of the sensor. This
@@ -112,13 +90,9 @@ is achieved by calculating the time duration between the
 transmission and reception of an ultrasonic wave. The module
 contains four terminals: Vcc, Trigger, Echo, and Gnd. Figure6
 illustrates the module.
-
 F. Android Application
-
 Fig. 2: Bluetooth module HC-05[1]
-
 C. PCB Design of L293D Module
-
 The L293D is an H-bridge motor driver IC with an operating
 voltage range of up to 36V from 5V. It provides a bidirectional
 drive current of up to 600mA, enabling control over two
@@ -128,16 +102,13 @@ motor driver module was created through PCB (Printed Circuit
 Board) design, with each module containing two L293D ICs.
 Figure3 shows the real-world view of designing on PCB
 Wizard, whereas Figure4 represents the design artwork view.
-
 D. Control Circuit Module
-
 This module incorporates a relay driver mechanism with the
 BC547 transistor and a buzzer, serving as the robot’s horn. It
 activates any output system through a relay by applying a
 digital pulse through an Arduino. This segment of the project
 will govern the lighting and horn mechanisms of the robot.
 The design of this module is depicted in Figure5.
-
 The Android application (Figure7) serves as the primary
 interface for voice signals and has been developed using
 the MIT App Inventor[3] platform, employing a drag-and-
@@ -147,7 +118,6 @@ with the utilization of the Google Voice Recognizer module.
 Its functionality includes converting voice commands into
 corresponding text messages displayed on the screen. Subse-
 quently, this message is transmitted to an electronic hardware
-circuit
 through Bluetooth connectivity. Upon receiving the
 text generated from the voice command, the system employs
 an ’if’ statement to check whether the command matches
@@ -157,12 +127,9 @@ actions. In practical terms, this activation results in the Arduino
 providing a digital high signal, delivering 5 volts of direct
 current (DC). This approach allows for a responsive and
 conditional control mechanism where the system’s behavior is
-
 grammed sequence. The simulation of the concept is presented
 in Figure8.
-
 IV. PROGRAMMING CONCEPT OF THE ROBOT
-
 The communication platform established in our project is
 Bluetooth, based on serial data transmission and reception.
 When serial data is available, the program reads the bytes from
@@ -199,9 +166,7 @@ call within that particular condition. This process demonstrates
 real-world operation, meaning the robot’s movement in a spec-
 ified direction. Real-time distance surveillance is conducted by
 the ultrasonic sensor.
-
 V. DESIGN ARCHITECTURE
-
 Design Architecture illustrates the overall mechanism of the
 proposed methodology. Figures13 (design architecture) and14
 (block diagram) depict the different sections of the project,
@@ -211,24 +176,16 @@ buzzer. In this methodology, wireless communication is estab-
 lished through serial communication, where one bit at a time
 is transmitted and can be processed by a controller. This setup
 forms the foundation for implementing the proposed system.
-
 VI. HARDWARE IMPLEMENTATION
-
 This section provides a detailed account of how the theo-
 retical concepts are translated into a physical system, encom-
 passing the integration of components like motor drivers, relay
-
 Fig. 5: Bluetooth module HC-05[1]
-
 Fig. 6: Ultrasonic sensor HCSR04[1]
-
 contingent on the recognized voice command meeting specific
 predefined criteria.
-
 Fig. 7: Android Application[1]
-
 III. PROTEUS SIMULATION SOFTWARE
-
 Proteus simulation software, version 7, is utilized to validate
 circuit connections in the virtual realm. Using this platform, a
 circuit can be drawn, and the programming file in hexadecimal
@@ -237,38 +194,27 @@ IDE—can be uploaded. In this simulation, Arduino interfaces
 with the L293D IC as the motor driver. The communication
 platform is established through the virtual terminal, and a
 circuit has been identified that operates according to a pro-
-
 Fig. 8: Simulation of the motor mechanism using Proteus[1].
-
 Fig. 10: Code for string processing[1]
-
 Fig. 9: Ultrasonic sensor interfacing[1]
-
 modules, and Arduino boards. In the hardware testing phase,
 rigorous evaluation and validation were conducted to ensure
-
 Fig. 11: Code for voice command execution[1]
-
 the seamless functioning of each component. This involved
 testing the responsiveness of the motor drivers, assessing the
 reliability of the relay modules, and confirming the proper
 integration of Arduino boards within the system. The objective
 of this phase was to identify and address any potential issues
 before proceeding to the full-scale hardware implementation.
-
 Fig. 12: Code for automation concept[1]
-
 Fig. 14: Block Diagram[1]
-
 cess of hardware testing, ensuring the reliability of individual
 components, followed by the successful physical development
 of the robot. The figures provide a visual representation of both
 the testing and implementation phases, offering a complete
 understanding of the hardware journey in the realization of
 the voice recognition robot concept.
-
 Fig. 13: Design Architecture[1]
-
 Figure15 illustrates the hardware testing process, showcasing
 the systematic evaluation of individual components and their
 collective functionality. This phase aimed to verify the ro-
@@ -285,14 +231,8 @@ implementation, illustrating the integrated components within
 the physical structure of the robot. The design carefully
 incorporates voice recognition technology, highlighting how
 the hardware components seamlessly interact with the software
-system.
-
 The integration of voice recognition technology into the
 physical robot marks a crucial advancement, bringing the con-
 cept to life. This section emphasizes the comprehensive pro-
-
 Fig. 15: Hardware Testing[1]
-
 Fig. 16: Hardware Implementation[1]
-
-VII. 

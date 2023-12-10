@@ -1,13 +1,9 @@
-INTRODUCTION
-This version of MIMo extends a previous version published at ICDL [1].
-(a) Full body view
-(b) Facial expressions
-Fig. 1. MIMo, the multimodal infant model. (a) MIMo sitting in a room with
-toys. (b) Six facial expressions of MIMo.
 Importantly, these interactions are largely initiated and con-
-trolled by the developing child. For example, an infant controls
+trolled by the developing child.
+For example, an infant controls
 its visual, proprioceptive, and haptic inputs through its eye
-and body movements. This ability to control and “experiment�
+and body movements.
+This ability to control and “experiment�
 with different movements to observe their effects on sensory
 inputs may be crucial for cognitive development, giving the
 developing mind a means to probe the causal structure of
@@ -23,180 +19,163 @@ Despite the impressive successes of such models, they may
 ultimately be severely limited in their ability to understand
 the causal mechanisms underlying their training data, which
 will limit their ability to generalize in novel situations.
-This should come as no surprise. Every scientist learns
-that mere correlation is not sufficient evidence for inferring
-causation. Therefore, scientists routinely exploit the ability to
+Therefore, scientists routinely exploit the ability to
 manipulate a system under study using clever experimental
 designs where they interfere with some variables and observe
 the effects on others to distill the causal mechanisms at work.
 Therefore, recreating the physical interaction with the envi-
 ronment must be a central aspect of rebuilding cognitive devel-
 opment and it may be equally essential for achieving human-
-like intelligence and consciousness in AIs. The idea that an
+like intelligence and consciousness in AIs.
+The idea that an
 AI could learn like a developing child can be traced back
-all the way to Turing [2]. However, serious “Developmental
+all the way to Turing [2].
+However, serious “Developmental
 Robotics� or “Developmental AI� efforts have become more
 common and practical only in the last 20 years, for reviews
 see [3]–[8].
 There are two options for modeling the interaction of a
-developing mind with its physical and social environment. The
-first option is using humanoid robots. This is the approach
-taken by the Developmental Robotics community. The main
+developing mind with its physical and social environment.
+The main
 advantage is the inherent realism: the system operates in the
-real world governed by the actual laws of physics. However,
-working with humanoid robots is expensive, time-consuming,
-and suffers from the brittleness of today’s humanoid hardware.
-All these factors negatively impact the reproducibility of the
-research. Furthermore, the sensing abilities of today’s robots
-are usually not comparable to those of actual humans. This
-is particularly problematic for the sense of touch. The human
-body is covered by a flexible skin containing various types
-of mechanoreceptors, thermoreceptors, and nociceptors (pain
-receptors). These allow us to sense touch, pressure, vibration,
-temperature, and pain. Today, reproducing such a human-like
-skin in humanoid robots is still out of reach.
+real world governed by the actual laws of physics.
+Furthermore, the sensing abilities of today’s robots
+are usually not comparable to those of actual humans.
 The second option for modeling the interaction of the
 developing mind with its physical and social environment is
-to do it completely in silico. Many physics simulators or game
+to do it completely in silico.
+Many physics simulators or game
 engines are available today that can approximate the physics
-of such interactions [9]–[11], for review see [12]. Among
+of such interactions [9]–[11], for review see [12].
+Among
 the disadvantages of such an approach are 1) inaccuracies
 of such simulations due to inevitable approximations and
 2) the high computational costs, especially when non-rigid
-body parts and objects are considered. Nevertheless, the in
+body parts and objects are considered.
+Nevertheless, the in
 silico approach avoids all
 the problems of working with
-humanoid robot hardware mentioned above. Furthermore, it
-ensures perfect reproducibility. Lastly, if simulations can be
+humanoid robot hardware mentioned above.
+Lastly, if simulations can be
 run (much) faster than real-time, this greatly facilitates the
 simulation of developmental processes unfolding over long
 periods of time (weeks, months, or even years).
 To support such in silico research, we here present the
 open source software platform MIMo, the Multi-Modal Infant
-Model (Fig. 1). MIMo is intended to support
+Model (Fig.
+MIMo is intended to support
 of research: 1) developing computational models of human
 cognitive development and 2) building developmental AIs that
 develop more human-like intelligence and consciousness by
 similarly exploiting their ability to probe the causal structure
 of the world through their actions.
-We have decided to model the body of MIMo after an
-average 18-month-old child. In total, MIMo has 82 degrees
-of freedom of the body and 6 degrees of freedom of the eyes.
 MIMo also features different facial expressions that can be
-used for studies of social development. To simulate MIMo’s
+used for studies of social development.
+To simulate MIMo’s
 interaction with the physical environment we use the MuJoCo
 physics engine [13], because of its strength at simulating
-contact physics with friction. Generally, we have aimed for
+contact physics with friction.
+Generally, we have aimed for
 a balance between realism and computational efficiency in the
-design of MIMo. To accelerate the simulation of physics and
+design of MIMo.
+To accelerate the simulation of physics and
 touch sensation, MIMo’s body is composed of simple rigid
 shape primitives such as a sphere for the head and capsules
-for most other body parts. Presently, MIMo features four
-sensory modalities: binocular vision, proprioception, full-body
-touch sensation, and a vestibular system. We also plan to add
-audition in the future.
+for most other body parts.
 The remainder of this article describes the detailed design
-of MIMo and illustrates how to use it. In particular, we present
+of MIMo and illustrates how to use it.
+In particular, we present
 four scenarios where MIMo learns to 1) reach for an object,
 2) stand up, 3) touch different locations on his body, and 4)
-catch a falling ball with his five-fingered hand. These examples
+catch a falling ball with his five-fingered hand.
+These examples
 are used to illustrate and benchmark potential uses of MIMo.
 They are not intended as faithful models of how infants acquire
 these behaviors.
 This paper is an extended version of preliminary work pre-
-viously published at the ICDL 2022 conference [1]. Compared
+viously published at the ICDL 2022 conference [1].
+Compared
 to the preliminary MIMo version we have added 1) five-
 fingered hands, 2) a new actuation model that more accurately
 models the force-generating behaviour and compliance of real
-muscles, 3) a detailed play room (see Fig. 2), in which MIMo
-can interact, and 4) a new demo environment of learning
-to catch a falling ball. A fifth contribution is that we have
+muscles, 3) a detailed play room (see Fig.
+A fifth contribution is that we have
 improved computational efficiency and benchmarks have been
 updated accordingly.
-II. RELATED WORK
+RELATED WORK
 We focus on two major classes of software platforms for
 simulating cognitive development during embodied interac-
-tions with the environment. The first kind is designed to
+tions with the environment.
+The first kind is designed to
 simulate a particular physical robot used in Developmental
 Robotics research and intended to complement the work with
-that physical robot. The second kind of platform emulates human body and
+that physical robot.
+The second kind of platform emulates human body and
 sensing abilities directly and thus is not restricted by limi-
 tations of current robotics technology in general or that of
-specific robots in particular. 
-VII. EXPERIMENTS
+specific robots in particular.
+EXPERIMENTS
 A. Illustrations of learning
 While RL is a powerful framework to generate controllers,
 its chaotic nature and requirements for large amounts of data
-require a stable and efficient model. In the following, we
-demonstrate that MIMo is well-suited for RL even while
-including multimodal inputs. Note that badly designed mod-
+require a stable and efficient model.
+Note that badly designed mod-
 els can negatively affect RL performance, even if they are
-physically accurate in some regimes. We use four example
-tasks: reaching for objects, standing up, self-body knowledge
-two different
-and catching a falling ball. In these tasks,
+physically accurate in some regimes.
+In these tasks,
 state-of-the-art, widely used deep RL algorithms, Proximal
 Policy Optimization (PPO) [54] and Soft Actor-Critic (SAC)
 [23] are trained to optimize task-dependent reward functions
-by controlling MiMo’s actuators. While both algorithms are
-actor-critics, PPO is a widely-used on-policy approach closely
-related to trust-region algorithms [55] and SAC is an off-policy
-algorithm with a maximum-entropy formulation [56].
+by controlling MiMo’s actuators.
 We use the default parameters of the Stable-Baselines3
 library [53], consisting of linear networks with two hidden
 layers of size 64 for PPO and size 256 for SAC, as well
 as common improvements [57], [58] that are critical for
-performance. Input and output
-layer sizes vary depending
-on the observation and action spaces of the environments.
-Performance is compared for PPO and SAC with 10 differ-
-ent seeds (Fig. 6). We do not claim that such extrinsically
-motivated learning is how human infants learn these skills.
+performance.
 We merely use these examples to showcase MIMo learning
 from multimodal input.
-(a) Binocular vision
-(b) Touch perception
-Fig. 5. MIMo’s multimodal perception while holding a ball. (a) Anaglyph of
-left and right eye views. (b) Visualization of touch sensors in the hand, with
-those reporting a force colored red. The size of the circle corresponds to the
+(b) Visualization of touch sensors in the hand, with
+those reporting a force colored red.
+The size of the circle corresponds to the
 amount of force sensed.
-A. Touch Perception
+Touch Perception
 Human touch sensation is produced by a variety of receptors
 responding towards specific aspects of touch, such as the
 Slowly Adapting type 1 (SA1), which responds primarily to
 direct pressure and coarse texture or the Rapidly Adapting
-(RA) type for slip and fine texture [50]. As with the other
+(RA) type for slip and fine texture [50].
+As with the other
 modalities, we model these types very simply, ignoring signal
 travel times and condensing the various types of receptors into
 a single generic “touch� sensor type that measures normal and
-frictional forces at its location. Sensor points are spread evenly
+frictional forces at its location.
+Sensor points are spread evenly
 on each individual body part, with the sensor density varying
 between body parts based on the two-point discrimination
-distances by [51]. Thus, the front and the back of the palm
-have the same sensor density, but not the fingertips.
-MuJoCo only performs rigid-body simulations in which all
-contacts are treated as point contacts. Area contacts between
+distances by [51].
+Area contacts between
 flat surfaces produce multiple contact points, for example at
-the corners of the contact area. As soft-body physics is very
+the corners of the contact area.
+As soft-body physics is very
 computationally expensive, we do not adjust these physics but
 weakly simulate the deformation of the skin to these point
 contacts, by distributing the point contact forces over nearby
-sensor points according to a surface response function. Our
+sensor points according to a surface response function.
+Our
 response function decreases sensed force linearly with distance
 from the contact point and then normalizes over all sensor
 points, such that the total sensed force remains identical to
-the initial point contact force from MuJoCo. The distance
-measure is the euclidean distance as geodesic approximations
-were too computationally expensive. To avoid bleed-through
+the initial point contact force from MuJoCo.
+To avoid bleed-through
 to the opposite side of thin bodies (such as the palm), we only
 select nearby sensor points with a breadth-first-search on the
-mesh of sensor points. While also expensive, the results of this
+mesh of sensor points.
+While also expensive, the results of this
 search can be cached and reused, leading to a only a small run
 time penalty compared to using just the euclidean distance.
 All of these aspects, from the sensor point density through
 the response function can be easily adjusted or expanded.
-Performance can be improved for specific experiments in
-multiple ways. In addition to adjusting the configuration of
+In addition to adjusting the configuration of
 the modalities or the scene, the performance of the simulation
 can be improved by reducing the frequency of control steps,
 reducing the frequency of observation collection and thus the

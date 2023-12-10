@@ -1,5 +1,4 @@
 Introduction
-
 Conventional pest management has been shown to contribute to climate change. Raising temperatures,
 intensifying ultraviolet radiation, and reducing relative humidity, are expected to increase pest
 outbreaks and undermine the efficacy of pest control methods like host-plant resistance, bio-pesticides,
@@ -8,26 +7,15 @@ warnings, adversely affects public health [9] and contributes to the climate cri
 i) greenhouse gas (GHG) emissions from pesticide production, packaging, and transportation [6], ii)
 compromised soil carbon sequestration [48], iii) elevated GHG emissions from soil [27, 18, 42], and
 iv) contamination of adjacent soil and water ecosystems, resulting in biodiversity loss [35].
-
 Thus, a vicious cycle has been established between pesticides and climate change [36]. In response,
 the European Commission (EC) has taken action for the reduce of all chemical and high-risk pesticides
 by 50% by 2030. Achieving such reductions requires adopting integrated pest management (IPM),
 which promotes sustainable agriculture and agroecology. IPM consists of 8 principles inspired by the
 Food and Agriculture Organization (FAO) description. The authors in [8] condense these principles
-
 ∗Equal contribution.
-
 Tackling Climate Change with Machine Learning: workshop at NeurIPS 2023.
-
- 
- 
- 
- 
- 
- 
 into prevention and suppression, monitoring, decision-making, non-chemical methods, pesticide
 selection, reduced pesticide use, anti-resistance strategies, and evaluation.
-
 Data-driven methods have played a crucial role in optimizing pest management decisions. Some
 employ supervised machine learning (e.g., Random Forests, Neural Networks) with satellite Earth
 observations (EO) and in-situ data for pest presence prediction [49, 4], some incorporating weather
@@ -36,15 +24,11 @@ data, effectively handling unobservable counterfactual outcomes [47]. Filho et a
 IPM information from meteorological data, insect scouting, remote sensing and machine learning
 [21]. Nanushi et al. propose an interpretable machine learning solution for Helicoverpa armigera
 presence in cotton fields [30], enhancing IPM decision-making beyond traditional thresholds.
-
-2 Proposal
-
 As Barzman et al. point out, threshold-based and "spray/don’t spray" advice is not enough [8]. There
 is a need for a new class of digital tools that take into account the entire set of IPM principles in
 order to truly enhance decision-making. In this direction, we propose a data analysis framework for
 IPM based on causality and explainability. It consists of short-term actionable advice for in-season
 interventions and long-term advice for supporting strategic farm planning (Figure 1).
-
 This way, we will upgrade the monitoring and decision-making IPM principles leading to actionable
 advice for direct pest control interventions and assist the selection of practices relevant to other IPM
 principles, such as use non-chemical methods and reduce pesticide dosage. Additionally, the proposed
@@ -52,70 +36,27 @@ framework will better inform farmers with respect to the potential impact of pra
 will enhance the IPM principle of prevention and suppression, e.g., crop rotation, day of sowing,
 and no-tillage. Furthermore, our framework employs observational causal inference to continuously
 assess the aforementioned recommendations and thereby satisfy the IPM principle of evaluation.
-
-Figure 1: Causal and explainable data analysis framework for enhanced IPM
-
-Data: Our strategy hinges on utilizing a variety of data to gain a holistic understanding of historical,
-current, and future agro-environmental conditions, thereby enhancing our ability to model and
-comprehend pest dynamics. We use EO data on factors like vegetation, soil moisture. Terrain and
-soil characteristics data are incorporated for long-term area-specific traits. We also utilize weather
-forecasts and ground measurements, including pest abundance (details in A.1 of Appendix).
-
 3 Approach & Methods
-
 Causal Graph for representing domain knowledge. We constructed a causal graph (Figure 2),
 denoted as G, that represents the underlying causal relationships within the pest-farm ecosystem
 for the H. armigera case. The graph G comprises vertices V , which represent the variables in the
 system, and directed edges E, which symbolize the cause-and-effect relationships between these
 variables (details about graph building in A.2 of Appendix). Besides helping us articulate domain
 knowledge, the causal graph G will benefit the downstream technical analyses in various ways. G
-
-2
-
 P1—prevention and suppressionP2—monitoringP3—decision-makingP4-7 — interventions for pest controlP8—evaluationimpact assessment of recommendationsATE estimation using observational causal inferencetime within seasonPrinciples of Integrated Pest Management (IPM)DATAlong-term adviceheterogeneouseﬀect estimation using CATE short-term adviceexplainable, invariant  pest population forecastcounterfactuals serves as an amalgamation of domain knowledge and a foundational schema that can be leveraged
 variably depending on the methodological requirements of the analytical techniques in play.
-
 Variable Description
 Temperature
-
-Id
-T
 SW Soil water
 RHa Air relative humidity
-SG
-Pr
-LC
-P
-V
-Sp
-CS
-M
-AC
-W
-S
-SOI
-PGS
-Y
-
 Size of generation
 Precipitation
-Life cycle
-Parasitism
-Variety
-Spraying
 Cropping System
-Migration
 Adjacent crops
-Wind
-Season
 South oscillation index
 Plant growth stage
 H. armigera population
-
-Figure 2: Causal graph of pest-farm ecosystem.
-
 Table 1: Pest-farm ecosystem variables.
-
 Invariant & Causal Learning for Robust Pest Prediction. Our goal is to predict near-future
 pest populations (Yt+1) using EO and environmental data (Xt) and weather forecasts (Wt+1) by
 learning the function yt+1 = f (xt, wt+1). Conventional machine learning methods [49, 4, 40, 47]
@@ -125,7 +66,6 @@ To achieve this, we integrate invariant learning with causality, categorizing da
 E (e.g., agroclimatic zones). While E influences features (xt, wt+1), it does not directly affect the
 target (Yt). Invariant Causal Prediction (ICP) [19], DAGs, and Invariant Risk Minimization (IRM)
 [5] help select causal features, identify potential relationships, and capture latent causal structures.
-
 Explainability & Counterfactual Reasoning for Short-term Advice. We define the problem as a
 binary classification of pest presence or absence, at the next time step, using EO data (Xt) and weather
 forecasts (Wt+1). We employ Explainable Boosting Machines (EBM) [31] to enhance predictions
@@ -134,14 +74,12 @@ contributions, enhancing trust. To bolster trust, we propose generating counterf
 recommended interventions. We follow the setup of [29], searching for minimal feature perturbations
 in (xt, wt+1) that alter predictions using the same model f . These counterfactual examples represent
 proposed actions for real farm systems, ensuring practicality and feasibility [45, 29].
-
 Heterogeneous Treatment Effects for Long-term Advice. We provide long-term advice for pest
 prevention and suppression by assessing how practices (e.g., crop rotation, balanced fertilization,
 sowing dates) affect pest harmfulness and yield indices. Different agro-environments may yield
 varying responses to the same practice. We estimate the conditional average treatment effect (CATE)
 [17] using the potential outcomes framework [33]. CATE quantifies the difference in potential
 outcomes (E[Y (T = 1) − Y (T = 0)|X]), controlling for field characteristics that drive heterogeneity.
-
 Causal Inference for Evaluating Advice Effectiveness. We employ causal inference techniques
 to assess the effectiveness of our pest control recommendations, building on a recent approach
 introduced in the context of cotton farming [44]. Adapting this method to pest control interventions,
@@ -151,20 +89,14 @@ units). Historical intervention data, annotated as recommended or not, will be u
 Causal inference will be conducted on a per-environment basis, ensuring similarity between treatment
 and control groups, following the parallel trends assumption [23]. Depending on data volume and
 time series length, other methods like synthetic control or panel data may also be considered.
-
-3
-
 4 Conclusions
-
 Breaking the harmful cycle between pesticides and climate change is essential. In this direction,
 IPM aims to successfully control pests while minimizing the adverse effects of conventional pest
 management on human health and the environment. We propose an AI-driven framework for IPM that
 provides short- and long-term advice, promoting sustainable practices and timely control methods.
 Additionally, we employ observational causal inference to evaluate the framework’s effectiveness.
 Finally, our approach ensures effective pest control and enhances trust and transparency.
-
 Acknowledgments and Disclosure of Funding
-
 We express our gratitude to Corteva Agriscience Hellas, particularly to Dr. George Zanakis, the
 Marketing & Development Manager, for their invaluable support, trust, and provision of data. This
 research was primarily funded by the "Financing of Charalambos Kontoe’s Research Activities_code
@@ -173,4 +105,3 @@ has been partially supported by the European Union Horizon 2020 Research and Inn
 (Project Code: 101070496, Smart Droplets). Vasileios Sitokonstantinou and Gustau Camps-Valls
 work has been supported by the GVA PROMETEO project "Artificial Intelligence for complex
 systems: Brain, Earth, Climate, Society" agreement CIPROM/2021/56.
-

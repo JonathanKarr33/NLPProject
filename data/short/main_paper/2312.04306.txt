@@ -1,5 +1,4 @@
 Introduction
-
 Named Entity Recognition (NER) is an important
 natural language processing task with a multitude
 of applications (Lorica and Nathan, 2021). While
@@ -17,19 +16,12 @@ greatly facilitate the use of such models. They
 cover the whole workflow consisting of dataset in-
 tegration, model training, evaluation and inference,
 see Fig. 1.
-
-Figure 1: Essential stages in the life cycle of a machine
-learning model.
-
 1http://nlpprogress.com/english/named_entity_
-
 recognition.html
-
 However, they do require a certain degree of
 expertise and often some significant, use-case spe-
 cific effort. Some of the (general and NER-specific)
 challenges are:
-
 (i) There exist various sources for datasets. Re-
 garding public datasets, HuggingFace and GitHub
 repositories are important sources. Private datasets
@@ -40,38 +32,12 @@ come in different formats. This may be true even
 for datasets from the same source. These issues typ-
 ically require customized data preprocessing code
 for every new use case.
-
 (ii) Data for NER is processed on three differ-
 ent levels: tokens, words and entities. Different
 parts of the workflow may operate on different
 levels, as shown in Tab. 1. Datasets may be pre-
-
-stage
-
-token word
-
-entity
-
-dataset
-training
-evaluation
-inference
-
-✕
-
-✕
-✕
-
-✕
-
-✕
-
-✕
-✕
-
 Table 1: Overview of the data levels that the different
 parts of a NER model workflow can operate on.
-
 tokenized (word level) or not (entity level). At
 training time, labels for tokens that are not the first
 token of a word may be ignored (word level) or
@@ -85,13 +51,6 @@ quire predictions on the word level, for instance if
 the associated probabilities are to be used for ac-
 tive learning. Handling these technical intricacies
 requires expert knowledge.
-
- 
- 
- 
- 
- 
- 
 (iii) There exists a multitude of NER-specific an-
 notation schemes and variants and it is important
 to be aware of the differences. For instance, during
@@ -101,14 +60,11 @@ notation scheme dependent process. At evaluation
 time, there are different ways to cope with predic-
 tions that do not obey the rules of the given annota-
 tion scheme (we will get back to this in Sec. 4.6).
-
 (iv) Training hyperparameters which lead to
 reasonable performance may depend on the
 employed model and dataset. For instance, while a
 small dataset often requires more training epochs,
 larger datasets can usually be trained for fewer
-epochs.
-
 The aim of nerblackbox is to provide a high-level
 framework which makes the usage of SOTA NER
 models as simple as possible. As we will see in de-
@@ -123,11 +79,7 @@ lows fine-grained control over all sorts of low-level
 parameters and provides many advanced features,
 some of which we will cover in Sec. 4. This might
 make the library appealing also for researchers and
-experts.
-
 2 Related Work
-
-The most
 commonly used framework for
 transformer-based NLP is arguably the Hugging-
 Face ecosystem, in particular the open source
@@ -135,21 +87,18 @@ libraries transformers (Wolf et al., 2020), datasets
 (Lhoest et al., 2021) and evaluate (Von Werra
 et al., 2022). Another popular alternative is spacy
 (Honnibal et al., 2020).
-
 High-level libraries that are build on top of trans-
 formers exist in the form of Simple Transformers
 (Rajapakse, 2019) and T-NER (Ushio and Camacho-
 Collados, 2021). Simple Transformers is a high-
 level library that covers a broad range of NLP tasks
 with basic support for NER. T-NER is specific to
-
 2This is where the name nerblackbox stems from: The
 framework does not require any knowledge about internal
 processes and can be used as a black box by only specify-
 ing inputs (pretrained model, dataset) and using the outputs
 (fine-tuned model). Note that there is no direct relation to
 explainability.
-
 NER with an emphasis on cross-domain and cross-
 lingual model evaluation. Of all the mentioned
 libraries, it is arguably the most similar to nerblack-
@@ -157,46 +106,26 @@ box. However, as will be discussed in the following
 sections, nerblackbox offers many unique and pow-
 erful features that—to the best of our knowledge—
 make it distinct from any existing frameworks.
-
 3 Basic Usage
-
 nerblackbox provides a simple API to automate
 each step in the life cycle of a NER model
 (cf. Fig. 1) using very few lines of code. It does so
 in terms of the following classes:
-
 1 >> from nerblackbox import Dataset ,
-
 Training , Model
-
 A high-level overview of the involved compo-
-
 nents is shown in Fig. 2.
-
 3.1 Dataset Integration
-
 nerblackbox allows seamless access to datasets
 from the following sources: HuggingFace (HF),
 the local filesystem (LF), built-in datasets (BI) and
 annotation tools (AT)3.
-
 Basically, a dataset can be set up for training and
-
 evaluation like in the following example:
-
 1 >> dataset = Dataset (
-2
-
 " conll2003 ",
 source =" HF ",
-
-3
-
-)
-
-4
 5 >> dataset . set_up ()
-
 While this works out-of-the-box for the sources
 HF and BI, some additional information needs to
 be provided for the sources LF and AT in order for
@@ -212,50 +141,23 @@ is transformed into a standard format4. Apart from
 downloading, reformatting, and dataset splitting (if
 needed), it also includes an analysis of the data.
 For details, we refer to the library’s documentation.
-
 3Currently, the two commonly used (open source) annota-
 tion tools LabelStudio (Tkachenko et al., 2020) and Doccano
 (Nakayama et al., 2018) are supported.
-
 4Datasets may still have different annotation schemes (IO,
-
 BIO, BILOU), and be pretokenized or not.
-
-Figure 2: High-level overview of the nerblackbox library. It allows to easily fine-tune, evaluate and apply models
-for named entity recognition. The symbols to the left and right represent the sources that nerblackbox provides
-seamless access to. These are the Local Filesystem (LF), HuggingFace (HF), Annotation Tools (AT) as well as
-Built-in (BI) datasets that are fetched from GitHub.
-
 3.2 Training
-
-3.4
-
-Inference
-
 In order to train a model, one only needs to choose
 a name for the training run (for later reference) and
 specify the model and dataset names, like so:
-
 Similar to evaluation, both NER models trained
 using nerblackbox and models taken directly from
 HuggingFace (HF) can be used for inference.
-
 1 >> training = Training (
-2
-
 " my_training ",
 model =" bert - base - cased ",
 dataset =" conll2003 ",
-
-3
-
-4
-
-)
-
-5
 6 >> training . run ()
-
 In order to ensure stable results irrespective of
 the dataset, the training employs well-established
 hyperparameters by default (Mosbach et al., 2021).
@@ -263,63 +165,30 @@ In particular, a specific learning rate schedule (Stol-
 lenwerk, 2022) based on early stopping and warm
 restarts (Loshchilov and Hutter, 2017) is used to
 accommodate different dataset sizes.
-
 3.3 Evaluation
-
 Any NER model, whether it was trained using
 nerblackbox or is taken directly from Hugging-
 Face (HF), can be evaluated on any dataset that
 is accessible via nerblackbox (see Sec. 3.1)
-
 1 >> model = Model . from_training (
-2
-
 " my_training "
-
-)
-
-)
-
-3
 4 >> results = model . evaluate_on_dataset (
-5
-
 " conll2003 ",
 phase =" test ",
-
-6
-
-7
 8 >> results [" micro "][" entity "][" f1 "]
 9 ## 0.9045
-
 The standard metrics for NER are used, i.e. pre-
 cision, recall and the f1 score. Each metric is com-
 puted as a micro- and macro-average as well as for
 the individual classes. All metrics are determined
 both on the entity and word level.
-
 1 >> model = Model . from_training (
-2
-
 " my_training "
-
-)
-
-3
 4 >> model . predict (" The United Nations ")
-5 ## [[{
-6 ##
-7 ##
-8 ##
-9 ##
-10 ## }]]
-
 ' char_start ': '4 ' ,
 ' char_end ': '18 ' ,
 ' token ': ' United Nations ' ,
 'tag ': 'ORG '
-
 Apart from the predictions on the entity level for
 a single document shown above, nerblackbox also
 supports predictions on the word level (with or
@@ -327,9 +196,7 @@ without probabilities) and batch inference. In ad-
 dition, a model can be applied directly to a file
 containing raw data, which may be useful for infer-
 ence at large scale (e.g. in production).
-
 4 Advanced Usage
-
 The nerblackbox workflow and the API are de-
 signed to be as simple as possible and to con-
 ceal technical complications from the user. How-
@@ -341,13 +208,10 @@ cover a non-exhaustive selection of nerblackbox’s
 advanced features, with a slight emphasis on the
 training part. For further information, the reader is
 referred to the library’s documentation.
-
 4.1 Training Hyperparameters and Presets
-
 While nerblackbox uses sensible default values for
 the training hyperparameters (see Sec. 3.2), one
 may also opt to specify them manually. In par-
-
 ticular, all aspects of the learning rate schedule
 (e.g. maximum learning rate, epochs, early stop-
 ping parameters etc.) can be chosen at one’s own
@@ -358,9 +222,7 @@ are the learning rate schedules from (Devlin et al.,
 2019) and (Mosbach et al., 2021), which may work
 well for larger and smaller datasets, respectively.
 Hyperparameters search is also supported.
-
 4.2 Dataset Pruning
-
 nerblackbox provides the option to only use a sub-
 set of the training, validation or test data by spec-
 ifying parameters like train_fraction . This may
@@ -369,9 +231,7 @@ in the development phase of a product) or if one
 wants to investigate the effect of the dataset size
 (for instance to see if the model has saturated, or
 for research).
-
 4.3 Annotation Schemes
-
 While every dataset is associated with a certain an-
 notation scheme, nerblackbox provides the option
 to translate between schemes at training time. The
@@ -381,9 +241,7 @@ may be interesting for users who aim to optimize
 their model’s performance as well as researchers
 who systematically want to investigate the impact
 of the annotation scheme.
-
 4.4 Multiple Runs
-
 Since the training of a neural network includes
 stochastic processes, the performance of the result-
 ing model depends on the employed random seed.
@@ -395,21 +253,15 @@ parameter multiple_runs to an integer greater than
 1. In that case, the evaluation metrics will be given
 in terms of the mean and its associated uncertainty.
 For inference, the best model is automatically used.
-
 4.5 Detailed Results
-
 nerblackbox saves detailed training and evaluation
 results (e.g. loss curves, confusion matrices) using
 MLflow5 and TensorBoard. This is useful in order
 to keep an overview of trained models, inspect their
-
 5https://pypi.org/project/mlflow/
-
 detailed properties as well as optimize and cross-
 check the training process.
-
 4.6 Careful Evaluation
-
 A model may predict labels for a sequence of to-
 kens that are inconsistent with the employed anno-
 tation scheme. For instance, if the BIO annotation
@@ -422,9 +274,7 @@ seqeval (Nakayama, 2018) libraries do take incon-
 sistent predictions into account during evaluation.
 For this reason, the evaluate_on_dataset() method
 (see Sec. 3.3) returns results for both approaches.
-
 4.7 Compatibility with transformers
-
 nerblackbox is heavily based on transformers (Wolf
 et al., 2020) such that compatibility is guaranteed.
 In particular, the Model class has the attributes
@@ -432,9 +282,7 @@ tokenizer and model , which are ordinary trans-
 formers classes and can be used as such. GPU
 support (i.e. automatic detection and use) is also
 provided through transformers.
-
 5 Resources and Code Quality
-
 nerblackbox is available as a package on PyPI7.
 The associated GitHub repository is public at
 https://github.com/flxst/nerblackbox and
@@ -449,25 +297,18 @@ unit and end-to-end testing. As an additional cross-
 check, numerical results from the literature are re-
 produced using nerblackbox (details can be found
 in the documentation).
-
 Acknowledgements
-
 This work was supported by Vinnova through the
 grants 2019-02996 and 2021-03630.
-
 6The variant of the BIO scheme which we assume here is
-
 also known as IOB2
-
 7https://pypi.org/project/nerblackbox/
 8https://flxst.github.io/nerblackbox/
 9https://pypi.org/project/black/
 10https://pypi.org/project/mypy/
-
 Maxim Tkachenko, Mikhail Malyuk, Andrey Hol-
 manyuk, and Nikolai Liubimov. 2020. Label Studio:
 Data labeling software.
-
 Asahi Ushio and Jose Camacho-Collados. 2021. T-
 NER: An All-Round Python Library for Transformer-
 based Named Entity Recognition. In Proceedings of
@@ -475,7 +316,6 @@ the 16th Conference of the European Chapter of the
 Association for Computational Linguistics: System
 Demonstrations, pages 53–62, Online. Association
 for Computational Linguistics.
-
 Leandro Von Werra, Lewis Tunstall, Abhishek Thakur,
 Sasha Luccioni, Tristan Thrush, Aleksandra Piktus,
 Felix Marty, Nazneen Rajani, Victor Mustar, and He-
@@ -485,7 +325,6 @@ ments. In Proceedings of the 2022 Conference on
 Empirical Methods in Natural Language Processing:
 System Demonstrations, pages 128–136, Abu Dhabi,
 UAE. Association for Computational Linguistics.
-
 Thomas Wolf, Lysandre Debut, Victor Sanh, Julien
 Chaumond, Clement Delangue, Anthony Moi, Pier-
 ric Cistac, Tim Rault, Remi Louf, Morgan Funtowicz,
@@ -498,4 +337,3 @@ Proceedings of the 2020 Conference on Empirical
 Methods in Natural Language Processing: System
 Demonstrations, pages 38–45, Online. Association
 for Computational Linguistics.
-

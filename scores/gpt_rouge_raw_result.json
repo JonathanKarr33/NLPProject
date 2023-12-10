@@ -1,0 +1,46 @@
+[
+  {
+    "article_id": "astro-ph9710065",
+    "rouge_score": 0.4552845478722982
+  },
+  {
+    "article_id": "1702.04923",
+    "rouge_score": 0.3720930182633255
+  },
+  {
+    "article_id": "astro-ph0410068",
+    "rouge_score": 0.3140495818536985
+  },
+  {
+    "article_id": "astro-ph0509143",
+    "rouge_score": 0.30555555065200624
+  },
+  {
+    "article_id": "1101.1128",
+    "rouge_score": 0.2320441939208206
+  },
+  {
+    "article_id": "astro-ph0002059",
+    "rouge_score": 0.3516483467087308
+  },
+  {
+    "article_id": "1312.3483",
+    "rouge_score": 0.35348836709832343
+  },
+  {
+    "article_id": "hep-ph0511214",
+    "rouge_score": 0.30769230275268694
+  },
+  {
+    "article_id": "cond-mat0111237",
+    "rouge_score": 0.3308270626717169
+  },
+  {
+    "article_id": "astro-ph0108385",
+    "rouge_score": 0.23529411293946784
+  },
+  {
+    "article_id": "0811.1596",
+    "rouge_score": 0.2950819623565947
+  }
+]

@@ -1,39 +1,54 @@
 from gensim.models import Word2Vec
 from nltk.tokenize import word_tokenize
 import os
+import json
 
 # Function to read text from a file
 
 
-def read_text_from_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return file.read()
+def read_file(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
 
 
-# File paths
-file_path1 = 'data/short/abstracts/2310.08569.txt'
-file_path2 = 'data/short/gpt_results/2310.08569.txt'
+# Define the file paths
+input_file_path = 'data/smallest_100/gpt_result.json'
+output_directory = "scores"
+output_file_path = f"{output_directory}/gpt_result.json"
 
-# Read text from files
-text1 = read_text_from_file(file_path1)
-text2 = read_text_from_file(file_path2)
+# Ensure the output directory exists
+os.makedirs(output_directory, exist_ok=True)
 
-# Tokenize the text
-tokens1 = word_tokenize(text1.lower())
-tokens2 = word_tokenize(text2.lower())
+gpt_files = 0
+with open(input_file_path, 'r') as file:
+    text = read_file(input_file_path)
 
-# Train Word2Vec model
-model = Word2Vec(sentences=[tokens1, tokens2],
-                 vector_size=100, window=5, sg=0, min_count=1)
+# Generate the summary
 
-# Get Word2Vec embeddings for each token in the texts
-embeddings1 = [model.wv[word] for word in tokens1]
-embeddings2 = [model.wv[word] for word in tokens2]
+result_list = []
+for article in text:
+    text1 = article["abstract_text"]
+    text1 = text1.replace("<S>", "").replace(
+        "</S>", "").replace("\n", "")
+    text2 = article["article_text_summary"]
+    # Tokenize the text
+    tokens1 = word_tokenize(text1.lower())
+    tokens2 = word_tokenize(text2.lower())
 
-# Calculate the similarity between the two texts
-similarity = model.wv.n_similarity(tokens1, tokens2)
+    # Train Word2Vec model
+    model = Word2Vec(sentences=[tokens1, tokens2],
+                     vector_size=100, window=5, sg=0, min_count=1)
 
-# Print results
-# print("Word2Vec Embeddings for Text 1:", embeddings1)
-# print("Word2Vec Embeddings for Text 2:", embeddings2)
-print("Similarity between Text 1 and Text 2:", similarity)
+    # Get Word2Vec embeddings for each token in the texts
+    embeddings1 = [model.wv[word] for word in tokens1]
+    embeddings2 = [model.wv[word] for word in tokens2]
+
+    # Calculate the similarity between the two texts
+    similarity = model.wv.n_similarity(tokens1, tokens2)
+    result_dict = {"article_id": article["article_id"],
+                   "word2vec_score": str(similarity)}
+    result_list.append(result_dict)
+
+with open(output_file_path, 'w') as file:
+    json.dump(result_list, file, indent=2)

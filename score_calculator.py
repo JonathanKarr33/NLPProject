@@ -1,6 +1,7 @@
 import os
 import json
 from statistics import mean
+import csv
 
 # Folder containing JSON files
 folder_path = "scores/fifty_scores"
@@ -46,11 +47,13 @@ for data, file in zip(data_list, json_files):
 merged_data = list(scores_dict.values())
 
 # Calculate the average scores
+all_articles = []
 all_rouge_fine_tune = []
 all_rouge_raw = []
 all_word2vec_fine_tune = []
 all_word2vec_raw = []
 for article_id, scores in scores_dict.items():
+    all_articles.append(article_id)
     for key in ["word2vec_fine_tune_score", "word2vec_raw_score", "rouge_fine_tune_score", "rouge_raw_score"]:
         if key == "word2vec_fine_tune_score":
             all_word2vec_fine_tune.append(scores["word2vec_fine_tune_score"])
@@ -65,5 +68,22 @@ print("Rouge Raw: " + str(mean(all_rouge_raw)))
 print("Rouge Fine Tune: " + str(mean(all_rouge_fine_tune)))
 print("Word2Vec Raw: " + str(mean(all_word2vec_raw)))
 print("Word2Vec Tune: " + str(mean(all_word2vec_fine_tune)))
-# Print or save the merged data as needed
-# print(json.dumps(merged_data, indent=2))
+
+all_data = list(zip(all_articles, all_rouge_raw,
+                all_rouge_fine_tune, all_word2vec_raw, all_word2vec_fine_tune))
+
+# Specify the CSV file path
+csv_file_path = f'{folder_path}/output.csv'
+
+# Write data to CSV
+with open(csv_file_path, 'w', newline='') as csv_file:
+    csv_writer = csv.writer(csv_file)
+
+    # Write header
+    csv_writer.writerow(
+        ['Articles', 'Rouge Raw', 'Rouge Fine Tune', 'Word2Vec Raw', 'Word2Vec Fine Tune'])
+
+    # Write data
+    csv_writer.writerows(all_data)
+
+print(f'Data has been written to {csv_file_path}')

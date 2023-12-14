@@ -13,7 +13,7 @@ GPT summaries go in the data/first_attempt/gpt_results/ directory
 ### Data
 
 Our new Data now comes from the Arxiv Dataset
-The file is to large to be uploaded to github and can be found here
+The file is to large to be uploaded to github and can be found here: https://huggingface.co/datasets/scientific_papers?row=4
 
 ### Transforming Data to GPT Results
 

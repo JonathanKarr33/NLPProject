@@ -1,24 +1,29 @@
 ## NLP Project Repository
 
+### By: Jonathan Karr and Chris Fakhimi
+
 ### Midterm Code, not used anymore
 
 PDFs are in the data/first_attempt/pdfs/ directory
 The entire paper goes in the data/first_attempt/entire_paper/ directory
+Abstracts go in the data/first_attempt/reference/ directory
+rest of the paper goes in the data/first_attempt/main_paper/ directory
+GPT summaries go in the data/first_attempt/gpt_results/ directory
 
-### Abstracts go in the data/reference/ directory
+### Data
 
-### The rest of the paper goes in the data/main_paper/ directory
+Our new Data now comes from the Arxiv Dataset
+The file is to large to be uploaded to github and can be found here
 
-### GPT summaries go in the data/gpt_results/ directory
+### Transforming Data to GPT Results
 
-### Make sure the files are named the same
+To read the data run: utils/read_arxiv
+To parse the papers run generate_abstracts/data_parser.py
 
-### Scores are put in the scores directory, one for each file, and then there is an aggregate score file.
+To use gpt 3.5 turbo as the basline run the parsed file using generate_abstracts/gpt_baseline.py which produces gpt_results.json
+To use gpt finetuning run the parsed file using fine_tune/finetune_summary.py which produces our_results.json
 
-### To run:
+### To get score metrics
 
-### 1. pdf_parser.py
-
-### 2. gpt_summary.py
-
-### 3. rouge_score.py
+Run generate generate_scores/rouge_result_metric.py and generate_scores/word2vec_metric.py
+for the respective gpt_result.json and our_result_json

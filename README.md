@@ -1,8 +1,9 @@
 ## NLP Project Repository
 
-### The PDFs are in the data/pdfs/ directory
+### Midterm Code, not used anymore
 
-### The entire paper goes in the data/entire_paper/ directory
+PDFs are in the data/first_attempt/pdfs/ directory
+The entire paper goes in the data/first_attempt/entire_paper/ directory
 
 ### Abstracts go in the data/reference/ directory
 

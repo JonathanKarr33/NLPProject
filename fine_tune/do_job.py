@@ -6,7 +6,8 @@ response = client.fine_tuning.jobs.create(
   validation_file="file-MWYpv4Xy4RW70BTaAmXVuUdl", 
   model="gpt-3.5-turbo-1106", 
   hyperparameters={
-    "n_epochs":10
+    "n_epochs":5,
+    "learning_rate_multiplier":.1
   },
 
 )

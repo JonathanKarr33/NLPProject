@@ -4,13 +4,13 @@ import json
 
 # Replace 'YOUR_API_KEY' with your actual OpenAI API key
 api_key = 'YOUR_API_KEY'
-client = OpenAI()
+client = OpenAI(api_key=api_key)
 
 
 def summarize_text(input_text):
-    model = "ft:gpt-3.5-turbo-1106:personal::8UJo3EgI" #! need to change this to the current finetuned model
-    max_tokens = 4000
-    text_to_gpt = f"Make an abstract for the following paper: \n{input_text}"
+    # Set the model and token limit
+    model = "gpt-3.5-turbo-1106"
+    text_to_gpt = f"Summarize this paper: {input_text}"
     # Call the OpenAI API to generate text
     response = client.chat.completions.create(model=model,
                                               messages=[
@@ -30,12 +30,12 @@ def read_file(file_path):
 
 
 # Define the file paths
-the_directory = "../data/tenth_percentile_600_700" #! change this
-input_file_path = f"{the_directory}//parsed_data.json"
-output_file_path = f"{the_directory}/our_result.json"
+input_file_path = 'data/smallest_100/parsed_data.json'  # Changed file extension
+output_directory = "data/smallest_100"
+output_file_path = f"{output_directory}/gpt_result.json"
 
 # Ensure the output directory exists
-os.makedirs(the_directory, exist_ok=True)
+os.makedirs(output_directory, exist_ok=True)
 
 gpt_files = 0
 with open(input_file_path, 'r') as file:
@@ -43,7 +43,7 @@ with open(input_file_path, 'r') as file:
 
 # Generate the summary
 result_list = []
-for article in text[50:]:
+for article in text:
     result_dict = {"article_id": article["article_id"],
                    "abstract_text": article["abstract_text"],
                    "article_text_summary": summarize_text(article["article_text"])}  # Renamed key
@@ -51,7 +51,7 @@ for article in text[50:]:
 
     # Don't waste money
     gpt_files += 1
-    if gpt_files >= 10:
+    if gpt_files >= 100:
         break
 
 with open(output_file_path, 'w') as file:

@@ -6,13 +6,21 @@ from nltk.corpus import stopwords
 from nltk.cluster.util import cosine_distance
 import nltk
 import os
+import tiktoken
+import json
 
 nltk.download('punkt')
 nltk.download('stopwords')
 
-def read_file(file_name):
-    with open(file_name, "r", encoding="utf-8", errors="ignore") as file:
-        return file.read()
+def read_file(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
+    
+def calculate_token_count(text, model_name='gpt-3.5-turbo'):
+    encoding = tiktoken.encoding_for_model(model_name)
+    tokens = len(encoding.encode(text))
+    return tokens
 
 def sentence_similarity(sent1, sent2, stopwords=None):
     if stopwords is None:
@@ -45,12 +53,12 @@ def build_similarity_matrix(sentences, stop_words):
 
     return similarity_matrix
 
-def generate_summary(file_name, top_n, output):
+def generate_summary(text, top_n, output):
     stop_words = stopwords.words('english')
     summarize_text = []
 
     # Read text and tokenize
-    sentences = sent_tokenize(read_file(file_name))
+    sentences = sent_tokenize(text)
     # Generate similarity matrix across sentences
     sentence_similarity_matrix = build_similarity_matrix(sentences, stop_words)
 
@@ -59,26 +67,44 @@ def generate_summary(file_name, top_n, output):
     scores = nx.pagerank(sentence_similarity_graph)
 
     # Sort the rank and pick top sentences
-    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)    
-    selected_sentences = [sentence for score, sentence in ranked_sentences[:top_n]]
-
+    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)  
+    current_selected = top_n
+    tokens = 0
+    print("starting:", len(ranked_sentences))
+    if len(ranked_sentences) < top_n:
+        selected_sentences = [sentence for score, sentence in ranked_sentences[:current_selected]]
+    while tokens < 3800 and current_selected < len(ranked_sentences):
+        selected_sentences = [sentence for score, sentence in ranked_sentences[:current_selected]]
+        text = " ".join(selected_sentences)
+        tokens = calculate_token_count(text)
+        current_selected += 15 #keep selecting more until at limit
+    #print(tokens)
     index_map = {sentence: index for index, sentence in enumerate(sentences)}
     resorted_list = sorted(selected_sentences, key=lambda x: index_map[x])
     size = len(resorted_list)
-    print(size)
+    print("ending:", size)
     for i in range(size):
         summarize_text.append(resorted_list[i])
-    with open(output, "w", encoding="utf-8") as f:
-        for sentence in summarize_text:
-            f.write(sentence.rstrip() + "\n")
+    
+    return summarize_text
 
-folder_path = "../data/short/main_paper/"
-output_path = "../data/short/shrink_paper/"
-for filename in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, filename)
-        output = os.path.join(output_path, filename)
-        if os.path.isfile(file_path):
-            print(file_path)            
-            processed_content = generate_summary(file_path, 50, output) #! might need to fix np
-            #it is saved in the function
-            print(f"Shrunk file: {filename}")
+
+input_file_path = '../data/thousand_papers/parsed_data.json'
+output_file_path = '../data/thousand_papers/thousand_papers_shrunk.json'
+
+result = read_file(input_file_path)
+#print(len(result))
+results = []
+for article in result:
+    text = ""
+    #print(article)
+    # Iterate through the outer list
+    name = article["article_id"]
+    text = article["article_text"]      
+    processed_content = generate_summary(text, 80, output_file_path) #! might need to fix np
+    new_text = "\n".join(processed_content)
+    article["article_text"] = new_text
+    results.append(article)
+    print(f"Shrunk file: {name}")
+with open(output_file_path, "w", encoding="utf-8") as f:
+    json.dump(results, f)

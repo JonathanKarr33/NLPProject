@@ -9,8 +9,8 @@ import os
 import tiktoken
 import json
 
-nltk.download('punkt')
-nltk.download('stopwords')
+#nltk.download('punkt')
+#nltk.download('stopwords')
 
 def read_file(file_path):
     with open(file_path, 'r') as file:
@@ -71,9 +71,9 @@ def generate_summary(text, top_n, output):
     current_selected = top_n
     tokens = 0
     print("starting:", len(ranked_sentences))
-    if len(ranked_sentences) < top_n:
+    if len(ranked_sentences) <= top_n:
         selected_sentences = [sentence for score, sentence in ranked_sentences[:current_selected]]
-    while tokens < 3800 and current_selected < len(ranked_sentences):
+    while tokens < 3500 and current_selected < len(ranked_sentences):
         selected_sentences = [sentence for score, sentence in ranked_sentences[:current_selected]]
         text = " ".join(selected_sentences)
         tokens = calculate_token_count(text)
@@ -90,7 +90,7 @@ def generate_summary(text, top_n, output):
 
 
 input_file_path = '../data/thousand_papers/parsed_data.json'
-output_file_path = '../data/thousand_papers/thousand_papers_shrunk.json'
+output_file_path = '../data/thousand_papers/thousand_papers_shrunk2.json'
 
 result = read_file(input_file_path)
 #print(len(result))

@@ -14,9 +14,11 @@ def read_file(file_path):
 
 
 # Define the file paths
-input_file_path = 'data/tenth_percentile_600_700/our_result.json'
+input_file_path = 'data/thousand_papers/gpt_result.json'
+#input_file_path = 'data/thousand_papers/our_result.json'
 output_directory = "scores"
-output_file_path = f"{output_directory}/gpt_rouge_finetune_result.json"
+output_file_path = f"{output_directory}/gpt_rouge_finetune_result1000.json"
+#output_file_path = f"{output_directory}/our_rouge_finetune_result1000.json"
 
 # Ensure the output directory exists
 os.makedirs(output_directory, exist_ok=True)

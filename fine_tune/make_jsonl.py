@@ -1,11 +1,11 @@
 import os
 import json
-json_path = "../data/tenth_percentile_600_700/parsed_data.json"
+json_path = "../data/thousand_papers/thousand_papers_shrunk2.json"
 
-total_files = 50
-train_files = 30
-val_file = open('data/val.jsonl', 'w')
-with open('data/train.jsonl', 'w') as jsonl_file:
+total_files = 900
+train_files = 600
+val_file = open('data/val1000.jsonl', 'w')
+with open('data/train1000.jsonl', 'w') as jsonl_file:
     i = 0
     with open(json_path, 'r') as json_file:
         data_list = json.load(json_file)

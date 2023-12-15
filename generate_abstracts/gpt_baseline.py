@@ -30,8 +30,8 @@ def read_file(file_path):
 
 
 # Define the file paths
-input_file_path = 'data/smallest_100/parsed_data.json'  # Changed file extension
-output_directory = "data/smallest_100"
+input_file_path = 'data/thousand_papers/thousand_papers_shrunk.json'  # Changed file extension
+output_directory = "data/thousand_papers"
 output_file_path = f"{output_directory}/gpt_result.json"
 
 # Ensure the output directory exists

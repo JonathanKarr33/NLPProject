@@ -1,0 +1,402 @@
+[
+  {
+    "article_id": "1001.1699",
+    "word2vec_score": "0.61209"
+  },
+  {
+    "article_id": "1603.02785",
+    "word2vec_score": "0.79153"
+  },
+  {
+    "article_id": "1606.01105",
+    "word2vec_score": "0.72036016"
+  },
+  {
+    "article_id": "1212.1995",
+    "word2vec_score": "0.5958229"
+  },
+  {
+    "article_id": "0903.0466",
+    "word2vec_score": "0.8468603"
+  },
+  {
+    "article_id": "0708.1404",
+    "word2vec_score": "0.66715544"
+  },
+  {
+    "article_id": "hep-ph0508238",
+    "word2vec_score": "0.4100315"
+  },
+  {
+    "article_id": "physics0406029",
+    "word2vec_score": "0.63734746"
+  },
+  {
+    "article_id": "hep-th0512289",
+    "word2vec_score": "0.7734668"
+  },
+  {
+    "article_id": "cond-mat0210199",
+    "word2vec_score": "0.65657395"
+  },
+  {
+    "article_id": "physics0312094",
+    "word2vec_score": "0.7852813"
+  },
+  {
+    "article_id": "1302.4020",
+    "word2vec_score": "0.7429539"
+  },
+  {
+    "article_id": "quant-ph0210172",
+    "word2vec_score": "0.6962945"
+  },
+  {
+    "article_id": "astro-ph0101505",
+    "word2vec_score": "0.5616508"
+  },
+  {
+    "article_id": "0910.2807",
+    "word2vec_score": "0.7668306"
+  },
+  {
+    "article_id": "1601.00801",
+    "word2vec_score": "0.85103464"
+  },
+  {
+    "article_id": "astro-ph9904249",
+    "word2vec_score": "0.71686476"
+  },
+  {
+    "article_id": "hep-ph0301222",
+    "word2vec_score": "0.38134086"
+  },
+  {
+    "article_id": "astro-ph0610498",
+    "word2vec_score": "0.7913904"
+  },
+  {
+    "article_id": "1604.04621",
+    "word2vec_score": "0.62926334"
+  },
+  {
+    "article_id": "astro-ph9904327",
+    "word2vec_score": "0.8335802"
+  },
+  {
+    "article_id": "astro-ph9808095",
+    "word2vec_score": "0.6378933"
+  },
+  {
+    "article_id": "0708.1350",
+    "word2vec_score": "0.70445806"
+  },
+  {
+    "article_id": "astro-ph0512257",
+    "word2vec_score": "0.78283906"
+  },
+  {
+    "article_id": "1202.0876",
+    "word2vec_score": "0.8162418"
+  },
+  {
+    "article_id": "astro-ph0304424",
+    "word2vec_score": "0.6498895"
+  },
+  {
+    "article_id": "1702.04805",
+    "word2vec_score": "0.77106166"
+  },
+  {
+    "article_id": "1308.4705",
+    "word2vec_score": "0.5996246"
+  },
+  {
+    "article_id": "astro-ph9912259",
+    "word2vec_score": "0.82343745"
+  },
+  {
+    "article_id": "astro-ph0201008",
+    "word2vec_score": "0.8304764"
+  },
+  {
+    "article_id": "1608.02078",
+    "word2vec_score": "0.79340297"
+  },
+  {
+    "article_id": "1608.03884",
+    "word2vec_score": "0.6483022"
+  },
+  {
+    "article_id": "1206.6716",
+    "word2vec_score": "0.7216962"
+  },
+  {
+    "article_id": "cond-mat9901336",
+    "word2vec_score": "0.717944"
+  },
+  {
+    "article_id": "astro-ph9806007",
+    "word2vec_score": "0.6747426"
+  },
+  {
+    "article_id": "0708.3799",
+    "word2vec_score": "0.7134665"
+  },
+  {
+    "article_id": "astro-ph0603107",
+    "word2vec_score": "0.6871632"
+  },
+  {
+    "article_id": "astro-ph0311117",
+    "word2vec_score": "0.62145233"
+  },
+  {
+    "article_id": "astro-ph9810085",
+    "word2vec_score": "0.67105854"
+  },
+  {
+    "article_id": "1405.5738",
+    "word2vec_score": "0.69481504"
+  },
+  {
+    "article_id": "astro-ph0409708",
+    "word2vec_score": "0.76835"
+  },
+  {
+    "article_id": "1504.03834",
+    "word2vec_score": "0.80692524"
+  },
+  {
+    "article_id": "astro-ph9909001",
+    "word2vec_score": "0.64093655"
+  },
+  {
+    "article_id": "hep-lat9507008",
+    "word2vec_score": "0.80276656"
+  },
+  {
+    "article_id": "1410.5738",
+    "word2vec_score": "0.4608113"
+  },
+  {
+    "article_id": "astro-ph0411775",
+    "word2vec_score": "0.7617344"
+  },
+  {
+    "article_id": "cond-mat9804031",
+    "word2vec_score": "0.69689107"
+  },
+  {
+    "article_id": "1605.05859",
+    "word2vec_score": "0.8181079"
+  },
+  {
+    "article_id": "0808.2809",
+    "word2vec_score": "0.7710097"
+  },
+  {
+    "article_id": "hep-ph0405252",
+    "word2vec_score": "0.6506037"
+  },
+  {
+    "article_id": "1307.7981",
+    "word2vec_score": "0.6778957"
+  },
+  {
+    "article_id": "0712.1858",
+    "word2vec_score": "0.76811075"
+  },
+  {
+    "article_id": "1004.3519",
+    "word2vec_score": "0.64382637"
+  },
+  {
+    "article_id": "1001.4027",
+    "word2vec_score": "0.45208108"
+  },
+  {
+    "article_id": "hep-ph0504276",
+    "word2vec_score": "0.673467"
+  },
+  {
+    "article_id": "1306.3048",
+    "word2vec_score": "0.6025835"
+  },
+  {
+    "article_id": "astro-ph9605107",
+    "word2vec_score": "0.76312196"
+  },
+  {
+    "article_id": "1007.2858",
+    "word2vec_score": "0.7780648"
+  },
+  {
+    "article_id": "1012.1755",
+    "word2vec_score": "0.70745516"
+  },
+  {
+    "article_id": "1509.08756",
+    "word2vec_score": "0.73641264"
+  },
+  {
+    "article_id": "astro-ph0205489",
+    "word2vec_score": "0.7066594"
+  },
+  {
+    "article_id": "0710.4283",
+    "word2vec_score": "0.86325717"
+  },
+  {
+    "article_id": "0705.3208",
+    "word2vec_score": "0.7080344"
+  },
+  {
+    "article_id": "1702.04548",
+    "word2vec_score": "0.8056101"
+  },
+  {
+    "article_id": "0910.3250",
+    "word2vec_score": "0.75248724"
+  },
+  {
+    "article_id": "1206.4092",
+    "word2vec_score": "0.7172301"
+  },
+  {
+    "article_id": "0806.1386",
+    "word2vec_score": "0.6526206"
+  },
+  {
+    "article_id": "q-bio0701016",
+    "word2vec_score": "0.71643275"
+  },
+  {
+    "article_id": "0802.1746",
+    "word2vec_score": "0.6674429"
+  },
+  {
+    "article_id": "gr-qc0108020",
+    "word2vec_score": "0.7475887"
+  },
+  {
+    "article_id": "1606.06558",
+    "word2vec_score": "0.72208285"
+  },
+  {
+    "article_id": "astro-ph9802183",
+    "word2vec_score": "0.80248976"
+  },
+  {
+    "article_id": "hep-ph0104208",
+    "word2vec_score": "0.711299"
+  },
+  {
+    "article_id": "hep-ph9905461",
+    "word2vec_score": "0.708039"
+  },
+  {
+    "article_id": "quant-ph0002002",
+    "word2vec_score": "0.74794364"
+  },
+  {
+    "article_id": "1011.4951",
+    "word2vec_score": "0.7856479"
+  },
+  {
+    "article_id": "hep-ph0310114",
+    "word2vec_score": "0.77021563"
+  },
+  {
+    "article_id": "hep-ph0201311",
+    "word2vec_score": "0.25425407"
+  },
+  {
+    "article_id": "astro-ph0306628",
+    "word2vec_score": "0.7436805"
+  },
+  {
+    "article_id": "astro-ph0509099",
+    "word2vec_score": "0.50195056"
+  },
+  {
+    "article_id": "nucl-th0209045",
+    "word2vec_score": "0.65284073"
+  },
+  {
+    "article_id": "1211.5805",
+    "word2vec_score": "0.7837262"
+  },
+  {
+    "article_id": "0908.4452",
+    "word2vec_score": "0.6863362"
+  },
+  {
+    "article_id": "gr-qc0504067",
+    "word2vec_score": "0.62028795"
+  },
+  {
+    "article_id": "physics0701216",
+    "word2vec_score": "0.6109735"
+  },
+  {
+    "article_id": "0707.2328",
+    "word2vec_score": "0.9011632"
+  },
+  {
+    "article_id": "0910.5336",
+    "word2vec_score": "0.81736183"
+  },
+  {
+    "article_id": "0810.1668",
+    "word2vec_score": "0.64912766"
+  },
+  {
+    "article_id": "0711.1297",
+    "word2vec_score": "0.81237036"
+  },
+  {
+    "article_id": "cond-mat0412095",
+    "word2vec_score": "0.7684858"
+  },
+  {
+    "article_id": "astro-ph0402602",
+    "word2vec_score": "0.80478"
+  },
+  {
+    "article_id": "astro-ph0008339",
+    "word2vec_score": "0.74914885"
+  },
+  {
+    "article_id": "astro-ph9812320",
+    "word2vec_score": "0.7731631"
+  },
+  {
+    "article_id": "1011.6206",
+    "word2vec_score": "0.82948893"
+  },
+  {
+    "article_id": "1509.03179",
+    "word2vec_score": "0.8772958"
+  },
+  {
+    "article_id": "1501.03930",
+    "word2vec_score": "0.674734"
+  },
+  {
+    "article_id": "1003.3140",
+    "word2vec_score": "0.8352296"
+  },
+  {
+    "article_id": "astro-ph9702119",
+    "word2vec_score": "0.7418524"
+  },
+  {
+    "article_id": "cond-mat0610820",
+    "word2vec_score": "0.23168951"
+  },
+  {
+    "article_id": "0910.0964",
+    "word2vec_score": "0.82166016"
+  }
+]

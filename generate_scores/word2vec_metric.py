@@ -13,11 +13,11 @@ def read_file(file_path):
 
 
 # Define the file paths
-input_file_path = 'data/thousand_papers/gpt_result.json'
-#input_file_path = 'data/thousand_papers/our_result.json'
-output_directory = "scores"
-output_file_path = f"{output_directory}/gpt_result_word2vec_1000.json"
-#output_file_path = f"{output_directory}/our_result_word2vec_1000.json"
+#input_file_path = '../data/thousand_papers/gpt_result.json'
+input_file_path = '../data/thousand_papers/our_result.json'
+output_directory = "../scores"
+#output_file_path = f"{output_directory}/gpt_result_word2vec_1000.json"
+output_file_path = f"{output_directory}/our_result_word2vec_1000.json"
 
 # Ensure the output directory exists
 os.makedirs(output_directory, exist_ok=True)
@@ -31,7 +31,7 @@ with open(input_file_path, 'r') as file:
 result_list = []
 for article in text:
     text1 = article["abstract_text"]
-    text2 = article["gpt_abstract"]
+    text2 = article["article_text_summary"]
     # Tokenize the text
     tokens1 = word_tokenize(text1.lower())
     tokens2 = word_tokenize(text2.lower())

@@ -14,6 +14,12 @@ rest of the paper goes in the data/first_attempt/main_paper/ directory
 
 GPT summaries go in the data/first_attempt/gpt_results/ directory
 
+### Overall Guide
+
+To test the final code, run python3 main.py
+
+NOTE: You will need to set the OPENAI_API_KEY variable
+
 ### Data
 
 Our new Data now comes from the Arxiv Dataset

@@ -4,7 +4,7 @@ import json
 
 # Replace 'YOUR_API_KEY' with your actual OpenAI API key
 api_key = 'YOUR_API_KEY'
-client = OpenAI(api_key=api_key)
+client = OpenAI()
 
 
 def summarize_text(input_text):
@@ -30,8 +30,8 @@ def read_file(file_path):
 
 
 # Define the file paths
-input_file_path = 'data/thousand_papers/thousand_papers_shrunk.json'  # Changed file extension
-output_directory = "data/thousand_papers"
+input_file_path = '../data/thousand_papers/thousand_papers_shrunk2.json'  # Changed file extension
+output_directory = "../data/thousand_papers"
 output_file_path = f"{output_directory}/gpt_result.json"
 
 # Ensure the output directory exists
@@ -43,7 +43,8 @@ with open(input_file_path, 'r') as file:
 
 # Generate the summary
 result_list = []
-for article in text:
+for article in text[900:]:
+    print(gpt_files)
     result_dict = {"article_id": article["article_id"],
                    "abstract_text": article["abstract_text"],
                    "article_text_summary": summarize_text(article["article_text"])}  # Renamed key

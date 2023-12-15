@@ -1,0 +1,402 @@
+[
+  {
+    "article_id": "1001.1699",
+    "rouge_score": 0.5205479402064177
+  },
+  {
+    "article_id": "1603.02785",
+    "rouge_score": 0.4117647011149558
+  },
+  {
+    "article_id": "1606.01105",
+    "rouge_score": 0.33259423112767394
+  },
+  {
+    "article_id": "1212.1995",
+    "rouge_score": 0.28799999589888003
+  },
+  {
+    "article_id": "0903.0466",
+    "rouge_score": 0.43930635339503493
+  },
+  {
+    "article_id": "0708.1404",
+    "rouge_score": 0.4404761855017007
+  },
+  {
+    "article_id": "hep-ph0508238",
+    "rouge_score": 0.2678571380500638
+  },
+  {
+    "article_id": "physics0406029",
+    "rouge_score": 0.41290322100645166
+  },
+  {
+    "article_id": "hep-th0512289",
+    "rouge_score": 0.44247787124755267
+  },
+  {
+    "article_id": "cond-mat0210199",
+    "rouge_score": 0.3238095188861678
+  },
+  {
+    "article_id": "physics0312094",
+    "rouge_score": 0.40490797098874637
+  },
+  {
+    "article_id": "1302.4020",
+    "rouge_score": 0.42857142358061223
+  },
+  {
+    "article_id": "quant-ph0210172",
+    "rouge_score": 0.3389830467451882
+  },
+  {
+    "article_id": "astro-ph0101505",
+    "rouge_score": 0.20060789938563026
+  },
+  {
+    "article_id": "0910.2807",
+    "rouge_score": 0.4363636313652893
+  },
+  {
+    "article_id": "1601.00801",
+    "rouge_score": 0.4489795868789047
+  },
+  {
+    "article_id": "astro-ph9904249",
+    "rouge_score": 0.17164178929271554
+  },
+  {
+    "article_id": "hep-ph0301222",
+    "rouge_score": 0.3034482709479192
+  },
+  {
+    "article_id": "astro-ph0610498",
+    "rouge_score": 0.2553191461678588
+  },
+  {
+    "article_id": "1604.04621",
+    "rouge_score": 0.4228571379291429
+  },
+  {
+    "article_id": "astro-ph9904327",
+    "rouge_score": 0.39810426047303527
+  },
+  {
+    "article_id": "astro-ph9808095",
+    "rouge_score": 0.19397993060032886
+  },
+  {
+    "article_id": "0708.1350",
+    "rouge_score": 0.2760736161225489
+  },
+  {
+    "article_id": "astro-ph0512257",
+    "rouge_score": 0.3669064698242845
+  },
+  {
+    "article_id": "1202.0876",
+    "rouge_score": 0.5026177960637046
+  },
+  {
+    "article_id": "astro-ph0304424",
+    "rouge_score": 0.24137930549346026
+  },
+  {
+    "article_id": "1702.04805",
+    "rouge_score": 0.39506172373113857
+  },
+  {
+    "article_id": "1308.4705",
+    "rouge_score": 0.3370786466860245
+  },
+  {
+    "article_id": "astro-ph9912259",
+    "rouge_score": 0.3775510162833195
+  },
+  {
+    "article_id": "astro-ph0201008",
+    "rouge_score": 0.35833332837534726
+  },
+  {
+    "article_id": "1608.02078",
+    "rouge_score": 0.4565217342302694
+  },
+  {
+    "article_id": "1608.03884",
+    "rouge_score": 0.4505494455711871
+  },
+  {
+    "article_id": "1206.6716",
+    "rouge_score": 0.18872870025130162
+  },
+  {
+    "article_id": "cond-mat9901336",
+    "rouge_score": 0.3237410028673464
+  },
+  {
+    "article_id": "astro-ph9806007",
+    "rouge_score": 0.29999999625
+  },
+  {
+    "article_id": "0708.3799",
+    "rouge_score": 0.44086021016707133
+  },
+  {
+    "article_id": "astro-ph0603107",
+    "rouge_score": 0.4782608645746692
+  },
+  {
+    "article_id": "astro-ph0311117",
+    "rouge_score": 0.2698412650226758
+  },
+  {
+    "article_id": "astro-ph9810085",
+    "rouge_score": 0.2222222179657397
+  },
+  {
+    "article_id": "1405.5738",
+    "rouge_score": 0.3916083866634065
+  },
+  {
+    "article_id": "astro-ph0409708",
+    "rouge_score": 0.4946236510440515
+  },
+  {
+    "article_id": "1504.03834",
+    "rouge_score": 0.45744680353836575
+  },
+  {
+    "article_id": "astro-ph9909001",
+    "rouge_score": 0.25396824902998244
+  },
+  {
+    "article_id": "hep-lat9507008",
+    "rouge_score": 0.5578231243963164
+  },
+  {
+    "article_id": "1410.5738",
+    "rouge_score": 0.3181818131829661
+  },
+  {
+    "article_id": "astro-ph0411775",
+    "rouge_score": 0.34210525828254856
+  },
+  {
+    "article_id": "cond-mat9804031",
+    "rouge_score": 0.23462414340946242
+  },
+  {
+    "article_id": "1605.05859",
+    "rouge_score": 0.21686746791463044
+  },
+  {
+    "article_id": "0808.2809",
+    "rouge_score": 0.45333332862133335
+  },
+  {
+    "article_id": "hep-ph0405252",
+    "rouge_score": 0.2499999950097319
+  },
+  {
+    "article_id": "1307.7981",
+    "rouge_score": 0.1510248095356726
+  },
+  {
+    "article_id": "0712.1858",
+    "rouge_score": 0.3981900406052292
+  },
+  {
+    "article_id": "1004.3519",
+    "rouge_score": 0.45205478993432163
+  },
+  {
+    "article_id": "1001.4027",
+    "rouge_score": 0.23255813461668481
+  },
+  {
+    "article_id": "hep-ph0504276",
+    "rouge_score": 0.4344262245565708
+  },
+  {
+    "article_id": "1306.3048",
+    "rouge_score": 0.2416107341489122
+  },
+  {
+    "article_id": "astro-ph9605107",
+    "rouge_score": 0.3553299447338247
+  },
+  {
+    "article_id": "1007.2858",
+    "rouge_score": 0.3275862030342515
+  },
+  {
+    "article_id": "1012.1755",
+    "rouge_score": 0.12529550650456328
+  },
+  {
+    "article_id": "1509.08756",
+    "rouge_score": 0.2823529365862361
+  },
+  {
+    "article_id": "astro-ph0205489",
+    "rouge_score": 0.48648648174011855
+  },
+  {
+    "article_id": "0710.4283",
+    "rouge_score": 0.4468085059642372
+  },
+  {
+    "article_id": "0705.3208",
+    "rouge_score": 0.39726026908613254
+  },
+  {
+    "article_id": "1702.04548",
+    "rouge_score": 0.361702123392938
+  },
+  {
+    "article_id": "0910.3250",
+    "rouge_score": 0.26881719955601807
+  },
+  {
+    "article_id": "1206.4092",
+    "rouge_score": 0.47777777349135814
+  },
+  {
+    "article_id": "0806.1386",
+    "rouge_score": 0.38683127095801795
+  },
+  {
+    "article_id": "q-bio0701016",
+    "rouge_score": 0.42592592098765436
+  },
+  {
+    "article_id": "0802.1746",
+    "rouge_score": 0.26666666283472223
+  },
+  {
+    "article_id": "gr-qc0108020",
+    "rouge_score": 0.4724409399938
+  },
+  {
+    "article_id": "1606.06558",
+    "rouge_score": 0.41221373552357093
+  },
+  {
+    "article_id": "astro-ph9802183",
+    "rouge_score": 0.40361445304108007
+  },
+  {
+    "article_id": "hep-ph0104208",
+    "rouge_score": 0.11857707058632397
+  },
+  {
+    "article_id": "hep-ph9905461",
+    "rouge_score": 0.15559157021264078
+  },
+  {
+    "article_id": "quant-ph0002002",
+    "rouge_score": 0.4999999950653062
+  },
+  {
+    "article_id": "1011.4951",
+    "rouge_score": 0.2580645121198752
+  },
+  {
+    "article_id": "hep-ph0310114",
+    "rouge_score": 0.31632652584183685
+  },
+  {
+    "article_id": "hep-ph0201311",
+    "rouge_score": 0.11764705418961956
+  },
+  {
+    "article_id": "astro-ph0306628",
+    "rouge_score": 0.37426900087685105
+  },
+  {
+    "article_id": "astro-ph0509099",
+    "rouge_score": 0.36363635917648784
+  },
+  {
+    "article_id": "nucl-th0209045",
+    "rouge_score": 0.3037974638960103
+  },
+  {
+    "article_id": "1211.5805",
+    "rouge_score": 0.39053253954693473
+  },
+  {
+    "article_id": "0908.4452",
+    "rouge_score": 0.3999999955555556
+  },
+  {
+    "article_id": "gr-qc0504067",
+    "rouge_score": 0.2428571386571429
+  },
+  {
+    "article_id": "physics0701216",
+    "rouge_score": 0.340425528218651
+  },
+  {
+    "article_id": "0707.2328",
+    "rouge_score": 0.4358974309105852
+  },
+  {
+    "article_id": "0910.5336",
+    "rouge_score": 0.351145033191539
+  },
+  {
+    "article_id": "0810.1668",
+    "rouge_score": 0.3164556926838648
+  },
+  {
+    "article_id": "0711.1297",
+    "rouge_score": 0.3333333293663912
+  },
+  {
+    "article_id": "cond-mat0412095",
+    "rouge_score": 0.4316546720997879
+  },
+  {
+    "article_id": "astro-ph0402602",
+    "rouge_score": 0.4024390197501488
+  },
+  {
+    "article_id": "astro-ph0008339",
+    "rouge_score": 0.34418604179296924
+  },
+  {
+    "article_id": "astro-ph9812320",
+    "rouge_score": 0.4343891353084499
+  },
+  {
+    "article_id": "1011.6206",
+    "rouge_score": 0.3319502029792876
+  },
+  {
+    "article_id": "1509.03179",
+    "rouge_score": 0.3469387714728238
+  },
+  {
+    "article_id": "1501.03930",
+    "rouge_score": 0.3192488223280214
+  },
+  {
+    "article_id": "1003.3140",
+    "rouge_score": 0.6391752527850993
+  },
+  {
+    "article_id": "astro-ph9702119",
+    "rouge_score": 0.2888888838913581
+  },
+  {
+    "article_id": "cond-mat0610820",
+    "rouge_score": 0.34871794377593696
+  },
+  {
+    "article_id": "0910.0964",
+    "rouge_score": 0.43410852254311644
+  }
+]
